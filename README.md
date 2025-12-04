@@ -124,14 +124,6 @@ Config file location: `~/.agentage/config.json`
 
 ---
 
-## Testing
-
-- **Unit tests**: Jest
-- **E2E**: Playwright (test flows: open agent, run agent, stream output)
-- Add `data-testid` attributes for E2E selectors
-
----
-
 ## Contributing
 
 1. Fork the repo
@@ -141,20 +133,9 @@ Config file location: `~/.agentage/config.json`
 
 ---
 
-## Coding Conventions
-
-- Named exports only
-- No `any`
-- Functions over classes
-- Explicit return types
-- Files <200 lines, functions <20 lines
-
----
-
 ## Links
 
 - [Agentage](https://agentage.io)
-- [Requirements](https://github.com/agentage/requirements)
 - [CLI](https://github.com/agentage/cli)
 - [AgentKit](https://github.com/agentage/agentkit)
 
