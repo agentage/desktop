@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "description": "Electron desktop client for Agentage — run, edit and manage agents locally",
   "type": "module",
-  "author": "Agentage",
+  "author": {
+    "name": "Agentage",
+    "email": "team@agentage.io"
+  },
   "license": "MIT",
   "repository": {
     "type": "git",
