@@ -1,163 +1,237 @@
 # Agentage Desktop
 
-> Electron desktop client for Agentage — run, edit and manage agents locally.
+> **Native desktop client for managing and executing AI agents** — part of the Agentage ecosystem.
 
-[![Build](https://github.com/agentage/desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/agentage/desktop/actions/workflows/ci.yml)
+[![CI](https://github.com/agentage/desktop/actions/workflows/ci.yml/badge.svg)](https://github.com/agentage/desktop/actions/workflows/ci.yml)
+[![Release](https://github.com/agentage/desktop/actions/workflows/release.yml/badge.svg)](https://github.com/agentage/desktop/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-lightgrey)](https://github.com/agentage/desktop/releases)
 
 ---
 
-## Why?
+## 🎯 Vision
 
-Lightweight desktop app to:
+> _"Agents should be as simple as writing a README, as portable as a Docker container, and as shareable as an npm package."_
 
-- Run local agents for development and testing
-- Edit and validate agent definitions
-- Manage local agent installs and registry connections
-- Quick access to dev.agentage.io when configured
+Agentage Desktop is the **visual interface** for the Agentage ecosystem — discover, create, execute, and publish AI agents from a native desktop application.
 
 ---
 
-## MVP Goals
+## ✨ Key Features
 
-1. Electron + React + TypeScript scaffold (strict TS)
-2. Agent list UI (load from local folder)
-3. Agent editor (with Zod validation)
-4. Run agent: spawn CLI `run` command and stream output
-5. Config UI: set registry URL, API token, and dev site URL
-6. Packaging: cross-platform builds (Linux, Mac, Windows)
-
----
-
-## Tech Stack
-
-- **Electron** — main process
-- **Vite** — bundling
-- **React + TypeScript** — strict mode
-- **Tailwind CSS** — styling
-- **Zod** — schema validation
-- **Node child_process** — call CLI (embed runtime later)
-- **Playwright** — E2E tests
-- **GitHub Actions** — CI and artifact publishing
+| Feature                    | Description                                           |
+| -------------------------- | ----------------------------------------------------- |
+| 🔍 **Agent Discovery**     | Browse local files, GitHub repos, and public registry |
+| ✏️ **Visual Editor**       | Monaco editor with YAML frontmatter + Markdown        |
+| ▶️ **Execution Engine**    | Embedded `@agentage/cli` with real-time log streaming |
+| 🔐 **Dual Authentication** | Agentage account + optional GitHub connection         |
+| 🔄 **Cross-Device Sync**   | Settings sync via backend API                         |
+| 📦 **Cross-Platform**      | Windows 10+, macOS 11+, Linux (Ubuntu 20.04+)         |
 
 ---
 
-## Repository Layout
+## 🏗️ Architecture
 
 ```
-.
-├── src/
-│   ├── main/                # Electron main process (IPC handlers, app lifecycle)
-│   ├── renderer/            # React app (UI)
-│   └── shared/              # Shared types, utils (zod schemas, agent types)
-├── public/                  # Static assets
-├── scripts/                 # Packaging and helper scripts
-├── tests/                   # E2E + unit tests
-├── .github/
-│   └── workflows/           # CI
-├── package.json
-├── tsconfig.json
-├── vite.config.ts
-└── README.md
+┌─────────────────────────────────────────────────────────────┐
+│                Desktop Application (Electron)                │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │         React + TypeScript Frontend (Renderer)         │ │
+│  │  • Agent Discovery UI    • Monaco Editor               │ │
+│  │  • Execution Console     • Settings Management         │ │
+│  └─────────────────────────┬──────────────────────────────┘ │
+│                            │ IPC                             │
+│  ┌─────────────────────────▼──────────────────────────────┐ │
+│  │              Electron Main Process                      │ │
+│  │  • File System Ops       • OAuth Flow (port 3737)      │ │
+│  │  • Embedded CLI Engine   • Encrypted Storage           │ │
+│  └─────────────────────────────────────────────────────────┘ │
+└───────────────────────────────┬─────────────────────────────┘
+                                │
+           ┌────────────────────┼────────────────────┐
+           ▼                    ▼                    ▼
+    ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+    │ Backend API  │    │   GitHub     │    │ ~/.agentage/ │
+    │ agentage.io  │    │     API      │    │ Local Files  │
+    └──────────────┘    └──────────────┘    └──────────────┘
 ```
 
 ---
 
-## Quickstart
+## 🛠️ Tech Stack
 
-### Install dependencies
+| Category       | Technology       | Version          |
+| -------------- | ---------------- | ---------------- |
+| **Desktop**    | Electron         | 33+              |
+| **UI**         | React            | 18+              |
+| **Language**   | TypeScript       | 5.9+ (strict)    |
+| **Bundler**    | Vite             | 6+               |
+| **Validation** | Zod              | 3.25+            |
+| **Testing**    | Jest             | 30+              |
+| **Linting**    | ESLint           | 9+ (flat config) |
+| **Packaging**  | electron-builder | 25+              |
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── main/                 # Electron main process
+│   ├── index.ts          # App entry, window creation
+│   ├── preload.ts        # Context bridge (IPC)
+│   ├── ipc-handlers.ts   # IPC handler registration
+│   └── services/         # Business logic services
+├── renderer/             # React app (UI)
+│   ├── main.tsx          # React entry point
+│   ├── App.tsx           # Main component
+│   ├── components/       # UI components
+│   └── styles/           # CSS files
+└── shared/               # Shared types & schemas
+    ├── schemas/          # Zod validation schemas
+    └── types/            # TypeScript type definitions
+```
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js >= 20.0.0
+- npm >= 10.0.0
+
+### Development
 
 ```bash
+# Install dependencies
 npm install
-```
 
-### Start dev (renderer + main)
-
-```bash
+# Start dev server (renderer only)
 npm run dev
+
+# Start full Electron dev mode
+npm run dev:electron
 ```
 
-### Build production packages
+### Build & Package
 
 ```bash
+# Build for production
 npm run build
+
+# Package for current platform
 npm run package
+
+# Package for specific platforms
+npm run package:linux
+npm run package:mac
+npm run package:win
 ```
 
 ---
 
-## Configuration
+## 📋 Scripts
 
-Config file location: `~/.agentage/config.json`
+| Command                 | Description                                |
+| ----------------------- | ------------------------------------------ |
+| `npm run dev`           | Start Vite dev server (renderer)           |
+| `npm run dev:electron`  | Build + run Electron app                   |
+| `npm run build`         | Production build                           |
+| `npm run type-check`    | TypeScript validation                      |
+| `npm run lint`          | ESLint check                               |
+| `npm run lint:fix`      | Auto-fix lint issues                       |
+| `npm run test`          | Run Jest tests                             |
+| `npm run test:coverage` | Coverage report                            |
+| `npm run verify`        | Full CI check (type + lint + build + test) |
+| `npm run package`       | Cross-platform packaging                   |
+| `npm run clean`         | Clean build artifacts                      |
+
+---
+
+## ⚙️ Configuration
+
+Local config file: `~/.agentage/config.json`
 
 ```json
 {
-  "registryUrl": "https://agentage.io/api",
-  "apiToken": "<your-token>",
-  "devUrl": "https://dev.agentage.io",
-  "telemetryEnabled": false
+  "auth": {
+    "token": "<jwt-token>",
+    "expiresAt": "2025-12-14T00:00:00Z"
+  },
+  "backendUrl": "https://agentage.io",
+  "theme": "system"
 }
 ```
 
----
+### Agent Sources
 
-## Scripts
-
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start renderer + main in dev |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Run Prettier |
-| `npm run build` | Production build |
-| `npm run package` | Cross-platform packaging |
-| `npm run test` | Run unit tests |
-| `npm run e2e` | Run Playwright tests |
+| Source  | Path                   | Description              |
+| ------- | ---------------------- | ------------------------ |
+| Local   | `~/.agentage/local/`   | User-created agents      |
+| Library | `~/.agentage/library/` | Downloaded from registry |
+| Synced  | `~/.agentage/synced/`  | GitHub repository clones |
 
 ---
 
-## Security
+## 🔒 Security
 
-- Do not store secrets in repo
-- OS keyring integration for tokens (post-MVP)
-- Validate all user input with Zod before execution
-
----
-
-## Testing
-
-- **Unit tests**: Jest
-- **E2E**: Playwright (test flows: open agent, run agent, stream output)
-- Add `data-testid` attributes for E2E selectors
+- ✅ Context isolation enabled
+- ✅ Node integration disabled in renderer
+- ✅ Preload scripts for safe IPC
+- ✅ Zod validation on all inputs
+- ✅ Encrypted token storage
+- ✅ No secrets in repository
 
 ---
 
-## Contributing
+## 🧪 Testing
 
-1. Fork the repo
-2. Create `feature/*` branch
-3. Follow conventions (named exports, no `any`, <200 lines/file)
-4. Open PR
+```bash
+# Run all tests
+npm run test
 
----
+# Watch mode
+npm run test:watch
 
-## Coding Conventions
+# Coverage report (70% threshold)
+npm run test:coverage
+```
 
-- Named exports only
-- No `any`
-- Functions over classes
-- Explicit return types
-- Files <200 lines, functions <20 lines
+**Coverage Requirements**: 70% for branches, functions, lines, and statements.
 
 ---
 
-## Links
+## 🤝 Contributing
 
-- [Agentage](https://agentage.io)
-- [Requirements](https://github.com/agentage/requirements)
-- [CLI](https://github.com/agentage/cli)
-- [AgentKit](https://github.com/agentage/agentkit)
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Follow coding standards (see below)
+4. Run `npm run verify` before committing
+5. Open a Pull Request
+
+### Coding Standards
+
+- 📤 **Named exports only** (no default exports)
+- 🚫 **No `any` type** — explicit types always
+- ⚛️ **Function components** — no class components
+- 📏 **Files < 200 lines**, functions < 20 lines
+- 🏷️ **Naming**: `PascalCase` for interfaces/types, `camelCase` for functions
 
 ---
 
-**MIT © 2025**
+## 🔗 Ecosystem
+
+| Repository                                                            | Description                                      |
+| --------------------------------------------------------------------- | ------------------------------------------------ |
+| [agentage/agentkit](https://github.com/agentage/agentkit)             | SDK monorepo (`@agentage/sdk`, `@agentage/core`) |
+| [agentage/cli](https://github.com/agentage/cli)                       | CLI tool (`@agentage/cli`)                       |
+| [agentage/web](https://github.com/agentage/web)                       | Website & API (agentage.io)                      |
+| [agentage/infrastructure](https://github.com/agentage/infrastructure) | Terraform + Docker configs                       |
+| [agentage/requirements](https://github.com/agentage/requirements)     | Top-level specs & planning                       |
+
+---
+
+## 📄 License
+
+MIT © 2025 Agentage

@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-and-test:
+    name: 🔍 Lint & Test
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Type check
+        run: npm run type-check
+
+      - name: 🔍 Lint
+        run: npm run lint
+
+      - name: 🧪 Test
+        run: npm run test -- --coverage
+
+      - name: 📊 Upload coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.node-version == '20.x'
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  build:
+    name: 🏗️ Build
+    runs-on: ${{ matrix.os }}
+    needs: lint-and-test
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Build
+        run: npm run build
+
+      - name: 🐧 Package (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run package:linux
+
+      - name: 🍎 Package (macOS)
+        if: matrix.os == 'macos-latest'
+        run: npm run package:mac
+
+      - name: 🪟 Package (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm run package:win
+
+      - name: 📤 Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentage-desktop-${{ matrix.os }}
+          path: release/*
+          retention-days: 7
