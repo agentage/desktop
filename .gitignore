@@ -41,6 +41,10 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Electron build output
+dist-electron/
+release/
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
@@ -137,3 +141,5 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+specs/*
