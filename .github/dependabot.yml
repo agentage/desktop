@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "typescript"
+          - "eslint*"
+          - "prettier"
+          - "jest"
+          - "ts-jest"
+        update-types:
+          - "minor"
+          - "patch"
+      electron:
+        patterns:
+          - "electron"
+          - "electron-builder"
+          - "vite-plugin-electron*"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@vitejs/plugin-react"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
