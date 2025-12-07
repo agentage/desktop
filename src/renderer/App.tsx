@@ -1,31 +1,29 @@
 import { useState } from 'react';
-import { AgentList } from './components/AgentList.js';
-import { AgentRunner } from './components/AgentRunner.js';
+import { AppLayout } from './app/layout.js';
+import { AgentRunner } from './components/features/agents/index.js';
+import { HomePage } from './pages/index.js';
 
 export const App = (): React.JSX.Element => {
+  const [showStartPage, setShowStartPage] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
+  const handleGetStarted = (): void => {
+    setShowStartPage(false);
+  };
+
+  if (showStartPage) {
+    return <HomePage onGetStarted={handleGetStarted} />;
+  }
+
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Agentage Desktop</h1>
-      </header>
-
-      <main className="app-main">
-        <aside className="sidebar">
-          <AgentList onSelect={setSelectedAgent} selectedAgent={selectedAgent} />
-        </aside>
-
-        <section className="content">
-          {selectedAgent ? (
-            <AgentRunner agentName={selectedAgent} />
-          ) : (
-            <div className="empty-state">
-              <p>Select an agent to get started</p>
-            </div>
-          )}
-        </section>
-      </main>
-    </div>
+    <AppLayout selectedAgent={selectedAgent} onSelectAgent={setSelectedAgent}>
+      {selectedAgent ? (
+        <AgentRunner agentName={selectedAgent} />
+      ) : (
+        <div className="empty-state">
+          <p>Select an agent to get started</p>
+        </div>
+      )}
+    </AppLayout>
   );
 };
