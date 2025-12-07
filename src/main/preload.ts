@@ -33,6 +33,7 @@ export interface AgentageAPI {
   };
   app: {
     getVersion: () => Promise<string>;
+    openExternal: (url: string) => Promise<void>;
     quit: () => void;
   };
 }
@@ -53,6 +54,7 @@ const api: AgentageAPI = {
   },
   app: {
     getVersion: () => ipcRenderer.invoke('app:version'),
+    openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
     quit: () => {
       ipcRenderer.send('app:quit');
     },
