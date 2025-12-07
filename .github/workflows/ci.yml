@@ -71,15 +71,15 @@ jobs:
 
       - name: 🐧 Package (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: npm run package:linux
+        run: npm run package:linux -- --publish never
 
       - name: 🍎 Package (macOS)
         if: matrix.os == 'macos-latest'
-        run: npm run package:mac
+        run: npm run package:mac -- --publish never
 
       - name: 🪟 Package (Windows)
         if: matrix.os == 'windows-latest'
-        run: npm run package:win
+        run: npm run package:win -- --publish never
 
       - name: 📤 Upload artifacts
         uses: actions/upload-artifact@v5
