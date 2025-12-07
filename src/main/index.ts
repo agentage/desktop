@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { registerIpcHandlers } from './ipc-handlers.js';
+import { registerIpcHandlers } from './ipc/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
