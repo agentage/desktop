@@ -17,15 +17,36 @@ interface AuthResult {
   error?: string;
 }
 
+interface LinkedProvider {
+  name: OAuthProvider;
+  email: string;
+  connectedAt: string;
+}
+
+interface LinkProviderResult {
+  success: boolean;
+  provider?: LinkedProvider;
+  providerToken?: string;
+  error?: string;
+}
+
+interface UnlinkProviderResult {
+  success: boolean;
+  error?: string;
+}
+
 export interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
     run: (name: string, prompt: string) => Promise<string>;
   };
   auth: {
-    login: (provider: OAuthProvider) => Promise<AuthResult>;
+    login: () => Promise<AuthResult>;
     logout: () => Promise<{ success: boolean }>;
     getUser: () => Promise<User | null>;
+    linkProvider: (provider: OAuthProvider) => Promise<LinkProviderResult>;
+    unlinkProvider: (provider: OAuthProvider) => Promise<UnlinkProviderResult>;
+    getProviders: () => Promise<LinkedProvider[]>;
   };
   config: {
     get: () => Promise<Record<string, unknown>>;
@@ -44,9 +65,13 @@ const api: AgentageAPI = {
     run: (name: string, prompt: string) => ipcRenderer.invoke('agents:run', name, prompt),
   },
   auth: {
-    login: (provider: OAuthProvider) => ipcRenderer.invoke('auth:login', provider),
+    login: () => ipcRenderer.invoke('auth:login'),
     logout: () => ipcRenderer.invoke('auth:logout'),
     getUser: () => ipcRenderer.invoke('auth:getUser'),
+    linkProvider: (provider: OAuthProvider) => ipcRenderer.invoke('auth:linkProvider', provider),
+    unlinkProvider: (provider: OAuthProvider) =>
+      ipcRenderer.invoke('auth:unlinkProvider', provider),
+    getProviders: () => ipcRenderer.invoke('auth:getProviders'),
   },
   config: {
     get: () => ipcRenderer.invoke('config:get'),
