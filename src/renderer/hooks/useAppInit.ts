@@ -9,6 +9,35 @@ interface AppInitState {
 }
 
 const HEALTH_CHECK_TIMEOUT = 1000; // 1 second
+const PRELOAD_CHECK_INTERVAL = 50; // ms between preload checks
+const PRELOAD_MAX_WAIT = 2000; // max time to wait for preload
+
+/**
+ * Wait for the preload script to expose window.agentage
+ */
+const waitForPreload = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    // Already available
+    if (typeof window.agentage !== 'undefined') {
+      resolve(true);
+      return;
+    }
+
+    const startTime = Date.now();
+    const checkInterval = setInterval(() => {
+      if (typeof window.agentage !== 'undefined') {
+        clearInterval(checkInterval);
+        resolve(true);
+        return;
+      }
+
+      if (Date.now() - startTime > PRELOAD_MAX_WAIT) {
+        clearInterval(checkInterval);
+        resolve(false);
+      }
+    }, PRELOAD_CHECK_INTERVAL);
+  });
+};
 
 /**
  * Hook to initialize the app: check Electron health and load user auth state
@@ -24,8 +53,9 @@ export const useAppInit = (): AppInitState => {
   useEffect(() => {
     const initializeApp = async (): Promise<void> => {
       try {
-        // Step 1: Check if Electron bridge is available
-        if (typeof window.agentage === 'undefined') {
+        // Step 1: Wait for preload script to be available
+        const preloadReady = await waitForPreload();
+        if (!preloadReady) {
           setState({
             isInitializing: false,
             electronHealthy: false,
