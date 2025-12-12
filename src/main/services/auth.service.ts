@@ -42,15 +42,28 @@ const fetchUserInfo = async (backendUrl: string, token: string): Promise<User> =
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch user info');
+    throw new Error(`Failed to fetch user info: ${String(response.status)} ${response.statusText}`);
   }
 
-  return (await response.json()) as User;
+  const data = (await response.json()) as { user?: User; authenticated?: boolean } | User;
+
+  // API returns { user: {...}, authenticated: true } or just User
+  let userData: User;
+  if ('user' in data && data.user) {
+    userData = data.user;
+  } else if ('id' in data && 'email' in data) {
+    userData = data;
+  } else {
+    throw new Error('Invalid user data received from server');
+  }
+
+  return userData;
 };
 
 const handleToken = async (token: string, githubToken?: string): Promise<AuthState> => {
   const backendUrl = await getBackendUrl();
   const user = await fetchUserInfo(backendUrl, token);
+
   const decoded = decodeJwt(token);
   // Convert exp (seconds) to ISO string
   const expiresAt = decoded.exp ? new Date(decoded.exp * 1000).toISOString() : undefined;
@@ -122,20 +135,64 @@ export const startOAuthFlow = async (): Promise<AuthState> => {
         const error = url.searchParams.get('error');
 
         if (error) {
-          res.writeHead(400, { 'Content-Type': 'text/html' });
-          res.end(
-            '<html><body><h1>Login Failed</h1><p>You can close this window.</p></body></html>'
-          );
+          res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Login Failed</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
+                .container { text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; }
+                .icon { font-size: 3rem; margin-bottom: 1rem; }
+                h1 { color: #111827; margin: 0 0 0.5rem; font-size: 1.5rem; }
+                p { color: #6b7280; margin: 0; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="icon">❌</div>
+                <h1>Login Failed</h1>
+                <p>You can close this window and try again.</p>
+              </div>
+            </body>
+            </html>
+          `);
           cleanup();
           reject(new Error(error));
           return;
         }
 
         if (token) {
-          res.writeHead(200, { 'Content-Type': 'text/html' });
-          res.end(
-            '<html><body><h1>✓ Login Successful!</h1><p>You can close this window and return to the desktop app.</p></body></html>'
-          );
+          res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+          res.end(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <title>Login Successful</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); }
+                .container { text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; }
+                .icon { font-size: 3rem; margin-bottom: 1rem; animation: checkmark 0.5s ease-in-out; }
+                h1 { color: #111827; margin: 0 0 0.5rem; font-size: 1.5rem; }
+                p { color: #6b7280; margin: 0; line-height: 1.5; }
+                @keyframes checkmark { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="icon">✓</div>
+                <h1>Login Successful!</h1>
+                <p>You can close this window and return to the desktop app.</p>
+              </div>
+              <script>setTimeout(() => window.close(), 2000);</script>
+            </body>
+            </html>
+          `);
           cleanup();
 
           handleToken(token, githubToken ?? undefined)
@@ -144,8 +201,31 @@ export const startOAuthFlow = async (): Promise<AuthState> => {
           return;
         }
 
-        res.writeHead(400, { 'Content-Type': 'text/html' });
-        res.end('<html><body><h1>Invalid Response</h1></body></html>');
+        res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Invalid Response</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); }
+              .container { text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; }
+              .icon { font-size: 3rem; margin-bottom: 1rem; }
+              h1 { color: #111827; margin: 0 0 0.5rem; font-size: 1.5rem; }
+              p { color: #6b7280; margin: 0; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="icon">⚠️</div>
+              <h1>Invalid Response</h1>
+              <p>Something went wrong. Please try again.</p>
+            </div>
+          </body>
+          </html>
+        `);
         cleanup();
         reject(new Error('No token received'));
       }

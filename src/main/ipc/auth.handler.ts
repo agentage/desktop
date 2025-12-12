@@ -20,8 +20,14 @@ export const registerAuthHandlers = (ipcMain: IpcMain): void => {
   ipcMain.handle('auth:login', async (): Promise<AuthResult> => {
     try {
       const authState = await startOAuthFlow();
+
+      if (!authState.user) {
+        throw new Error('Authentication succeeded but user info is missing');
+      }
+
       return { success: true, user: authState.user };
     } catch (error) {
+      console.error('[Auth] OAuth flow failed:', error);
       return { success: false, error: (error as Error).message };
     }
   });
