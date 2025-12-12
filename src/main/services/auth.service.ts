@@ -176,20 +176,33 @@ export const startOAuthFlow = async (): Promise<AuthState> => {
               <title>Login Successful</title>
               <style>
                 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); }
-                .container { text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; }
+                .container { text-align: center; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; opacity: 0; }
                 .icon { font-size: 3rem; margin-bottom: 1rem; animation: checkmark 0.5s ease-in-out; }
                 h1 { color: #111827; margin: 0 0 0.5rem; font-size: 1.5rem; }
                 p { color: #6b7280; margin: 0; line-height: 1.5; }
+                .show { animation: fadeIn 0.3s ease-in-out forwards; }
                 @keyframes checkmark { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+                @keyframes fadeIn { to { opacity: 1; } }
               </style>
             </head>
             <body>
-              <div class="container">
+              <div class="container" id="content">
                 <div class="icon">✓</div>
                 <h1>Login Successful!</h1>
                 <p>You can close this window and return to the desktop app.</p>
               </div>
-              <script>setTimeout(() => window.close(), 2000);</script>
+              <script>
+                // Clear URL parameters from address bar
+                if (window.history && window.history.replaceState) {
+                  window.history.replaceState({}, document.title, '/callback');
+                }
+                // Show success message after URL is clean
+                setTimeout(() => {
+                  document.getElementById('content').classList.add('show');
+                }, 50);
+                // Auto-close window
+                setTimeout(() => window.close(), 2000);
+              </script>
             </body>
             </html>
           `);
@@ -234,7 +247,7 @@ export const startOAuthFlow = async (): Promise<AuthState> => {
     server.on('request', handleRequest);
 
     // Open browser to desktop login page (not direct OAuth URL)
-    void shell.openExternal(loginPageUrl);
+    void shell.openExternal(loginPageUrl, { activate: true });
 
     // Timeout after 5 minutes
     timeoutId = setTimeout(() => {
@@ -405,7 +418,7 @@ export const linkProvider = async (provider: OAuthProvider): Promise<LinkProvide
     server.on('request', handleRequest);
 
     // Open browser to link URL
-    void shell.openExternal(linkUrl);
+    void shell.openExternal(linkUrl, { activate: true });
 
     // Timeout after 5 minutes
     timeoutId = setTimeout(() => {
