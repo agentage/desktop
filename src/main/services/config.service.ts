@@ -20,11 +20,13 @@ const userSchema = z.object({
 /**
  * Auth config schema - compatible with CLI
  * Note: expiresAt is ISO string (CLI format), not number
+ * githubToken is device-only, never sent to backend
  */
 const authConfigSchema = z.object({
   token: z.string(),
   expiresAt: z.string().datetime().optional(),
   user: userSchema.optional(),
+  githubToken: z.string().optional(),
 });
 
 /**

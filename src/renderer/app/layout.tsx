@@ -15,8 +15,9 @@ export const AppLayout = ({
 }: AppLayoutProps): React.JSX.Element => {
   const { user, isLoading, login, logout } = useAuth();
 
-  const handleLogin = async (provider: 'google' | 'github' | 'microsoft'): Promise<void> => {
-    await login(provider);
+  const handleLogin = async (): Promise<void> => {
+    // Provider selection happens on the web page, not in desktop app
+    await login();
   };
 
   return (
@@ -54,11 +55,8 @@ export const AppLayout = ({
               </div>
             ) : (
               <div className="login-buttons">
-                <button className="login-btn google" onClick={() => void handleLogin('google')}>
-                  Sign in with Google
-                </button>
-                <button className="login-btn github" onClick={() => void handleLogin('github')}>
-                  Sign in with GitHub
+                <button className="login-btn primary" onClick={() => void handleLogin()}>
+                  Sign In
                 </button>
               </div>
             )}

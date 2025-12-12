@@ -30,16 +30,10 @@ export default defineConfig({
             lib: {
               entry: 'src/main/preload.ts',
               formats: ['cjs'],
-              fileName: () => '[name].js',
+              fileName: () => 'preload.js',
             },
             rollupOptions: {
               external: ['electron'],
-              output: {
-                format: 'cjs',
-              },
-            },
-            commonjsOptions: {
-              transformMixedEsModules: true,
             },
           },
         },
