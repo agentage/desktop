@@ -1,12 +1,17 @@
-import type { IpcMain } from 'electron';
+import type { BrowserWindow, IpcMain } from 'electron';
 import { registerAgentsHandlers } from './agents.handler.js';
 import { registerAppHandlers } from './app.handler.js';
 import { registerAuthHandlers } from './auth.handler.js';
 import { registerConfigHandlers } from './config.handler.js';
+import { registerWindowHandlers } from './window.handler.js';
 
-export const registerIpcHandlers = (ipcMain: IpcMain): void => {
+export const registerIpcHandlers = (
+  ipcMain: IpcMain,
+  getMainWindow: () => BrowserWindow | null
+): void => {
   registerAgentsHandlers(ipcMain);
   registerAuthHandlers(ipcMain);
   registerConfigHandlers(ipcMain);
   registerAppHandlers(ipcMain);
+  registerWindowHandlers(ipcMain, getMainWindow);
 };

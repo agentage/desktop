@@ -64,6 +64,168 @@ body {
   height: 100%;
 }
 
+/* ============================================
+   Custom Titlebar (VS Code style)
+   ============================================ */
+
+.titlebar {
+  display: flex;
+  align-items: center;
+  height: 32px;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  -webkit-app-region: drag;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.titlebar-drag-region {
+  flex: 1;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+
+.titlebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--spacing-sm);
+  height: 100%;
+  -webkit-app-region: no-drag;
+  cursor: default;
+}
+
+.titlebar-logo-icon {
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.titlebar-logo-icon svg {
+  width: 12px;
+  height: 12px;
+  color: white;
+}
+
+.titlebar-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: default;
+}
+
+/* Window control buttons */
+.titlebar-controls {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-controls--win {
+  height: 100%;
+}
+
+.titlebar-controls--mac {
+  padding-left: var(--spacing-sm);
+  gap: 8px;
+}
+
+.titlebar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+/* Windows/Linux style buttons */
+.titlebar-controls--win .titlebar-btn {
+  width: 46px;
+  height: 100%;
+  color: var(--color-text-secondary);
+}
+
+.titlebar-controls--win .titlebar-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.titlebar-controls--win .titlebar-btn--close:hover {
+  background: #e81123;
+  color: white;
+}
+
+/* macOS style buttons */
+.titlebar-controls--mac .titlebar-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  font-size: 0;
+  overflow: hidden;
+}
+
+.titlebar-controls--mac .titlebar-btn-icon {
+  font-size: 9px;
+  line-height: 1;
+  opacity: 0;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.titlebar-controls--mac:hover .titlebar-btn-icon {
+  opacity: 1;
+}
+
+.titlebar-controls--mac .titlebar-btn--close {
+  background: #ff5f57;
+}
+
+.titlebar-controls--mac .titlebar-btn--minimize {
+  background: #febc2e;
+}
+
+.titlebar-controls--mac .titlebar-btn--maximize {
+  background: #28c840;
+}
+
+.titlebar-controls--mac .titlebar-btn:hover {
+  filter: brightness(0.9);
+}
+
+/* Dark titlebar variant (for start page) */
+.titlebar--dark {
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.titlebar--dark .titlebar-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.titlebar--dark .titlebar-controls--win .titlebar-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.titlebar--dark .titlebar-controls--win .titlebar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.titlebar--dark .titlebar-controls--win .titlebar-btn--close:hover {
+  background: #e81123;
+  color: white;
+}
+
+/* ============================================
+   Old app-header styles (deprecated, kept for compatibility)
+   ============================================ */
+
 .app-header {
   padding: var(--spacing-md) var(--spacing-lg);
   background: var(--color-bg-secondary);
@@ -439,11 +601,41 @@ body {
 .start-page {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   overflow: hidden;
+}
+
+/* Titlebar positioned at top of start page */
+.start-page-titlebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.start-page-titlebar .titlebar {
+  background: transparent;
+  border-bottom: none;
+}
+
+.start-page-titlebar .titlebar-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.start-page-titlebar .titlebar-controls--win .titlebar-btn {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.start-page-titlebar .titlebar-controls--win .titlebar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.start-page-titlebar .titlebar-controls--win .titlebar-btn--close:hover {
+  background: #e81123;
+  color: white;
 }
 
 .start-page-content {
@@ -452,8 +644,12 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  flex: 1;
   padding: var(--spacing-xl);
+  padding-top: calc(32px + var(--spacing-xl)); /* Account for titlebar */
   max-width: 480px;
+  margin: 0 auto;
   text-align: center;
 }
 
@@ -825,18 +1021,24 @@ body {
 
 .loading-screen {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   min-height: 100vh;
   background: linear-gradient(135deg, var(--color-bg) 0%, var(--color-bg-tertiary) 100%);
   font-family: var(--font-sans);
 }
 
+.loading-screen .titlebar {
+  background: transparent;
+  border-bottom: none;
+}
+
 .loading-content {
-  text-align: center;
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  text-align: center;
   gap: var(--spacing-lg);
 }
 
@@ -889,16 +1091,26 @@ body {
 
 .electron-error-screen {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   min-height: 100vh;
-  padding: var(--spacing-xl);
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   font-family: var(--font-sans);
 }
 
+.electron-error-screen .titlebar {
+  background: transparent;
+  border-bottom: none;
+}
+
 .electron-error-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   max-width: 480px;
+  margin: 0 auto;
+  padding: var(--spacing-xl);
   text-align: center;
 }
 

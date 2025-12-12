@@ -54,74 +54,79 @@ const getAppIcon = (): Electron.NativeImage | undefined => {
   return icon;
 };
 
+let mainWindow: BrowserWindow | null = null;
+
+export const getMainWindow = (): BrowserWindow | null => mainWindow;
+
 const createWindow = (): BrowserWindow => {
   const appIcon = getAppIcon();
 
-  const mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: 1200,
     height: 800,
     minWidth: 800,
     minHeight: 600,
     icon: appIcon,
+    frame: false, // Frameless window for custom titlebar
     webPreferences: {
       preload: join(__dirname, '../preload/preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
     },
-    // Only use hiddenInset on macOS where it looks native
-    ...(process.platform === 'darwin' ? { titleBarStyle: 'hiddenInset' } : {}),
     show: false,
   });
 
+  mainWindow = win;
+
   // Set icon again after window creation (Linux workaround)
   if (appIcon && process.platform === 'linux') {
-    mainWindow.setIcon(appIcon);
+    win.setIcon(appIcon);
   }
 
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+  win.once('ready-to-show', () => {
+    win.show();
   });
 
   if (isDev) {
-    void mainWindow.loadURL('http://localhost:5173');
+    void win.loadURL('http://localhost:5173');
 
     // Dev mode keyboard shortcuts for DevTools
-    mainWindow.webContents.on('before-input-event', (event, input) => {
+    win.webContents.on('before-input-event', (event, input) => {
       if (input.type !== 'keyDown') return;
 
       const isCtrlOrCmd = input.control || input.meta;
 
       // DevTools: F12 or Ctrl+Shift+I
       if (input.key === 'F12') {
-        mainWindow.webContents.toggleDevTools();
+        win.webContents.toggleDevTools();
         event.preventDefault();
       } else if (isCtrlOrCmd && input.shift && input.key.toLowerCase() === 'i') {
-        mainWindow.webContents.toggleDevTools();
+        win.webContents.toggleDevTools();
         event.preventDefault();
       }
     });
 
     // Ctrl+Mouse scroll zoom
-    mainWindow.webContents.on('zoom-changed', (_event, zoomDirection) => {
-      const currentZoom = mainWindow.webContents.getZoomFactor();
+    win.webContents.on('zoom-changed', (_event, zoomDirection) => {
+      const currentZoom = win.webContents.getZoomFactor();
       if (zoomDirection === 'in') {
-        mainWindow.webContents.setZoomFactor(currentZoom + 0.1);
+        win.webContents.setZoomFactor(currentZoom + 0.1);
       } else {
-        mainWindow.webContents.setZoomFactor(Math.max(0.1, currentZoom - 0.1));
+        win.webContents.setZoomFactor(Math.max(0.1, currentZoom - 0.1));
       }
     });
   } else {
-    void mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    void win.loadFile(join(__dirname, '../renderer/index.html'));
   }
 
-  return mainWindow;
+  return win;
 };
 
 const initialize = async (): Promise<void> => {
   await app.whenReady();
 
-  registerIpcHandlers(ipcMain);
+  registerIpcHandlers(ipcMain, getMainWindow);
   createWindow();
 
   app.on('activate', () => {
