@@ -22,10 +22,10 @@ export default {
   },
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
+    'src/main/**/*.{ts,tsx}',
+    'src/shared/**/*.{ts,tsx}',
     '!src/**/*.test.{ts,tsx}',
     '!src/**/*.d.ts',
-    '!src/renderer/main.tsx',
   ],
   coverageThreshold: {
     global: {
