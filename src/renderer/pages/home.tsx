@@ -7,8 +7,9 @@ interface HomePageProps {
 export const HomePage = ({ onGetStarted }: HomePageProps): React.JSX.Element => {
   const { user, isLoading, login } = useAuth();
 
-  const handleLogin = async (provider: 'google' | 'github' | 'microsoft'): Promise<void> => {
-    const result = await login(provider);
+  const handleLogin = async (): Promise<void> => {
+    // Provider selection happens on the web page, not in desktop app
+    const result = await login();
     if (result.success) {
       onGetStarted();
     }
@@ -44,7 +45,7 @@ export const HomePage = ({ onGetStarted }: HomePageProps): React.JSX.Element => 
           ) : (
             <>
               <p className="start-prompt">Sign in to sync agents and settings</p>
-              <button className="start-btn primary" onClick={() => void handleLogin('github')}>
+              <button className="start-btn primary" onClick={() => void handleLogin()}>
                 Sign in to Agentage
               </button>
               <button className="start-btn skip" onClick={onGetStarted}>

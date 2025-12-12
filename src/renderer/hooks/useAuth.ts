@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { AuthResult, OAuthProvider, User } from '../../shared/types/auth.types.js';
+import type { AuthResult, User } from '../../shared/types/auth.types.js';
 
 interface UseAuthReturn {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (provider: OAuthProvider) => Promise<AuthResult>;
+  login: () => Promise<AuthResult>;
   logout: () => Promise<void>;
 }
 
@@ -27,10 +27,10 @@ export const useAuth = (): UseAuthReturn => {
     void checkAuth();
   }, []);
 
-  const login = useCallback(async (provider: OAuthProvider): Promise<AuthResult> => {
+  const login = useCallback(async (): Promise<AuthResult> => {
     setIsLoading(true);
     try {
-      const result = await window.agentage.auth.login(provider);
+      const result = await window.agentage.auth.login();
       if (result.success && result.user) {
         setUser(result.user);
       }
