@@ -1,0 +1,62 @@
+/* ============================================
+   Base Styles - Reset & CSS Variables
+   ============================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Agentage Web Color Palette - Light Theme */
+  --color-bg: #f9fafb; /* gray-50 */
+  --color-bg-secondary: #ffffff; /* white */
+  --color-bg-tertiary: #f3f4f6; /* gray-100 */
+  --color-text: #111827; /* gray-900 */
+  --color-text-secondary: #4b5563; /* gray-600 */
+  --color-text-muted: #6b7280; /* gray-500 */
+  --color-primary: #2563eb; /* blue-600 */
+  --color-primary-hover: #1d4ed8; /* blue-700 */
+  --color-primary-light: #dbeafe; /* blue-100 */
+  --color-accent: #10b981; /* emerald-500 */
+  --color-error: #ef4444; /* red-500 */
+  --color-success: #22c55e; /* green-500 */
+  --color-border: #e5e7eb; /* gray-200 */
+  --color-border-dark: #d1d5db; /* gray-300 */
+
+  /* Footer Dark Theme */
+  --color-footer-bg: #111827; /* gray-900 */
+  --color-footer-text: #9ca3af; /* gray-400 */
+  --color-footer-border: #1f2937; /* gray-800 */
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
