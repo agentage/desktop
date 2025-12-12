@@ -1,3 +1,5 @@
+import { TitleBar } from './TitleBar.js';
+
 interface ElectronErrorScreenProps {
   error: string;
   onRetry?: () => void;
@@ -20,6 +22,7 @@ export const ElectronErrorScreen = ({
 
   return (
     <div className="electron-error-screen">
+      <TitleBar title="Agentage" showLogo={false} simple={true} />
       <div className="electron-error-content">
         <div className="electron-error-icon">
           <svg
