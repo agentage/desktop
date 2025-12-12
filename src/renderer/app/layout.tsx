@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { AgentList } from '../components/features/agents/index.js';
+import { TitleBar } from '../components/index.js';
 import { useAuth } from '../hooks/useAuth.js';
 
 interface AppLayoutProps {
@@ -22,19 +23,7 @@ export const AppLayout = ({
 
   return (
     <div className="app">
-      <header className="app-header">
-        <div className="app-logo">
-          <div className="app-logo-icon">
-            <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-            </svg>
-          </div>
-          <div className="app-logo-text">
-            <span className="app-title">Agentage</span>
-            <span className="app-version">Desktop</span>
-          </div>
-        </div>
-      </header>
+      <TitleBar title="Agentage" showLogo={true} />
 
       <main className="app-main">
         <aside className="sidebar">

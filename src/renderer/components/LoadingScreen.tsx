@@ -1,3 +1,5 @@
+import { TitleBar } from './TitleBar.js';
+
 interface LoadingScreenProps {
   message?: string;
 }
@@ -9,6 +11,7 @@ export const LoadingScreen = ({
   message = 'Loading...',
 }: LoadingScreenProps): React.JSX.Element => (
   <div className="loading-screen">
+    <TitleBar title="Agentage" showLogo={false} simple={true} />
     <div className="loading-content">
       <div className="loading-logo">
         <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">

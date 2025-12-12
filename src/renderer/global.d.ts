@@ -1,6 +1,8 @@
-import { contextBridge, ipcRenderer } from 'electron';
+// Global type declarations for the renderer process
 
-// Inline types to avoid import issues in preload context
+// Re-export the AgentageAPI interface from preload
+// This enables TypeScript to understand window.agentage in renderer code
+
 type OAuthProvider = 'google' | 'github' | 'microsoft';
 
 interface User {
@@ -35,7 +37,7 @@ interface UnlinkProviderResult {
   error?: string;
 }
 
-export interface AgentageAPI {
+interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
     run: (name: string, prompt: string) => Promise<string>;
@@ -65,43 +67,10 @@ export interface AgentageAPI {
   };
 }
 
-const api: AgentageAPI = {
-  agents: {
-    list: () => ipcRenderer.invoke('agents:list'),
-    run: (name: string, prompt: string) => ipcRenderer.invoke('agents:run', name, prompt),
-  },
-  auth: {
-    login: () => ipcRenderer.invoke('auth:login'),
-    logout: () => ipcRenderer.invoke('auth:logout'),
-    getUser: () => ipcRenderer.invoke('auth:getUser'),
-    linkProvider: (provider: OAuthProvider) => ipcRenderer.invoke('auth:linkProvider', provider),
-    unlinkProvider: (provider: OAuthProvider) =>
-      ipcRenderer.invoke('auth:unlinkProvider', provider),
-    getProviders: () => ipcRenderer.invoke('auth:getProviders'),
-  },
-  config: {
-    get: () => ipcRenderer.invoke('config:get'),
-    set: (key: string, value: unknown) => ipcRenderer.invoke('config:set', key, value),
-  },
-  app: {
-    getVersion: () => ipcRenderer.invoke('app:version'),
-    openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
-    quit: () => {
-      ipcRenderer.send('app:quit');
-    },
-  },
-  window: {
-    minimize: () => ipcRenderer.invoke('window:minimize'),
-    maximize: () => ipcRenderer.invoke('window:maximize'),
-    close: () => ipcRenderer.invoke('window:close'),
-    isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
-  },
-};
-
-contextBridge.exposeInMainWorld('agentage', api);
-
 declare global {
   interface Window {
     agentage: AgentageAPI;
   }
 }
+
+export {};

@@ -1,3 +1,4 @@
+import { TitleBar } from '../components/index.js';
 import { useAuth } from '../hooks/useAuth.js';
 
 interface HomePageProps {
@@ -17,6 +18,10 @@ export const HomePage = ({ onGetStarted }: HomePageProps): React.JSX.Element => 
 
   return (
     <div className="start-page">
+      {/* Custom titlebar (dark variant for start page) */}
+      <div className="start-page-titlebar">
+        <TitleBar title="Agentage" showLogo={false} dark={true} />
+      </div>
       <div className="start-page-content">
         {/* Logo / Branding - Matching web Header.tsx Logo component */}
         <div className="start-logo">
