@@ -39,8 +39,10 @@ export const App = (): React.JSX.Element => {
       {selectedAgent ? (
         <AgentRunner agentName={selectedAgent} />
       ) : (
-        <div className="empty-state">
-          <p>Select an agent to get started</p>
+        <div className="empty-state empty-state--dark">
+          <div className="empty-state-content">
+            <p>Select an agent to get started</p>
+          </div>
         </div>
       )}
     </AppLayout>
