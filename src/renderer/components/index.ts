@@ -1,4 +1,5 @@
 export * from './ElectronErrorScreen.js';
 export * from './features/agents/index.js';
 export * from './LoadingScreen.js';
+export * from './Sidebar.js';
 export * from './TitleBar.js';
