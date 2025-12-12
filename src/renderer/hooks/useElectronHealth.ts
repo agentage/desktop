@@ -7,6 +7,35 @@ interface ElectronHealthState {
 }
 
 const HEALTH_CHECK_TIMEOUT = 1000; // 1 second
+const PRELOAD_CHECK_INTERVAL = 50; // ms between preload checks
+const PRELOAD_MAX_WAIT = 2000; // max time to wait for preload
+
+/**
+ * Wait for the preload script to expose window.agentage
+ */
+const waitForPreload = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    // Already available
+    if (typeof window.agentage !== 'undefined') {
+      resolve(true);
+      return;
+    }
+
+    const startTime = Date.now();
+    const checkInterval = setInterval(() => {
+      if (typeof window.agentage !== 'undefined') {
+        clearInterval(checkInterval);
+        resolve(true);
+        return;
+      }
+
+      if (Date.now() - startTime > PRELOAD_MAX_WAIT) {
+        clearInterval(checkInterval);
+        resolve(false);
+      }
+    }, PRELOAD_CHECK_INTERVAL);
+  });
+};
 
 /**
  * Hook to check if Electron IPC bridge is available and responding
@@ -20,8 +49,9 @@ export const useElectronHealth = (): ElectronHealthState => {
 
   useEffect(() => {
     const checkHealth = async (): Promise<void> => {
-      // Check if window.agentage exists (preload loaded)
-      if (typeof window.agentage === 'undefined') {
+      // Wait for preload script to be available
+      const preloadReady = await waitForPreload();
+      if (!preloadReady) {
         setState({
           isChecking: false,
           isHealthy: false,
