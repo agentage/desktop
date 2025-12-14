@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 import { z } from 'zod';
+import type { AppConfig, ExternalToken } from '../../shared/types/config.types.js';
 
 const CONFIG_DIR = join(homedir(), '.agentage');
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
@@ -20,13 +21,22 @@ const userSchema = z.object({
 /**
  * Auth config schema - compatible with CLI
  * Note: expiresAt is ISO string (CLI format), not number
- * githubToken is device-only, never sent to backend
  */
 const authConfigSchema = z.object({
   token: z.string(),
   expiresAt: z.string().datetime().optional(),
   user: userSchema.optional(),
-  githubToken: z.string().optional(),
+});
+
+/**
+ * External token schema for OAuth providers (GitHub, GitLab, Bitbucket)
+ */
+const externalTokenSchema = z.object({
+  provider: z.enum(['github', 'gitlab', 'bitbucket']),
+  scope: z.array(z.string()),
+  value: z.string(),
+  username: z.string().optional(),
+  connectedAt: z.string().datetime(),
 });
 
 /**
@@ -43,11 +53,12 @@ export const configSchema = z.object({
   auth: authConfigSchema.optional(),
   registry: registryConfigSchema.optional(),
   deviceId: z.string().optional(),
+  tokens: z.array(externalTokenSchema).default([]),
 });
 
-export type AppConfig = z.infer<typeof configSchema>;
+export type { AppConfig, ExternalToken };
 
-const DEFAULT_CONFIG: AppConfig = {};
+const DEFAULT_CONFIG: AppConfig = { tokens: [] };
 
 export const loadConfig = async (): Promise<AppConfig> => {
   try {
@@ -81,4 +92,42 @@ export const getRegistryUrl = async (): Promise<string> => {
 export const isTokenExpired = (expiresAt: string | undefined): boolean => {
   if (!expiresAt) return false;
   return new Date(expiresAt) <= new Date();
+};
+
+/**
+ * Get external token by provider
+ */
+export const getExternalToken = async (
+  provider: 'github' | 'gitlab' | 'bitbucket'
+): Promise<ExternalToken | undefined> => {
+  const config = await loadConfig();
+  return config.tokens?.find((t) => t.provider === provider);
+};
+
+/**
+ * Set or update external token
+ */
+export const setExternalToken = async (token: ExternalToken): Promise<void> => {
+  const config = await loadConfig();
+  const tokens = config.tokens ?? [];
+  const index = tokens.findIndex((t) => t.provider === token.provider);
+
+  if (index >= 0) {
+    tokens[index] = token;
+  } else {
+    tokens.push(token);
+  }
+
+  await saveConfig({ ...config, tokens });
+};
+
+/**
+ * Remove external token by provider
+ */
+export const removeExternalToken = async (
+  provider: 'github' | 'gitlab' | 'bitbucket'
+): Promise<void> => {
+  const config = await loadConfig();
+  const tokens = (config.tokens ?? []).filter((t) => t.provider !== provider);
+  await saveConfig({ ...config, tokens });
 };

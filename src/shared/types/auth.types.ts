@@ -18,15 +18,13 @@ export interface AuthState {
   token: string; // Agentage JWT
   expiresAt?: string; // ISO datetime string
   user?: User;
-  githubToken?: string; // GitHub access token (device-only, returned once)
 }
 
 /**
- * GitHub token is:
- * - Returned ONLY on initial GitHub OAuth login
+ * External tokens (GitHub, GitLab, etc.) are:
+ * - Stored in config.tokens[] array
  * - NEVER stored on backend (security)
- * - Stored ONLY in ~/.agentage/config.json on device
- * - Used for: git clone, push, GitHub API calls
+ * - Used for: git clone, push, provider API calls
  */
 
 export interface LinkedProvider {

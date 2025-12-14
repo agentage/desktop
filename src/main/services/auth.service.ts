@@ -9,7 +9,14 @@ import type {
   UnlinkProviderResult,
   User,
 } from '../../shared/types/auth.types.js';
-import { getRegistryUrl, isTokenExpired, loadConfig, saveConfig } from './config.service.js';
+import type { ExternalToken } from '../../shared/types/config.types.js';
+import {
+  getRegistryUrl,
+  isTokenExpired,
+  loadConfig,
+  saveConfig,
+  setExternalToken,
+} from './config.service.js';
 
 const OAUTH_PORT = 3739;
 const OAUTH_TIMEOUT = 5 * 60 * 1000; // 5 minutes
@@ -68,11 +75,23 @@ const handleToken = async (token: string, githubToken?: string): Promise<AuthSta
   // Convert exp (seconds) to ISO string
   const expiresAt = decoded.exp ? new Date(decoded.exp * 1000).toISOString() : undefined;
 
-  const authState: AuthState = { token, expiresAt, user, githubToken };
+  const authState: AuthState = { token, expiresAt, user };
 
   // Save to config (CLI compatible format)
   const config = await loadConfig();
   await saveConfig({ ...config, auth: authState });
+
+  // Save GitHub token to tokens array if provided
+  if (githubToken) {
+    const externalToken: ExternalToken = {
+      provider: 'github',
+      scope: ['repo', 'read:user'],
+      value: githubToken,
+      username: user.verifiedAlias,
+      connectedAt: new Date().toISOString(),
+    };
+    await setExternalToken(externalToken);
+  }
 
   return authState;
 };
@@ -385,10 +404,21 @@ export const linkProvider = async (provider: OAuthProvider): Promise<LinkProvide
                 token: config.auth.token,
                 expiresAt: config.auth.expiresAt,
                 user,
-                githubToken: githubToken && provider === 'github' ? githubToken : undefined,
               };
 
               await saveConfig({ ...config, auth: updatedAuth });
+
+              // Save provider token to tokens array if provided
+              if (githubToken && provider === 'github') {
+                const externalToken: ExternalToken = {
+                  provider: 'github',
+                  scope: ['repo', 'read:user'],
+                  value: githubToken,
+                  username: user.verifiedAlias,
+                  connectedAt: new Date().toISOString(),
+                };
+                await setExternalToken(externalToken);
+              }
 
               resolve({
                 success: true,

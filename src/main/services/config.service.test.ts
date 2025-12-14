@@ -38,27 +38,39 @@ describe('config.service - unit tests', () => {
         registry: {
           url: 'https://agentage.io',
         },
+        tokens: [],
       };
 
       expect(validConfig.auth.token).toBeDefined();
       expect(validConfig.auth.user.email).toBe('test@test.com');
       expect(validConfig.registry.url).toBe('https://agentage.io');
+      expect(validConfig.tokens).toEqual([]);
     });
 
     it('should accept minimal config', () => {
-      const minimalConfig = {};
+      const minimalConfig = { tokens: [] };
       expect(minimalConfig).toBeDefined();
     });
 
-    it('should handle config with github token', () => {
-      const configWithGithub = {
+    it('should handle config with tokens array', () => {
+      const configWithTokens = {
         auth: {
           token: 'jwt-token',
-          githubToken: 'github-personal-access-token',
         },
+        tokens: [
+          {
+            provider: 'github',
+            scope: ['repo', 'read:user'],
+            value: 'ghp_abc123',
+            username: 'john-doe',
+            connectedAt: '2025-12-14T00:00:00.000Z',
+          },
+        ],
       };
 
-      expect(configWithGithub.auth.githubToken).toBe('github-personal-access-token');
+      expect(configWithTokens.tokens).toHaveLength(1);
+      expect(configWithTokens.tokens[0].provider).toBe('github');
+      expect(configWithTokens.tokens[0].value).toBe('ghp_abc123');
     });
   });
 
