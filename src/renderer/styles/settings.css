@@ -1,0 +1,331 @@
+/**
+ * Settings Page Styles
+ * Implements dark theme inspired by VS Code and OpenAI
+ */
+
+/* Settings Page Layout */
+.settings-page {
+  display: block;
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+/* Custom Scrollbar */
+.settings-page::-webkit-scrollbar {
+  width: 10px;
+}
+
+.settings-page::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+.settings-page::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 5px;
+}
+
+.settings-page::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+.settings-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Loading & Error States */
+.settings-page.loading,
+.settings-page.error {
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-loading,
+.settings-error {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.settings-error {
+  color: var(--color-error);
+}
+
+/* Settings Section */
+.settings-section {
+  margin-bottom: 24px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.settings-section:first-child {
+  margin-top: 0;
+}
+
+.settings-section-title {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Settings Field */
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.settings-input {
+  height: 40px;
+  padding: 0 12px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: inherit;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.settings-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.settings-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.field-error {
+  font-size: 12px;
+  color: var(--color-error);
+  margin-top: 4px;
+}
+
+/* Input Group */
+.input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.input-group .settings-input {
+  flex: 1;
+}
+
+/* Radio Group */
+.radio-group {
+  display: flex;
+  gap: 16px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.radio-option input[type='radio'] {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--color-text-muted);
+  border-radius: 50%;
+  margin: 0;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radio-option input[type='radio']:checked {
+  border-color: var(--color-primary);
+}
+
+.radio-option input[type='radio']:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: var(--color-primary);
+  border-radius: 50%;
+}
+
+/* Account Section */
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.account-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.account-details {
+  flex: 1;
+}
+
+.account-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  color: var(--color-text);
+}
+
+.account-email {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.account-provider {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Provider Section */
+.test-result {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.test-result.success {
+  color: var(--color-success);
+}
+
+.test-result.error {
+  color: var(--color-error);
+}
+
+/* About Section */
+.about-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.about-version {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.about-copyright {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.about-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Buttons */
+.settings-page .btn {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+}
+
+.settings-page .btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.settings-page .btn-primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.settings-page .btn-secondary {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.settings-page .btn-secondary:hover {
+  background: var(--color-border);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-page {
+    padding: 16px;
+  }
+}
