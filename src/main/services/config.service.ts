@@ -2,7 +2,14 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 import { z } from 'zod';
-import type { AppConfig, ExternalToken } from '../../shared/types/config.types.js';
+import { modelProviderSchema, syncedSettingsSchema } from '../../shared/schemas/index.js';
+import type {
+  AppConfig,
+  ExternalToken,
+  ModelProvider,
+  Settings,
+  SyncedSettings,
+} from '../../shared/types/index.js';
 
 const CONFIG_DIR = join(homedir(), '.agentage');
 const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
@@ -54,11 +61,22 @@ export const configSchema = z.object({
   registry: registryConfigSchema.optional(),
   deviceId: z.string().optional(),
   tokens: z.array(externalTokenSchema).default([]),
+  models: z.array(modelProviderSchema).default([]),
+  settings: syncedSettingsSchema.optional(),
 });
 
 export type { AppConfig, ExternalToken };
 
-const DEFAULT_CONFIG: AppConfig = { tokens: [] };
+const DEFAULT_CONFIG: AppConfig = {
+  tokens: [],
+  models: [],
+};
+
+const DEFAULT_SETTINGS: SyncedSettings = {
+  theme: 'system',
+  logRetention: 30,
+  language: 'en',
+};
 
 export const loadConfig = async (): Promise<AppConfig> => {
   try {
@@ -130,4 +148,78 @@ export const removeExternalToken = async (
   const config = await loadConfig();
   const tokens = (config.tokens ?? []).filter((t) => t.provider !== provider);
   await saveConfig({ ...config, tokens });
+};
+
+/**
+ * Get settings (combines local and synced settings)
+ */
+export const getSettings = async (): Promise<Settings> => {
+  const config = await loadConfig();
+  const settings = config.settings ?? DEFAULT_SETTINGS;
+
+  return {
+    models: config.models ?? [],
+    backendUrl: config.registry?.url ?? 'https://agentage.io',
+    theme: settings.theme,
+    defaultModelProvider: settings.defaultModelProvider,
+    logRetention: settings.logRetention,
+    language: settings.language,
+  };
+};
+
+/**
+ * Update settings (updates both local and synced)
+ */
+export const updateSettings = async (updates: Partial<Settings>): Promise<void> => {
+  const config = await loadConfig();
+
+  const updatedConfig: AppConfig = {
+    ...config,
+    models: updates.models ?? config.models,
+    registry: updates.backendUrl ? { url: updates.backendUrl } : config.registry,
+    settings: {
+      ...(config.settings ?? DEFAULT_SETTINGS),
+      theme: updates.theme ?? config.settings?.theme ?? DEFAULT_SETTINGS.theme,
+      defaultModelProvider: updates.defaultModelProvider ?? config.settings?.defaultModelProvider,
+      logRetention:
+        updates.logRetention ?? config.settings?.logRetention ?? DEFAULT_SETTINGS.logRetention,
+      language: updates.language ?? config.settings?.language ?? DEFAULT_SETTINGS.language,
+    },
+  };
+
+  await saveConfig(updatedConfig);
+};
+
+/**
+ * Get model provider by ID
+ */
+export const getModelProvider = async (id: string): Promise<ModelProvider | undefined> => {
+  const config = await loadConfig();
+  return config.models?.find((m) => m.id === id);
+};
+
+/**
+ * Add or update model provider
+ */
+export const setModelProvider = async (provider: ModelProvider): Promise<void> => {
+  const config = await loadConfig();
+  const models = config.models ?? [];
+  const index = models.findIndex((m) => m.id === provider.id);
+
+  if (index >= 0) {
+    models[index] = provider;
+  } else {
+    models.push(provider);
+  }
+
+  await saveConfig({ ...config, models });
+};
+
+/**
+ * Remove model provider by ID
+ */
+export const removeModelProvider = async (id: string): Promise<void> => {
+  const config = await loadConfig();
+  const models = (config.models ?? []).filter((m) => m.id !== id);
+  await saveConfig({ ...config, models });
 };

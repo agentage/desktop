@@ -37,6 +37,28 @@ export interface RegistryConfig {
 }
 
 /**
+ * Model provider configuration
+ */
+export interface ModelProvider {
+  id: string;
+  provider: 'openai' | 'anthropic' | 'ollama' | 'custom';
+  apiKey?: string;
+  baseUrl?: string;
+  defaultModel?: string;
+  isDefault?: boolean;
+}
+
+/**
+ * Synced settings (stored on backend)
+ */
+export interface SyncedSettings {
+  theme: 'light' | 'dark' | 'system';
+  defaultModelProvider?: string;
+  logRetention: 7 | 30 | 90 | -1;
+  language: string;
+}
+
+/**
  * Complete app configuration structure
  */
 export interface AppConfig {
@@ -44,4 +66,6 @@ export interface AppConfig {
   registry?: RegistryConfig;
   deviceId?: string;
   tokens?: ExternalToken[];
+  models?: ModelProvider[];
+  settings?: SyncedSettings;
 }

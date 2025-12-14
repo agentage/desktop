@@ -46,6 +46,29 @@
   --spacing-xl: 32px;
 }
 
+[data-theme='dark'] {
+  /* Agentage Dark Theme - VS Code / OpenAI Inspired */
+  --color-bg: #1e1e1e; /* VS Code Editor BG */
+  --color-bg-secondary: #252526; /* VS Code Sidebar BG */
+  --color-bg-tertiary: #333333; /* Input BG */
+  --color-text: #d4d4d4; /* VS Code Text */
+  --color-text-secondary: #a1a1aa; /* Muted Text */
+  --color-text-muted: #6b7280;
+  --color-primary: #3b82f6; /* Blue-500 (Brighter for dark mode) */
+  --color-primary-hover: #60a5fa; /* Blue-400 */
+  --color-primary-light: rgba(59, 130, 246, 0.2);
+  --color-accent: #10b981; /* Emerald-500 */
+  --color-error: #f87171; /* Red-400 */
+  --color-success: #4ade80; /* Green-400 */
+  --color-border: #3e3e42; /* VS Code Border */
+  --color-border-dark: #1f2937;
+
+  /* Footer Dark Theme (Same as light mode footer in dark) */
+  --color-footer-bg: #1e1e1e;
+  --color-footer-text: #9ca3af;
+  --color-footer-border: #3e3e42;
+}
+
 html,
 body,
 #root {
