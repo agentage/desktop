@@ -1,17 +1,18 @@
-import { TitleBar } from './TitleBar.js';
+import { TitleBar } from '../components/TitleBar.js';
 
-interface ElectronErrorScreenProps {
-  error: string;
+interface ErrorLayoutProps {
+  error?: string;
   onRetry?: () => void;
 }
 
 /**
- * Full-screen error display when Electron IPC is not available
+ * Layout for critical errors (e.g., Electron IPC unavailable)
+ * Full-screen error display with retry option
  */
-export const ElectronErrorScreen = ({
-  error,
+export const ErrorLayout = ({
+  error = 'An unexpected error occurred',
   onRetry,
-}: ElectronErrorScreenProps): React.JSX.Element => {
+}: ErrorLayoutProps): React.JSX.Element => {
   const handleReload = (): void => {
     if (onRetry) {
       onRetry();

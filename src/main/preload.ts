@@ -35,6 +35,24 @@ interface UnlinkProviderResult {
   error?: string;
 }
 
+interface ModelProvider {
+  id: string;
+  provider: 'openai' | 'anthropic' | 'ollama' | 'custom';
+  apiKey?: string;
+  baseUrl?: string;
+  defaultModel?: string;
+  isDefault?: boolean;
+}
+
+interface Settings {
+  models: ModelProvider[];
+  backendUrl: string;
+  theme: 'light' | 'dark' | 'system';
+  defaultModelProvider?: string;
+  logRetention: 7 | 30 | 90 | -1;
+  language: string;
+}
+
 export interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
@@ -55,7 +73,16 @@ export interface AgentageAPI {
   app: {
     getVersion: () => Promise<string>;
     openExternal: (url: string) => Promise<void>;
+    openPath: (path: string) => Promise<void>;
+    getConfigDir: () => Promise<string>;
     quit: () => void;
+  };
+  settings: {
+    get: () => Promise<Settings>;
+    update: (updates: Partial<Settings>) => Promise<void>;
+    getModelProvider: (id: string) => Promise<ModelProvider | undefined>;
+    setModelProvider: (provider: ModelProvider) => Promise<void>;
+    removeModelProvider: (id: string) => Promise<void>;
   };
   window: {
     minimize: () => Promise<void>;
@@ -86,9 +113,19 @@ const api: AgentageAPI = {
   app: {
     getVersion: () => ipcRenderer.invoke('app:version'),
     openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
+    openPath: (path: string) => ipcRenderer.invoke('app:openPath', path),
+    getConfigDir: () => ipcRenderer.invoke('app:getConfigDir'),
     quit: () => {
       ipcRenderer.send('app:quit');
     },
+  },
+  settings: {
+    get: () => ipcRenderer.invoke('settings:get'),
+    update: (updates: Partial<Settings>) => ipcRenderer.invoke('settings:update', updates),
+    getModelProvider: (id: string) => ipcRenderer.invoke('settings:getModelProvider', id),
+    setModelProvider: (provider: ModelProvider) =>
+      ipcRenderer.invoke('settings:setModelProvider', provider),
+    removeModelProvider: (id: string) => ipcRenderer.invoke('settings:removeModelProvider', id),
   },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),

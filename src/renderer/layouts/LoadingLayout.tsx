@@ -1,15 +1,16 @@
-import { TitleBar } from './TitleBar.js';
+import { TitleBar } from '../components/TitleBar.js';
 
-interface LoadingScreenProps {
+interface LoadingLayoutProps {
   message?: string;
 }
 
 /**
- * Full-screen loading display shown during app initialization
+ * Layout for loading states (app initialization, auth checks, etc.)
+ * Full-screen loading display with branding
  */
-export const LoadingScreen = ({
+export const LoadingLayout = ({
   message = 'Loading...',
-}: LoadingScreenProps): React.JSX.Element => (
+}: LoadingLayoutProps): React.JSX.Element => (
   <div className="loading-screen">
     <TitleBar title="Agentage" showLogo={false} simple={true} />
     <div className="loading-content">

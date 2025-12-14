@@ -15,8 +15,7 @@ const PRELOAD_MAX_WAIT = 2000; // max time to wait for preload
 /**
  * Wait for the preload script to expose window.agentage
  */
-const waitForPreload = (): Promise<boolean> => {
-  return new Promise((resolve) => {
+const waitForPreload = (): Promise<boolean> => new Promise((resolve) => {
     // Already available
     if (typeof window.agentage !== 'undefined') {
       resolve(true);
@@ -37,7 +36,6 @@ const waitForPreload = (): Promise<boolean> => {
       }
     }, PRELOAD_CHECK_INTERVAL);
   });
-};
 
 /**
  * Hook to initialize the app: check Electron health and load user auth state

@@ -1,24 +1,21 @@
 import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
-
-interface SidebarProps {
-  selectedAgent: string | null;
-  onSelectAgent: (name: string) => void;
-  onNewTask?: () => void;
-}
 
 /**
  * Left sidebar navigation component - Manus-style design
  * Collapsible with hamburger menu for mobile/compact mode
  * Contains: main navigation, projects, and user section at bottom
  */
-export const Sidebar = ({
-  selectedAgent,
-  onSelectAgent,
-  onNewTask,
-}: SidebarProps): React.JSX.Element => {
+export const Sidebar = (): React.JSX.Element => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { user, isLoading, login, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Determine current route for active state
+  const isSettingsActive = location.pathname === '/settings';
+  const isHomeActive = location.pathname === '/';
 
   const handleLogin = async (): Promise<void> => {
     await login();
@@ -30,6 +27,18 @@ export const Sidebar = ({
 
   const toggleCollapse = (): void => {
     setIsCollapsed(!isCollapsed);
+  };
+
+  const handleSettingsClick = (): void => {
+    void navigate('/settings');
+  };
+
+  const handleNewTask = (): void => {
+    void navigate('/');
+  };
+
+  const handleAllTasks = (): void => {
+    void navigate('/');
   };
 
   return (
@@ -51,7 +60,7 @@ export const Sidebar = ({
         <NavItem
           icon={<EditIcon />}
           label="New task"
-          onClick={onNewTask}
+          onClick={handleNewTask}
           isActive={false}
           collapsed={isCollapsed}
         />
@@ -82,10 +91,8 @@ export const Sidebar = ({
         <NavItem
           icon={<TasksIcon />}
           label="All tasks"
-          onClick={() => {
-            onSelectAgent('all');
-          }}
-          isActive={selectedAgent === 'all'}
+          onClick={handleAllTasks}
+          isActive={isHomeActive && !isSettingsActive}
           hasDropdown={!isCollapsed}
           collapsed={isCollapsed}
         />
@@ -120,7 +127,7 @@ export const Sidebar = ({
 
         {/* Footer Actions */}
         <div className={`sidebar-footer-actions ${isCollapsed ? 'collapsed' : ''}`}>
-          <button className="sidebar-footer-btn" title="Settings">
+          <button className="sidebar-footer-btn" title="Settings" onClick={handleSettingsClick}>
             <SettingsIcon />
           </button>
           <button
