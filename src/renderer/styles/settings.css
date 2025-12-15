@@ -233,6 +233,74 @@
 
 /* Provider Section */
 
+/* Accounts List */
+.accounts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.account-item:hover {
+  border-color: var(--color-text-muted);
+}
+
+.account-item-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.account-item-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-tertiary);
+  border-radius: 50%;
+  font-size: 20px;
+}
+
+.account-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.account-item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.account-item-email {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.account-item-status {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
 /* About Section */
 .about-info {
   display: flex;

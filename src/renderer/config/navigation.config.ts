@@ -70,6 +70,12 @@ export const navigationConfig: NavigationConfig = {
           icon: 'file-text',
           path: '/context',
         },
+        {
+          id: 'accounts',
+          title: 'Accounts',
+          icon: 'link',
+          path: '/accounts',
+        },
       ],
     },
   ],

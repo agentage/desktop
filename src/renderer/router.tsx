@@ -4,11 +4,13 @@ import { ElectronGuard } from './guards/ElectronGuard.js';
 import { AppLayout, LoginLayout } from './layouts/index.js';
 import {
   AccountPage,
+  AccountsPage,
   AgentPage,
   ErrorPage,
   HelpPage,
   HomePage,
   LoginPage,
+  ModelsPage,
   SettingsPage,
 } from './pages/index.js';
 
@@ -50,6 +52,14 @@ export const router = createHashRouter([
               {
                 path: '/account',
                 element: <AccountPage />,
+              },
+              {
+                path: '/accounts',
+                element: <AccountsPage />,
+              },
+              {
+                path: '/models',
+                element: <ModelsPage />,
               },
               {
                 path: '/settings',
