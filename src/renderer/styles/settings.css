@@ -232,21 +232,6 @@
 }
 
 /* Provider Section */
-.test-result {
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.test-result.success {
-  color: var(--color-success);
-}
-
-.test-result.error {
-  color: var(--color-error);
-}
 
 /* About Section */
 .about-info {

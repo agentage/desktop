@@ -122,28 +122,6 @@
   text-shadow: 0 2px 20px rgba(37, 99, 235, 0.5);
 }
 
-.logo-badge {
-  display: inline-block;
-  padding: 6px var(--spacing-md);
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.3) 0%, rgba(37, 99, 235, 0.15) 100%);
-  border: 1px solid rgba(37, 99, 235, 0.5);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #60a5fa;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  margin-top: var(--spacing-sm);
-  backdrop-filter: blur(10px);
-}
-
-/* Tagline */
-.start-tagline {
-  font-size: 1.125rem;
-  color: #a0aec0;
-  margin-bottom: var(--spacing-xl);
-}
-
 /* Features */
 .start-features {
   display: flex;
@@ -209,13 +187,6 @@
   margin-bottom: var(--spacing-sm);
 }
 
-.auth-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
-  width: 100%;
-}
-
 .start-btn {
   display: flex;
   align-items: center;
@@ -245,28 +216,6 @@
   background: var(--color-primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
-}
-
-.start-btn.auth {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
-  backdrop-filter: blur(10px);
-}
-
-.start-btn.auth:hover {
-  border-color: var(--color-primary);
-  background: rgba(37, 99, 235, 0.15);
-}
-
-.start-btn.auth.google:hover {
-  border-color: var(--color-primary);
-  background: rgba(37, 99, 235, 0.15);
-}
-
-.start-btn.auth.github:hover {
-  border-color: #a0aec0;
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .start-btn.skip {

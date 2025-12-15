@@ -15,79 +15,6 @@
   overflow: hidden;
 }
 
-/* Old app-header styles (deprecated, kept for compatibility) */
-.app-header {
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  -webkit-app-region: drag;
-}
-
-.app-header h1 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text);
-}
-
-/* App header logo - matching web Header.tsx */
-.app-logo {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  -webkit-app-region: no-drag;
-}
-
-.app-logo-icon {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  background: var(--color-primary);
-  border-radius: var(--radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: var(--shadow-sm);
-}
-
-.app-logo-icon::after {
-  content: '';
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 12px;
-  height: 12px;
-  background: var(--color-accent);
-  border-radius: 50%;
-  border: 2px solid var(--color-bg-secondary);
-}
-
-.app-logo-icon svg {
-  width: 18px;
-  height: 18px;
-  color: white;
-}
-
-.app-logo-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.app-title {
-  font-size: 1.125rem;
-  font-weight: 900;
-  color: var(--color-text);
-  line-height: 1.2;
-}
-
-.app-version {
-  font-size: 0.625rem;
-  color: var(--color-text-muted);
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 /* Content area */
 .content {
   flex: 1;
@@ -100,22 +27,6 @@
 .content:has(.empty-state--dark) {
   padding: 0;
   background: var(--color-footer-bg);
-}
-
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--color-text-muted);
-  font-size: 1.125rem;
-}
-
-/* Dark empty state - matches sidebar dark theme */
-.empty-state--dark {
-  background: var(--color-footer-bg);
-  color: var(--color-footer-text);
-  border-radius: 0;
 }
 
 .empty-state--dark .empty-state-content {
