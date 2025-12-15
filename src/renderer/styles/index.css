@@ -13,6 +13,7 @@
    - start-page.css : Start page with dark theme
    - agent-runner.css : Agent input/output sections
    - loading.css    : Loading & error screens
+   - error-page.css : 404/routing error page
    - animations.css : Keyframe animations
    ============================================ */
 
@@ -23,4 +24,5 @@
 @import './start-page.css';
 @import './agent-runner.css';
 @import './loading.css';
+@import './error-page.css';
 @import './animations.css';
