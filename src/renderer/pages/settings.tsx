@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import type { ModelProvider, Settings } from '../../shared/types/index.js';
+import type { Settings } from '../../shared/types/index.js';
 import {
   AdvancedSection,
   AppearanceSection,
-  ProviderSection,
 } from '../components/features/settings/index.js';
 import '../styles/settings.css';
 
@@ -53,21 +52,6 @@ export const SettingsPage = (): React.JSX.Element => {
     await window.agentage.settings.update({ theme });
   };
 
-  const handleProviderUpdate = async (provider: ModelProvider): Promise<void> => {
-    await window.agentage.settings.setModelProvider(provider);
-
-    if (settings) {
-      const models = [...settings.models];
-      const index = models.findIndex((m) => m.id === provider.id);
-      if (index >= 0) {
-        models[index] = provider;
-      } else {
-        models.push(provider);
-      }
-      setSettings({ ...settings, models });
-    }
-  };
-
   const handleBackendUrlChange = async (backendUrl: string): Promise<void> => {
     if (!settings) return;
 
@@ -103,13 +87,6 @@ export const SettingsPage = (): React.JSX.Element => {
           theme={settings.theme}
           onThemeChange={(theme) => {
             void handleThemeChange(theme);
-          }}
-        />
-
-        <ProviderSection
-          providers={settings.models}
-          onProviderUpdate={(provider) => {
-            void handleProviderUpdate(provider);
           }}
         />
 
