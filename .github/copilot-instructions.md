@@ -1,5 +1,12 @@
 # Agentage Desktop - Development Instructions
 
+## **Project Philosophy**
+
+- Build a lightweight, local Electron app for managing AI agents.
+- Prioritize simplicity, usability, and security.
+- Simple working solution first, then optimize.
+- Less is better: DO NOT add unnecessary features or complexity.
+
 ## **Project Overview**
 
 - Electron desktop client for Agentage
