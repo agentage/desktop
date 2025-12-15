@@ -10,7 +10,7 @@
   background: var(--color-bg);
   color: var(--color-text);
   overflow-y: auto;
-  padding: 20px 24px;
+  padding: 7px 12px;
 }
 
 /* Custom Scrollbar */

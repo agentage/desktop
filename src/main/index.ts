@@ -88,9 +88,27 @@ const createWindow = (): BrowserWindow => {
     win.show();
   });
 
-  if (isDev) {
-    void win.loadURL('http://localhost:5173');
+  // Load URL after window setup is complete
+  const loadUrl = isDev
+    ? win.loadURL('http://localhost:5173')
+    : win.loadFile(join(__dirname, '../renderer/index.html'));
 
+  // Handle load failures in dev mode (Vite not ready yet)
+  if (isDev) {
+    void loadUrl.catch(() => {
+      // Retry loading after a short delay if Vite dev server isn't ready
+      console.warn('Failed to load dev server, retrying in 1s...');
+      setTimeout(() => {
+        void win.loadURL('http://localhost:5173').catch((err: unknown) => {
+          console.error('Failed to load dev server:', err);
+        });
+      }, 1000);
+    });
+  } else {
+    void loadUrl;
+  }
+
+  if (isDev) {
     // Dev mode keyboard shortcuts for DevTools
     win.webContents.on('before-input-event', (event, input) => {
       if (input.type !== 'keyDown') return;
@@ -116,8 +134,6 @@ const createWindow = (): BrowserWindow => {
         win.webContents.setZoomFactor(Math.max(0.1, currentZoom - 0.1));
       }
     });
-  } else {
-    void win.loadFile(join(__dirname, '../renderer/index.html'));
   }
 
   return win;

@@ -10,7 +10,7 @@ import { navigationConfig } from '../config/navigation.config.js';
  */
 export const Sidebar = (): React.JSX.Element => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, isLoading, login, logout } = useAuth();
+  const { user, isLoading, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,8 +33,9 @@ export const Sidebar = (): React.JSX.Element => {
       'list-checks': <TasksIcon />,
       workflow: <WorkflowIcon />,
       'file-stack': <FileStackIcon />,
-      library: <LibraryIcon />,
-      'book-open': <BookOpenIcon />,
+      brain: <BrainIcon />,
+      wrench: <WrenchIcon />,
+      'file-text': <FileTextIcon />,
       'circle-help': <HelpIcon />,
     };
     return iconMap[iconName] ?? <DefaultIcon />;
@@ -84,7 +85,7 @@ export const Sidebar = (): React.JSX.Element => {
       {/* Spacer */}
       <div className="sidebar-spacer" />
 
-      {/* Footer - Settings, Docs, User */}
+      {/* Footer - Settings, Help, User */}
       <div className="sidebar-footer-section">
         {/* Footer Actions */}
         <div className={`sidebar-footer-actions ${isCollapsed ? 'collapsed' : ''}`}>
@@ -97,6 +98,15 @@ export const Sidebar = (): React.JSX.Element => {
           >
             <SettingsIcon />
           </button>
+          <button
+            className="sidebar-footer-btn"
+            title="Help"
+            onClick={() => {
+              void navigate('/help');
+            }}
+          >
+            <HelpIcon />
+          </button>
 
           {/* User Profile / Login */}
           {isLoading ? (
@@ -105,9 +115,9 @@ export const Sidebar = (): React.JSX.Element => {
             <button
               className="sidebar-user-btn"
               onClick={() => {
-                void logout();
+                void navigate('/account');
               }}
-              title={`${user.name ?? user.email} - Click to logout`}
+              title={`${user.name ?? user.email} - Account settings`}
             >
               <UserAvatar name={user.name ?? user.email} />
             </button>
@@ -249,17 +259,26 @@ const FileStackIcon = (): React.JSX.Element => (
   </svg>
 );
 
-const LibraryIcon = (): React.JSX.Element => (
+const BrainIcon = (): React.JSX.Element => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
-    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
   </svg>
 );
 
-const BookOpenIcon = (): React.JSX.Element => (
+const WrenchIcon = (): React.JSX.Element => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
-    <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
+    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+  </svg>
+);
+
+const FileTextIcon = (): React.JSX.Element => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="16" y1="13" x2="8" y2="13" />
+    <line x1="16" y1="17" x2="8" y2="17" />
+    <line x1="10" y1="9" x2="8" y2="9" />
   </svg>
 );
 

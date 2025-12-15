@@ -1,3 +1,4 @@
+export { AccountPage } from './AccountPage.js';
 export { AgentPage } from './AgentPage.js';
 export { ErrorPage } from './ErrorPage.js';
 export { HelpPage } from './help.js';

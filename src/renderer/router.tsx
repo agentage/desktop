@@ -3,6 +3,7 @@ import { AuthGuard } from './guards/AuthGuard.js';
 import { ElectronGuard } from './guards/ElectronGuard.js';
 import { AppLayout, LoginLayout } from './layouts/index.js';
 import {
+  AccountPage,
   AgentPage,
   ErrorPage,
   HelpPage,
@@ -45,6 +46,10 @@ export const router = createHashRouter([
               {
                 path: '/agent/:name',
                 element: <AgentPage />,
+              },
+              {
+                path: '/account',
+                element: <AccountPage />,
               },
               {
                 path: '/settings',

@@ -187,12 +187,6 @@
 /* Sidebar Sections */
 .sidebar-section {
   padding: var(--spacing-xs) var(--spacing-sm);
-  border-top: 1px solid var(--color-footer-border);
-}
-
-/* Remove border from first section */
-.sidebar-section:first-of-type {
-  border-top: none;
 }
 
 .sidebar-section-header {
@@ -205,6 +199,15 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  gap: var(--spacing-xs);
+}
+
+.sidebar-section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-footer-border);
+  margin-left: var(--spacing-xs);
 }
 
 /* Sidebar Spacer */
