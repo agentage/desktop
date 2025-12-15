@@ -2,7 +2,17 @@ import { createHashRouter } from 'react-router-dom';
 import { AuthGuard } from './guards/AuthGuard.js';
 import { ElectronGuard } from './guards/ElectronGuard.js';
 import { AppLayout, LoginLayout } from './layouts/index.js';
-import { AgentPage, HelpPage, HomePage, LoginPage, SettingsPage } from './pages/index.js';
+import {
+  AccountPage,
+  AccountsPage,
+  AgentPage,
+  ErrorPage,
+  HelpPage,
+  HomePage,
+  LoginPage,
+  ModelsPage,
+  SettingsPage,
+} from './pages/index.js';
 
 /**
  * Application router using hash-based routing for Electron compatibility
@@ -12,6 +22,7 @@ export const router = createHashRouter([
   {
     // Root guard - checks Electron IPC health
     element: <ElectronGuard />,
+    errorElement: <ErrorPage />,
     children: [
       // Public routes (login)
       {
@@ -37,6 +48,18 @@ export const router = createHashRouter([
               {
                 path: '/agent/:name',
                 element: <AgentPage />,
+              },
+              {
+                path: '/account',
+                element: <AccountPage />,
+              },
+              {
+                path: '/accounts',
+                element: <AccountsPage />,
+              },
+              {
+                path: '/models',
+                element: <ModelsPage />,
               },
               {
                 path: '/settings',

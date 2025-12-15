@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import type { ModelProvider, Settings } from '../../shared/types/index.js';
+import type { Settings } from '../../shared/types/index.js';
 import {
-  AccountSection,
   AdvancedSection,
   AppearanceSection,
-  ProviderSection,
 } from '../components/features/settings/index.js';
-import { useAuth } from '../hooks/index.js';
 import '../styles/settings.css';
 
 /**
@@ -16,8 +12,6 @@ import '../styles/settings.css';
  * Content only - rendered inside AppLayout
  */
 export const SettingsPage = (): React.JSX.Element => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [configDir, setConfigDir] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -58,21 +52,6 @@ export const SettingsPage = (): React.JSX.Element => {
     await window.agentage.settings.update({ theme });
   };
 
-  const handleProviderUpdate = async (provider: ModelProvider): Promise<void> => {
-    await window.agentage.settings.setModelProvider(provider);
-
-    if (settings) {
-      const models = [...settings.models];
-      const index = models.findIndex((m) => m.id === provider.id);
-      if (index >= 0) {
-        models[index] = provider;
-      } else {
-        models.push(provider);
-      }
-      setSettings({ ...settings, models });
-    }
-  };
-
   const handleBackendUrlChange = async (backendUrl: string): Promise<void> => {
     if (!settings) return;
 
@@ -85,12 +64,6 @@ export const SettingsPage = (): React.JSX.Element => {
     window.agentage.app.openPath(configDir).catch(console.error);
   };
 
-  const handleLogout = (): void => {
-    logout()
-      .then(() => navigate('/login'))
-      .catch(console.error);
-  };
-
   if (loading) {
     return (
       <div className="settings-page loading">
@@ -99,7 +72,7 @@ export const SettingsPage = (): React.JSX.Element => {
     );
   }
 
-  if (!settings || !user) {
+  if (!settings) {
     return (
       <div className="settings-page error">
         <div className="settings-error">Failed to load settings</div>
@@ -114,19 +87,6 @@ export const SettingsPage = (): React.JSX.Element => {
           theme={settings.theme}
           onThemeChange={(theme) => {
             void handleThemeChange(theme);
-          }}
-        />
-
-        <AccountSection
-          user={user}
-          authProvider="Google" // TODO: Get actual provider
-          onLogout={handleLogout}
-        />
-
-        <ProviderSection
-          providers={settings.models}
-          onProviderUpdate={(provider) => {
-            void handleProviderUpdate(provider);
           }}
         />
 
