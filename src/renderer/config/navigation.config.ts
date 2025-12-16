@@ -11,16 +11,10 @@ export const navigationConfig: NavigationConfig = {
       label: '', // No label for main navigation
       items: [
         {
-          id: 'home',
-          title: 'Home',
-          icon: 'home',
-          path: '/',
-        },
-        {
           id: 'agents',
           title: 'Agents',
           icon: 'bot',
-          path: '/agents',
+          path: '/',
         },
       ],
     },
@@ -34,18 +28,6 @@ export const navigationConfig: NavigationConfig = {
           icon: 'list-checks',
           path: '/tasks',
         },
-        {
-          id: 'workflows',
-          title: 'Workflows',
-          icon: 'workflow',
-          path: '/workflows',
-        },
-        {
-          id: 'templates',
-          title: 'Templates',
-          icon: 'file-stack',
-          path: '/templates',
-        },
       ],
     },
     {
@@ -53,28 +35,28 @@ export const navigationConfig: NavigationConfig = {
       label: 'RESOURCES',
       items: [
         {
-          id: 'models',
-          title: 'Models',
-          icon: 'brain',
-          path: '/models',
-        },
-        {
           id: 'tools',
           title: 'Tools',
           icon: 'wrench',
           path: '/tools',
         },
         {
+          id: 'models',
+          title: 'Models',
+          icon: 'brain',
+          path: '/models',
+        },
+        {
+          id: 'secrets',
+          title: 'Secrets',
+          icon: 'key',
+          path: '/secrets',
+        },
+        {
           id: 'context',
           title: 'Context',
           icon: 'file-text',
           path: '/context',
-        },
-        {
-          id: 'accounts',
-          title: 'Accounts',
-          icon: 'link',
-          path: '/accounts',
         },
       ],
     },

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth.js';
 import { navigationConfig } from '../config/navigation.config.js';
+import { useAuth } from '../hooks/useAuth.js';
 
 /**
  * Left sidebar navigation component - Uxcel-style design
@@ -35,6 +35,7 @@ export const Sidebar = (): React.JSX.Element => {
       'file-stack': <FileStackIcon />,
       brain: <BrainIcon />,
       wrench: <WrenchIcon />,
+      key: <KeyIcon />,
       'file-text': <FileTextIcon />,
       'circle-help': <HelpIcon />,
       link: <LinkIcon />,
@@ -270,6 +271,14 @@ const BrainIcon = (): React.JSX.Element => (
 const WrenchIcon = (): React.JSX.Element => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+  </svg>
+);
+
+const KeyIcon = (): React.JSX.Element => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="7.5" cy="15.5" r="5.5" />
+    <path d="m21 2-9.6 9.6" />
+    <path d="m15.5 7.5 3 3L22 7l-3-3" />
   </svg>
 );
 
