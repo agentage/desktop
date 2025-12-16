@@ -14,6 +14,7 @@
    - agent-runner.css : Agent input/output sections
    - loading.css    : Loading & error screens
    - error-page.css : 404/routing error page
+   - pages.css      : Placeholder pages
    - animations.css : Keyframe animations
    ============================================ */
 
@@ -25,4 +26,5 @@
 @import './agent-runner.css';
 @import './loading.css';
 @import './error-page.css';
+@import './pages.css';
 @import './animations.css';
