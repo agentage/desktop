@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../styles/pages/agents-page.css';
 
 /**
  * Agents page - displays a grid of available agents

@@ -3,7 +3,7 @@
    ============================================
    
    This file imports all CSS modules.
-   Organized by: Component-Based Split (Option 1)
+   Organized by: Component-Based Split
    
    Structure:
    - base.css       : Reset, CSS variables, body styles
@@ -14,8 +14,9 @@
    - agent-runner.css : Agent input/output sections
    - loading.css    : Loading & error screens
    - error-page.css : 404/routing error page
-   - pages.css      : Placeholder pages
+   - settings.css   : Settings page styles
    - animations.css : Keyframe animations
+   - pages/         : Page-specific styles
    ============================================ */
 
 @import './base.css';
@@ -26,5 +27,6 @@
 @import './agent-runner.css';
 @import './loading.css';
 @import './error-page.css';
-@import './pages.css';
+@import './settings.css';
 @import './animations.css';
+@import './pages/index.css';

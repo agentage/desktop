@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
+import '../styles/pages/login-page.css';
 
 /**
  * Login page content - renders inside LoginLayout

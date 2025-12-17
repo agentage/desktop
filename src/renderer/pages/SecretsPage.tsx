@@ -1,3 +1,5 @@
+import '../styles/pages/placeholder-pages.css';
+
 /**
  * SecretsPage - Encrypted credential storage
  * Placeholder page for Week 1 MVP

@@ -1,3 +1,5 @@
+import '../styles/pages/home-page.css';
+
 /**
  * Home page - displays empty state prompting user to select an agent
  * Route: /

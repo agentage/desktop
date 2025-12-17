@@ -1,3 +1,5 @@
+import '../styles/pages/placeholder-pages.css';
+
 /**
  * ContextPage - Document collections management
  * Placeholder page for Week 1 MVP

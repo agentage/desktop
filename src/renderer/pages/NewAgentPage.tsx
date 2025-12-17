@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import '../styles/pages/new-agent-page.css';
 
 interface AgentConfig {
   name: string;
