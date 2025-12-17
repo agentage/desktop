@@ -2,19 +2,77 @@
    Agent Runner Styles
    ============================================ */
 
-/* Agent runner */
-.agent-runner h2 {
-  font-size: 1.5rem;
-  margin-bottom: var(--spacing-lg);
+.agent-runner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--spacing-lg);
+  overflow: auto;
+  gap: var(--spacing-lg);
+}
+
+/* Runner Header */
+.runner-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.runner-header h1 {
+  flex: 1;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: var(--color-text);
-  font-weight: 700;
+  margin: 0;
 }
 
-.input-section {
-  margin-bottom: var(--spacing-lg);
+.btn-back {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.input-section textarea {
+.btn-back:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text);
+}
+
+.btn-stop {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-error);
+  border: none;
+  border-radius: var(--radius);
+  color: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-stop:hover {
+  opacity: 0.9;
+}
+
+/* Input Section */
+.runner-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.runner-input label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.runner-input textarea {
   width: 100%;
   padding: var(--spacing-md);
   background: var(--color-bg-secondary);
@@ -22,75 +80,203 @@
   border-radius: var(--radius);
   color: var(--color-text);
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: 0.9375rem;
   resize: vertical;
   min-height: 100px;
-  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
-.input-section textarea:focus {
+.runner-input textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
-.input-section textarea:disabled {
+.runner-input textarea:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.input-section button {
-  margin-top: var(--spacing-md);
-  padding: var(--spacing-sm) var(--spacing-lg);
-  background: var(--color-primary);
-  border: none;
-  border-radius: var(--radius);
-  color: white;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  box-shadow: var(--shadow-sm);
+.runner-input textarea::placeholder {
+  color: var(--color-text-muted);
 }
 
-.input-section button:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.input-section button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.input-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
 .shortcut-hint {
-  margin-top: var(--spacing-sm);
   font-size: 0.75rem;
   color: var(--color-text-muted);
 }
 
-/* Output section */
-.output-section h3 {
+/* Execution Logs */
+.runner-logs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.runner-logs label {
   font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-text-muted);
-  margin-bottom: var(--spacing-md);
-  font-weight: 600;
 }
 
-.output-section pre {
-  padding: var(--spacing-md);
+.log-container {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
+  padding: var(--spacing-sm);
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.log-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: 4px;
+}
+
+.log-entry:hover {
+  background: var(--color-bg-tertiary);
+}
+
+.log-time {
+  color: var(--color-text-muted);
+}
+
+.log-icon {
+  width: 16px;
+  text-align: center;
+}
+
+.log-message {
+  color: var(--color-text-secondary);
+}
+
+.log-success .log-icon {
+  color: var(--color-success);
+}
+
+.log-info .log-icon {
+  color: var(--color-primary);
+}
+
+.log-error .log-icon,
+.log-error .log-message {
+  color: var(--color-error);
+}
+
+.log-tool .log-icon {
+  color: var(--color-accent);
+}
+
+.log-running {
+  color: var(--color-text-muted);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Error Section */
+.runner-error {
+  padding: var(--spacing-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius);
+}
+
+.runner-error .error-message {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--color-error);
+  font-size: 0.875rem;
+}
+
+.runner-error .error-icon {
+  font-size: 1rem;
+}
+
+/* Output Section */
+.runner-output {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  flex: 1;
+  min-height: 200px;
+}
+
+.output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.output-header label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.output-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.btn-icon {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.output-content {
+  flex: 1;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: auto;
+}
+
+.output-content pre {
+  padding: var(--spacing-md);
+  margin: 0;
   font-family: var(--font-mono);
   font-size: 0.875rem;
-  line-height: 1.7;
-  overflow-x: auto;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-wrap: break-word;
-  box-shadow: var(--shadow-sm);
-  color: var(--color-text-secondary);
+  color: var(--color-text);
 }

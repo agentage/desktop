@@ -6,12 +6,13 @@ import {
   AccountPage,
   AccountsPage,
   AgentPage,
+  AgentsPage,
   ContextPage,
   ErrorPage,
   HelpPage,
-  HomePage,
   LoginPage,
   ModelsPage,
+  NewAgentPage,
   SecretsPage,
   SettingsPage,
   TasksPage,
@@ -47,11 +48,15 @@ export const router = createHashRouter([
             children: [
               {
                 path: '/',
-                element: <HomePage />,
+                element: <AgentsPage />,
               },
               {
                 path: '/agent/:name',
                 element: <AgentPage />,
+              },
+              {
+                path: '/agents/new',
+                element: <NewAgentPage />,
               },
               {
                 path: '/tasks',
