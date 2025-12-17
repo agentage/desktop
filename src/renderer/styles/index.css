@@ -30,3 +30,7 @@
 @import './settings.css';
 @import './animations.css';
 @import './pages/index.css';
+
+/* Tailwind CSS directives */
+@import 'tailwindcss/preflight';
+@import 'tailwindcss/utilities';
