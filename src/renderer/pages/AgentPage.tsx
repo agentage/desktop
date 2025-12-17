@@ -1,5 +1,6 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { AgentRunner } from '../components/features/agents/AgentRunner.js';
+import '../styles/pages/agent-page.css';
 
 /**
  * Agent runner page - displays the agent runner for a specific agent

@@ -1,3 +1,5 @@
+import '../styles/pages/placeholder-pages.css';
+
 /**
  * TasksPage - Task execution history and queue
  * Placeholder page for Week 1 MVP
