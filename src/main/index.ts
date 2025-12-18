@@ -109,22 +109,6 @@ const createWindow = (): BrowserWindow => {
   }
 
   if (isDev) {
-    // Dev mode keyboard shortcuts for DevTools
-    win.webContents.on('before-input-event', (event, input) => {
-      if (input.type !== 'keyDown') return;
-
-      const isCtrlOrCmd = input.control || input.meta;
-
-      // DevTools: F12 or Ctrl+Shift+I
-      if (input.key === 'F12') {
-        win.webContents.toggleDevTools();
-        event.preventDefault();
-      } else if (isCtrlOrCmd && input.shift && input.key.toLowerCase() === 'i') {
-        win.webContents.toggleDevTools();
-        event.preventDefault();
-      }
-    });
-
     // Ctrl+Mouse scroll zoom
     win.webContents.on('zoom-changed', (_event, zoomDirection) => {
       const currentZoom = win.webContents.getZoomFactor();
