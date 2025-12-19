@@ -1,18 +1,14 @@
-import { Navigate, useParams } from 'react-router-dom';
-import { AgentRunner } from '../components/features/agents/AgentRunner.js';
-import '../styles/pages/agent-page.css';
+import '../styles/pages/placeholder-pages.css';
 
 /**
- * Agent runner page - displays the agent runner for a specific agent
- * Route: /agent/:name
+ * AgentPage - Single agent view and execution
+ * Placeholder page for Week 1 MVP
  */
-export const AgentPage = (): React.JSX.Element => {
-  const { name } = useParams<{ name: string }>();
-
-  // Redirect to home if no agent name provided
-  if (!name) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <AgentRunner agentName={name} />;
-};
+export const AgentPage = (): React.JSX.Element => (
+  <div className="page-placeholder">
+    <div className="placeholder-content">
+      <h1>🤖 Agent Runner</h1>
+      <p>Single agent view and execution coming soon</p>
+    </div>
+  </div>
+);
