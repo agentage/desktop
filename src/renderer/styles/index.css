@@ -6,6 +6,7 @@
    Organized by: Component-Based Split
    
    Structure:
+   - tailwindcss    : Tailwind CSS utilities (imported first)
    - base.css       : Reset, CSS variables, body styles
    - layout.css     : App structure, content areas
    - titlebar.css   : Custom titlebar (Win/Mac)
@@ -19,6 +20,8 @@
    - pages/         : Page-specific styles
    ============================================ */
 
+/* Tailwind CSS - Import first for proper cascading */
+@import 'tailwindcss';
 @import './base.css';
 @import './layout.css';
 @import './titlebar.css';
@@ -30,3 +33,26 @@
 @import './settings.css';
 @import './animations.css';
 @import './pages/index.css';
+
+@source "../../index.html";
+@source "../";
+
+@theme {
+  --color-bg: var(--color-bg);
+  --color-bg-secondary: var(--color-bg-secondary);
+  --color-bg-tertiary: var(--color-bg-tertiary);
+
+  --color-text: var(--color-text);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+
+  --color-accent: var(--color-accent);
+  --color-error: var(--color-error);
+  --color-success: var(--color-success);
+
+  --color-border: var(--color-border);
+  --color-border-dark: var(--color-border-dark);
+}
