@@ -37,7 +37,7 @@
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^7.10.1",
+    "react-router-dom": "^7.11.0",
     "zod": "^3.25.30"
   },
   "devDependencies": {
