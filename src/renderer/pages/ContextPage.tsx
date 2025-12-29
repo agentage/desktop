@@ -1,14 +1,12 @@
-import '../styles/pages/placeholder-pages.css';
-
 /**
  * ContextPage - Document collections management
- * Placeholder page for Week 1 MVP
+ *
+ * Purpose: Manage document collections for agent context/RAG
+ * Features: Upload documents, create collections, manage embeddings
  */
 export const ContextPage = (): React.JSX.Element => (
-  <div className="page-placeholder">
-    <div className="placeholder-content">
-      <h1>📁 Context</h1>
-      <p>Document collections coming soon</p>
-    </div>
+  <div>
+    <h1>Context</h1>
+    <p>Document collections - placeholder</p>
   </div>
 );

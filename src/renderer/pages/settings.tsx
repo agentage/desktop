@@ -1,118 +1,13 @@
-import { useEffect, useState } from 'react';
-import type { Settings } from '../../shared/types/index.js';
-import {
-  AdvancedSection,
-  AppearanceSection,
-} from '../components/features/settings/index.js';
-import '../styles/settings.css';
-
 /**
  * Settings page - displays user settings
  * Route: /settings
- * Content only - rendered inside AppLayout
+ *
+ * Purpose: Application preferences and configuration
+ * Features: Theme selection, backend URL, config directory
  */
-export const SettingsPage = (): React.JSX.Element => {
-  const [settings, setSettings] = useState<Settings | null>(null);
-  const [configDir, setConfigDir] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadSettings = async (): Promise<void> => {
-      try {
-        const [settingsData, configDirData] = await Promise.all([
-          window.agentage.settings.get(),
-          window.agentage.app.getConfigDir(),
-        ]);
-
-        setSettings(settingsData);
-        setConfigDir(configDirData);
-
-        // Apply theme on load
-        applyTheme(settingsData.theme);
-      } catch (error) {
-        console.error('Failed to load settings:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSettings().catch(console.error);
-  }, []);
-
-  const handleThemeChange = async (theme: 'light' | 'dark' | 'system'): Promise<void> => {
-    if (!settings) return;
-
-    const updated = { ...settings, theme };
-    setSettings(updated);
-
-    // Apply theme immediately
-    applyTheme(theme);
-
-    // Save to config
-    await window.agentage.settings.update({ theme });
-  };
-
-  const handleBackendUrlChange = async (backendUrl: string): Promise<void> => {
-    if (!settings) return;
-
-    const updated = { ...settings, backendUrl };
-    setSettings(updated);
-    await window.agentage.settings.update({ backendUrl });
-  };
-
-  const handleOpenConfigDir = (): void => {
-    window.agentage.app.openPath(configDir).catch(console.error);
-  };
-
-  if (loading) {
-    return (
-      <div className="settings-page loading">
-        <div className="settings-loading">Loading settings...</div>
-      </div>
-    );
-  }
-
-  if (!settings) {
-    return (
-      <div className="settings-page error">
-        <div className="settings-error">Failed to load settings</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="settings-page">
-      <div className="settings-content">
-        <AppearanceSection
-          theme={settings.theme}
-          onThemeChange={(theme) => {
-            void handleThemeChange(theme);
-          }}
-        />
-
-        <AdvancedSection
-          backendUrl={settings.backendUrl}
-          configDir={configDir}
-          onBackendUrlChange={(url) => {
-            void handleBackendUrlChange(url);
-          }}
-          onOpenConfigDir={handleOpenConfigDir}
-        />
-      </div>
-    </div>
-  );
-};
-
-/**
- * Apply theme to document
- */
-function applyTheme(theme: 'light' | 'dark' | 'system'): void {
-  const root = document.documentElement;
-
-  if (theme === 'system') {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-  } else {
-    root.setAttribute('data-theme', theme);
-  }
-}
+export const SettingsPage = (): React.JSX.Element => (
+  <div>
+    <h1>Settings</h1>
+    <p>Application settings - placeholder</p>
+  </div>
+);

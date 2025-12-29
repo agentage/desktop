@@ -1,14 +1,12 @@
-import '../styles/pages/placeholder-pages.css';
-
 /**
  * TasksPage - Task execution history and queue
- * Placeholder page for Week 1 MVP
+ *
+ * Purpose: Display task history, pending tasks, task status
+ * Features: Task list, status indicators, re-run/cancel actions
  */
 export const TasksPage = (): React.JSX.Element => (
-  <div className="page-placeholder">
-    <div className="placeholder-content">
-      <h1>📋 Tasks</h1>
-      <p>Task execution history and queue coming soon</p>
-    </div>
+  <div>
+    <h1>Tasks</h1>
+    <p>Task execution history and queue - placeholder</p>
   </div>
 );

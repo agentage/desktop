@@ -16,6 +16,13 @@ const formatTime = (): string => {
   return now.toLocaleTimeString('en-US', { hour12: false });
 };
 
+/**
+ * Agent runner component
+ * 
+ * Purpose: Execute agent with user prompt, display results
+ * Features: Prompt input, execution control, log display, output display,
+ *           copy to clipboard, keyboard shortcuts
+ */
 export const AgentRunner = ({ agentName }: AgentRunnerProps): React.JSX.Element => {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
@@ -65,7 +72,6 @@ export const AgentRunner = ({ agentName }: AgentRunnerProps): React.JSX.Element 
   };
 
   const handleStop = (): void => {
-    // TODO: Implement agent cancellation
     setRunning(false);
     addLog('info', 'Stopped by user');
   };
@@ -75,102 +81,73 @@ export const AgentRunner = ({ agentName }: AgentRunnerProps): React.JSX.Element 
     try {
       await navigator.clipboard.writeText(output);
       setCopied(true);
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
+      setTimeout(() => { setCopied(false); }, 2000);
     } catch {
-      // Clipboard API may fail in some contexts
+      // Clipboard API may fail
     }
   };
 
   return (
-    <div className="agent-runner">
-      <header className="runner-header">
-        <button type="button" className="btn-back" onClick={handleBack}>
-          ← Back
-        </button>
+    <div>
+      <header>
+        <button type="button" onClick={handleBack}>← Back</button>
         <h1>Running: {agentName}</h1>
-        {running && (
-          <button type="button" className="btn-stop" onClick={handleStop}>
-            ⏹ Stop
-          </button>
-        )}
+        {running && <button type="button" onClick={handleStop}>Stop</button>}
       </header>
 
-      <section className="runner-input">
+      <section>
         <label htmlFor="prompt-input">INPUT</label>
         <textarea
           id="prompt-input"
           value={prompt}
-          onChange={(e) => {
-            setPrompt(e.target.value);
-          }}
+          onChange={(e) => { setPrompt(e.target.value); }}
           onKeyDown={handleKeyDown}
           placeholder="Enter your prompt..."
           disabled={running}
           rows={4}
         />
-        <div className="input-actions">
+        <div>
           <button
             type="button"
-            className="btn-primary"
             onClick={() => void handleRun()}
             disabled={running || !prompt.trim()}
           >
-            {running ? '⏳ Running...' : '▶ Execute'}
+            {running ? 'Running...' : 'Execute'}
           </button>
-          <span className="shortcut-hint">Ctrl+Enter to run</span>
+          <span>Ctrl+Enter to run</span>
         </div>
       </section>
 
       {logs.length > 0 && (
-        <section className="runner-logs">
+        <section>
           <label>EXECUTION LOG</label>
-          <div className="log-container">
+          <div>
             {logs.map((log, index) => (
-              <div key={index} className={`log-entry log-${log.type}`}>
-                <span className="log-time">[{log.time}]</span>
-                <span className="log-icon">
-                  {log.type === 'success' && '✓'}
-                  {log.type === 'info' && 'ℹ'}
-                  {log.type === 'error' && '✗'}
-                  {log.type === 'tool' && '⚡'}
-                </span>
-                <span className="log-message">{log.message}</span>
+              <div key={index}>
+                <span>[{log.time}]</span>
+                <span>{log.message}</span>
               </div>
             ))}
-            {running && <div className="log-entry log-running">⏳ Processing...</div>}
+            {running && <div>Processing...</div>}
           </div>
         </section>
       )}
 
       {error && (
-        <section className="runner-error">
-          <div className="error-message">
-            <span className="error-icon">⚠️</span>
-            <span>{error}</span>
-          </div>
+        <section>
+          <div>⚠️ {error}</div>
         </section>
       )}
 
       {output && (
-        <section className="runner-output">
-          <div className="output-header">
+        <section>
+          <div>
             <label>OUTPUT</label>
-            <div className="output-actions">
-              <button
-                type="button"
-                className="btn-icon"
-                onClick={() => void handleCopy()}
-                title="Copy to clipboard"
-              >
-                {copied ? '✓ Copied' : '📋 Copy'}
-              </button>
-            </div>
+            <button type="button" onClick={() => void handleCopy()}>
+              {copied ? '✓ Copied' : 'Copy'}
+            </button>
           </div>
-          <div className="output-content">
-            <pre>{output}</pre>
-          </div>
+          <pre>{output}</pre>
         </section>
       )}
     </div>

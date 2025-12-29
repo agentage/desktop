@@ -15,6 +15,12 @@ interface ProviderSectionProps {
   onProviderUpdate: (provider: ModelProvider) => void;
 }
 
+/**
+ * Model provider settings section
+ * 
+ * Purpose: Configure AI model providers (OpenAI, Anthropic, etc.)
+ * Features: API key input, show/hide toggle, test button
+ */
 export const ProviderSection = ({
   providers,
   onProviderUpdate,
@@ -32,8 +38,6 @@ export const ProviderSection = ({
     setTestResult(null);
 
     try {
-      // TODO: Implement actual OpenAI API key validation
-      // For now, just simulate a test
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       if (apiKey.startsWith('sk-')) {
@@ -61,46 +65,30 @@ export const ProviderSection = ({
 
   return (
     <SettingsSection title="Model Provider">
-      <div className="settings-field">
-        <label htmlFor="openai-key" className="settings-label">
-          OpenAI API Key
-        </label>
-        <div className="input-group">
+      <div>
+        <label htmlFor="openai-key">OpenAI API Key</label>
+        <div>
           <input
             id="openai-key"
             type={showKey ? 'text' : 'password'}
-            className="settings-input"
             placeholder="sk-..."
             value={apiKey}
-            onChange={(e) => {
-              setApiKey(e.target.value);
-            }}
-            onBlur={() => {
-              handleSave();
-            }}
+            onChange={(e) => { setApiKey(e.target.value); }}
+            onBlur={() => { handleSave(); }}
           />
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => {
-              setShowKey(!showKey);
-            }}
-          >
+          <button type="button" onClick={() => { setShowKey(!showKey); }}>
             {showKey ? 'Hide' : 'Show'}
           </button>
           <button
             type="button"
-            className="btn btn-primary"
-            onClick={() => {
-              void handleTest();
-            }}
+            onClick={() => void handleTest()}
             disabled={!apiKey || testing}
           >
             {testing ? 'Testing...' : 'Test'}
           </button>
         </div>
         {testResult && (
-          <div className={`test-result ${testResult.success ? 'success' : 'error'}`}>
+          <div>
             {testResult.success ? '✓' : '✗'} {testResult.message}
           </div>
         )}

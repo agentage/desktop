@@ -3,16 +3,16 @@ import { Sidebar, TitleBar } from '../components/index.js';
 
 /**
  * Main application layout for authenticated users
- * Contains TitleBar, Sidebar, and content area
+ *
+ * Structure: TitleBar (top) + Sidebar (left) + Content area (right)
+ * Contains the main navigation and content rendering area
  */
 export const AppLayout = (): React.JSX.Element => (
-  <div className="app">
+  <div>
     <TitleBar title="" showLogo={true} dark={true} />
-
-    <main className="app-main">
+    <main>
       <Sidebar />
-
-      <section className="content">
+      <section>
         <Outlet />
       </section>
     </main>

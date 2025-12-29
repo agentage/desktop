@@ -3,35 +3,20 @@ import { TitleBar } from '../components/TitleBar.js';
 
 /**
  * Layout for unauthenticated users (login/signup screens)
- * Full-page branded experience with dark theme
+ *
+ * Purpose: Full-page branded experience for login flow
+ * Structure: TitleBar + centered content area + footer
  */
 export const LoginLayout = (): React.JSX.Element => (
-  <div className="start-page">
-    {/* Custom titlebar (dark variant for start page) */}
-    <div className="start-page-titlebar">
-      <TitleBar title="Agentage" showLogo={false} dark={true} />
-    </div>
-
-    {/* Page content from nested routes */}
+  <div>
+    <TitleBar title="Agentage" showLogo={false} dark={true} />
     <Outlet />
-
-    {/* Footer - positioned bottom right */}
-    <div className="start-footer">
-      <span className="version">v1.0.0</span>
-      <span className="separator">•</span>
-      <button
-        className="link"
-        onClick={() => void window.agentage.app.openExternal('https://dev.agentage.io')}
-      >
+    <footer>
+      <span>v1.0.0</span>
+      <span>•</span>
+      <button onClick={() => void window.agentage.app.openExternal('https://dev.agentage.io')}>
         agentage.io
       </button>
-    </div>
-
-    {/* Background decoration */}
-    <div className="start-bg-decoration">
-      <div className="glow glow-1" />
-      <div className="glow glow-2" />
-      <div className="grid-pattern" />
-    </div>
+    </footer>
   </div>
 );
