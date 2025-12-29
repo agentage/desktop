@@ -5,9 +5,15 @@ interface SettingsSectionProps {
   children: ReactNode;
 }
 
+/**
+ * Settings section wrapper component
+ * 
+ * Purpose: Provide consistent section layout for settings pages
+ * Features: Section title, content container
+ */
 export const SettingsSection = ({ title, children }: SettingsSectionProps): React.JSX.Element => (
-  <section className="settings-section">
-    <h2 className="settings-section-title">{title}</h2>
-    <div className="settings-section-content">{children}</div>
+  <section>
+    <h2>{title}</h2>
+    <div>{children}</div>
   </section>
 );

@@ -8,6 +8,12 @@ interface AdvancedSectionProps {
   onOpenConfigDir: () => void;
 }
 
+/**
+ * Advanced settings section
+ * 
+ * Purpose: Backend URL configuration, config directory access
+ * Features: URL input with validation, open config dir button
+ */
 export const AdvancedSection = ({
   backendUrl,
   configDir,
@@ -33,31 +39,24 @@ export const AdvancedSection = ({
 
   return (
     <SettingsSection title="Advanced">
-      <div className="settings-field">
-        <label htmlFor="backend-url" className="settings-label">
-          Backend URL
-        </label>
+      <div>
+        <label htmlFor="backend-url">Backend URL</label>
         <input
           id="backend-url"
           type="url"
-          className="settings-input"
           placeholder="https://agentage.io"
           value={url}
-          onChange={(e) => {
-            handleUrlChange(e.target.value);
-          }}
+          onChange={(e) => { handleUrlChange(e.target.value); }}
           onBlur={handleUrlBlur}
         />
-        {urlError && <div className="field-error">{urlError}</div>}
+        {urlError && <div>{urlError}</div>}
       </div>
 
-      <div className="settings-field">
-        <label className="settings-label">Agent Directory</label>
-        <div className="input-group">
-          <input type="text" className="settings-input" value={configDir} readOnly disabled />
-          <button type="button" className="btn btn-secondary" onClick={onOpenConfigDir}>
-            Open in Explorer
-          </button>
+      <div>
+        <label>Agent Directory</label>
+        <div>
+          <input type="text" value={configDir} readOnly disabled />
+          <button type="button" onClick={onOpenConfigDir}>Open in Explorer</button>
         </div>
       </div>
     </SettingsSection>
