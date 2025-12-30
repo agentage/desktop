@@ -47,7 +47,7 @@ interface WorkspaceCardProps {
   workspace: Workspace;
   isActive: boolean;
   onSwitch: (id: string) => void;
-  onRename: (id: string, name: string) => void;
+  onUpdate: (id: string, name: string) => void;
   onRemove: (id: string) => void;
 }
 
@@ -55,7 +55,7 @@ const WorkspaceCard = ({
   workspace,
   isActive,
   onSwitch,
-  onRename,
+  onUpdate,
   onRemove,
 }: WorkspaceCardProps): React.JSX.Element => {
   const [isEditing, setIsEditing] = useState(false);
@@ -63,7 +63,7 @@ const WorkspaceCard = ({
 
   const handleSave = (): void => {
     if (editName.trim() && editName !== workspace.name) {
-      onRename(workspace.id, editName.trim());
+      onUpdate(workspace.id, editName.trim());
     }
     setIsEditing(false);
   };
@@ -270,12 +270,12 @@ export const WorkspacesPage = (): React.JSX.Element => {
     }
   };
 
-  const handleRename = async (id: string, name: string): Promise<void> => {
+  const handleUpdate = async (id: string, name: string): Promise<void> => {
     try {
-      await window.agentage.workspace.rename(id, name);
+      await window.agentage.workspace.update(id, { name });
       setWorkspaces((prev) => prev.map((w) => (w.id === id ? { ...w, name } : w)));
     } catch (error) {
-      console.error('Failed to rename workspace:', error);
+      console.error('Failed to update workspace:', error);
     }
   };
 
@@ -335,8 +335,8 @@ export const WorkspacesPage = (): React.JSX.Element => {
               onSwitch={(id) => {
                 void handleSwitch(id);
               }}
-              onRename={(id, name) => {
-                void handleRename(id, name);
+              onUpdate={(id, name) => {
+                void handleUpdate(id, name);
               }}
               onRemove={(id) => {
                 void handleRemove(id);

@@ -9,6 +9,7 @@ import type {
   Workspace,
   WorkspaceGitStatus,
   WorkspaceState,
+  WorkspaceUpdate,
 } from '../../shared/types/workspace.types.js';
 import { loadConfig } from './config.service.js';
 
@@ -20,11 +21,11 @@ export const setMainWindow = (window: BrowserWindow | null): void => {
 };
 
 /**
- * Notify renderer of workspace changes
+ * Notify renderer of workspace list changes
  */
-const notifyWorkspaceChanged = (): void => {
+const notifyWorkspaceListChanged = (): void => {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('workspace:changed');
+    mainWindow.webContents.send('workspace:listChanged');
   }
 };
 
@@ -76,7 +77,7 @@ const saveWorkspaceState = async (state: WorkspaceState): Promise<void> => {
 };
 
 /**
- * Get git status for a workspace path
+ * Get git status for a workspace path (including diff)
  */
 const getGitStatus = async (workspacePath: string): Promise<WorkspaceGitStatus> => {
   try {
@@ -88,11 +89,22 @@ const getGitStatus = async (workspacePath: string): Promise<WorkspaceGitStatus> 
     }
 
     const status = await git.status();
+    const isDirty = !status.isClean();
+
+    // Get diff if there are changes
+    let diff: string | undefined;
+    if (isDirty) {
+      const stagedDiff = await git.diff(['--cached']);
+      const unstagedDiff = await git.diff();
+      diff = (stagedDiff + unstagedDiff).trim() || undefined;
+    }
+
     return {
       isGitRepo: true,
-      isDirty: !status.isClean(),
+      isDirty,
       changedFiles: status.files.length,
       branch: status.current ?? undefined,
+      diff,
     };
   } catch {
     return { isGitRepo: false, isDirty: false, changedFiles: 0 };
@@ -101,9 +113,33 @@ const getGitStatus = async (workspacePath: string): Promise<WorkspaceGitStatus> 
 
 /**
  * List all workspaces with git status
+ * Creates default workspace if none exist
  */
 export const listWorkspaces = async (): Promise<Workspace[]> => {
   const state = await loadWorkspaceState();
+
+  // Create default workspace if none exist
+  if (state.workspaces.length === 0) {
+    const defaultPath = await getDefaultWorkspacePath();
+
+    // Create directory
+    await mkdir(defaultPath, { recursive: true });
+
+    // Initialize git with agentage.json
+    await initGit(defaultPath);
+
+    const workspace: Workspace = {
+      id: 'default',
+      name: 'My Workspace',
+      path: defaultPath,
+      isDefault: true,
+    };
+
+    state.workspaces.push(workspace);
+    state.activeWorkspaceId = 'default';
+    await saveWorkspaceState(state);
+    notifyWorkspaceListChanged();
+  }
 
   // Fetch git status for each workspace
   const workspacesWithStatus = await Promise.all(
@@ -174,7 +210,7 @@ export const addWorkspace = async (path: string, initializeGit = true): Promise<
   }
 
   await saveWorkspaceState(state);
-  notifyWorkspaceChanged();
+  notifyWorkspaceListChanged();
   return id;
 };
 
@@ -198,7 +234,7 @@ export const removeWorkspace = async (id: string): Promise<void> => {
   }
 
   await saveWorkspaceState(state);
-  notifyWorkspaceChanged();
+  notifyWorkspaceListChanged();
 };
 
 /**
@@ -214,13 +250,13 @@ export const switchWorkspace = async (id: string): Promise<void> => {
 
   state.activeWorkspaceId = id;
   await saveWorkspaceState(state);
-  notifyWorkspaceChanged();
+  notifyWorkspaceListChanged();
 };
 
 /**
- * Rename a workspace
+ * Update a workspace (name, icon, etc.)
  */
-export const renameWorkspace = async (id: string, name: string): Promise<void> => {
+export const updateWorkspace = async (id: string, updates: WorkspaceUpdate): Promise<void> => {
   const state = await loadWorkspaceState();
   const workspace = state.workspaces.find((w) => w.id === id);
 
@@ -228,9 +264,15 @@ export const renameWorkspace = async (id: string, name: string): Promise<void> =
     throw new Error(`Workspace ${id} not found`);
   }
 
-  workspace.name = name;
+  if (updates.name !== undefined) {
+    workspace.name = updates.name;
+  }
+  if (updates.icon !== undefined) {
+    workspace.icon = updates.icon;
+  }
+
   await saveWorkspaceState(state);
-  notifyWorkspaceChanged();
+  notifyWorkspaceListChanged();
 };
 
 /**
@@ -242,31 +284,6 @@ export const browseWorkspaceFolder = async (): Promise<string | undefined> => {
     title: 'Select Workspace Folder',
   });
   return filePaths[0];
-};
-
-/**
- * Get git diff for a workspace
- */
-export const getWorkspaceDiff = async (id: string): Promise<string> => {
-  const state = await loadWorkspaceState();
-  const workspace = state.workspaces.find((w) => w.id === id);
-
-  if (!workspace) {
-    throw new Error(`Workspace ${id} not found`);
-  }
-
-  const git: SimpleGit = simpleGit(workspace.path);
-  const isRepo = await git.checkIsRepo();
-
-  if (!isRepo) {
-    return '';
-  }
-
-  // Get diff of all changes (staged and unstaged)
-  const diff = await git.diff();
-  const stagedDiff = await git.diff(['--cached']);
-
-  return stagedDiff + diff;
 };
 
 /**
@@ -307,34 +324,5 @@ export const saveWorkspace = async (id: string, message?: string): Promise<void>
     // Push failed, but commit succeeded - that's ok for local-only repos
   }
 
-  notifyWorkspaceChanged();
-};
-
-/**
- * Create default workspace on first login
- */
-export const ensureDefaultWorkspace = async (): Promise<void> => {
-  const state = await loadWorkspaceState();
-
-  if (state.workspaces.length === 0) {
-    const defaultPath = await getDefaultWorkspacePath();
-
-    // Create directory
-    await mkdir(defaultPath, { recursive: true });
-
-    // Initialize git with agentage.json
-    await initGit(defaultPath);
-
-    const workspace: Workspace = {
-      id: 'default',
-      name: 'My Workspace',
-      path: defaultPath,
-      isDefault: true,
-    };
-
-    state.workspaces.push(workspace);
-    state.activeWorkspaceId = 'default';
-    await saveWorkspaceState(state);
-    notifyWorkspaceChanged();
-  }
+  notifyWorkspaceListChanged();
 };

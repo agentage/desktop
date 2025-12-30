@@ -6,6 +6,7 @@ export interface WorkspaceGitStatus {
   isDirty: boolean;
   changedFiles: number;
   branch?: string;
+  diff?: string;
 }
 
 /**
@@ -15,8 +16,17 @@ export interface Workspace {
   id: string;
   name: string;
   path: string;
+  icon?: string;
   isDefault?: boolean;
   gitStatus?: WorkspaceGitStatus;
+}
+
+/**
+ * Partial update for workspace
+ */
+export interface WorkspaceUpdate {
+  name?: string;
+  icon?: string;
 }
 
 /**

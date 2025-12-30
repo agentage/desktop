@@ -59,8 +59,8 @@ export const WorkspaceSwitcher = ({
   useEffect(() => {
     void loadWorkspaces();
 
-    // Subscribe to workspace changes
-    const unsubscribe = window.agentage.workspace.onChanged((): void => {
+    // Subscribe to workspace list changes
+    const unsubscribe = window.agentage.workspace.onListChanged((): void => {
       void loadWorkspaces();
     });
 
