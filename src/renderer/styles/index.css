@@ -1,6 +1,9 @@
 /* Agentage Desktop - Main Stylesheet */
 @import 'tailwindcss';
 
+/* Only scan src folder for Tailwind classes */
+@source "../../**/*.{ts,tsx}";
+
 /* Custom color theme based on provided dark palette */
 @theme {
   /* Base colors - dark theme with blue undertone */

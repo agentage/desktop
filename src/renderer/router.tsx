@@ -10,6 +10,7 @@ import {
   ContextPage,
   ErrorPage,
   HelpPage,
+  HomePage,
   LoginPage,
   ModelsPage,
   NewAgentPage,
@@ -48,6 +49,10 @@ export const router = createHashRouter([
             children: [
               {
                 path: '/',
+                element: <HomePage />,
+              },
+              {
+                path: '/agents',
                 element: <AgentsPage />,
               },
               {
