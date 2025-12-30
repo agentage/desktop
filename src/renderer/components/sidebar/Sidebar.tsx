@@ -193,7 +193,7 @@ export const Sidebar = ({ isCollapsed = false, onChatToggle }: SidebarProps): Re
         {navigationConfig.groups.map((group) => (
           <div key={group.id} className="px-2 py-1">
             {group.label && !isCollapsed && (
-              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <div className="pl-4 pr-2 py-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
                 {group.label}
               </div>
             )}
@@ -207,11 +207,13 @@ export const Sidebar = ({ isCollapsed = false, onChatToggle }: SidebarProps): Re
                   disabled={item.disabled}
                   title={isCollapsed ? item.title : undefined}
                   className={cn(
-                    'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm',
-                    'transition-colors cursor-pointer',
+                    'flex items-center gap-2 rounded-md py-1.5 text-xs',
+                    isCollapsed ? 'px-2' : 'pl-4 pr-2',
+                    'transition-colors',
+                    'focus:outline-none',
                     isActive(item.path)
                       ? 'bg-primary text-primary-foreground'
-                      : 'text-sidebar-foreground hover:bg-card',
+                      : 'text-foreground hover:bg-accent',
                     item.disabled && 'opacity-50 cursor-not-allowed',
                     isCollapsed && 'justify-center'
                   )}
@@ -219,7 +221,7 @@ export const Sidebar = ({ isCollapsed = false, onChatToggle }: SidebarProps): Re
                   <NavIcon name={item.icon} />
                   {!isCollapsed && item.title}
                   {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
-                    <span className="ml-auto rounded-full bg-destructive px-2 py-0.5 text-xs text-destructive-foreground">
+                    <span className="ml-auto rounded-full bg-destructive px-1.5 py-0.5 text-[10px] text-destructive-foreground">
                       {item.badge}
                     </span>
                   )}

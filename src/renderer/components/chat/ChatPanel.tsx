@@ -5,15 +5,7 @@ import { ComposerInput } from '../composer/index.js';
 
 // Close icon
 const CloseIcon = (): React.JSX.Element => (
-  <svg
-    className="size-4"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M18 6 6 18" />
     <path d="m6 6 12 12" />
   </svg>
@@ -27,8 +19,6 @@ const ChatIcon = (): React.JSX.Element => (
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
   >
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
   </svg>
@@ -103,12 +93,16 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
         className="absolute left-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-primary/50 transition-colors z-10"
       />
 
-      {/* Header */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-sidebar-border px-4">
-        <h2 className="text-sm font-semibold text-foreground">Chat</h2>
+      {/* Header - matches SiteHeader height */}
+      <div className="flex h-10 shrink-0 items-center justify-between border-b border-sidebar-border px-3">
+        <h2 className="text-xs font-medium text-foreground">Chat</h2>
         <button
           onClick={onClose}
-          className="rounded-md p-1 hover:bg-card transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+          className={cn(
+            'flex size-7 items-center justify-center rounded-md',
+            'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors',
+            'focus:outline-none focus:text-foreground'
+          )}
           title="Close chat"
         >
           <CloseIcon />
