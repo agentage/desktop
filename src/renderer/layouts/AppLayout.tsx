@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
+import { ChatPanel } from '../components/chat/index.js';
 import { Footer, Sidebar, SiteHeader, TitleBar } from '../components/index.js';
 
 // Mobile breakpoint (matches Tailwind's 'md')
@@ -15,6 +16,7 @@ const MOBILE_BREAKPOINT = 768;
 export const AppLayout = (): React.JSX.Element => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Handle responsive sidebar collapse
   useEffect(() => {
@@ -41,14 +43,23 @@ export const AppLayout = (): React.JSX.Element => {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
+  const toggleChat = (): void => {
+    setIsChatOpen((prev) => !prev);
+  };
+
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Title bar at top */}
       <TitleBar title="" showLogo={true} dark={true} />
 
-      {/* Main content area: sidebar + content */}
+      {/* Main content area: sidebar + content + chat panel */}
       <main className="flex flex-1 overflow-hidden">
-        <Sidebar isCollapsed={isSidebarCollapsed || isMobile} onToggle={toggleSidebar} />
+        <Sidebar
+          isCollapsed={isSidebarCollapsed || isMobile}
+          onToggle={toggleSidebar}
+          onChatToggle={toggleChat}
+          isChatOpen={isChatOpen}
+        />
 
         {/* Content area */}
         <section className="flex flex-1 flex-col overflow-hidden">
@@ -60,6 +71,9 @@ export const AppLayout = (): React.JSX.Element => {
             <Outlet />
           </div>
         </section>
+
+        {/* Chat panel on the right */}
+        <ChatPanel isOpen={isChatOpen} onClose={toggleChat} />
       </main>
 
       {/* Footer at bottom - full width */}
