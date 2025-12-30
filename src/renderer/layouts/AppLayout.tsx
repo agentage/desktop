@@ -1,15 +1,41 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar, SiteHeader, TitleBar } from '../components/index.js';
+
+// Mobile breakpoint (matches Tailwind's 'md')
+const MOBILE_BREAKPOINT = 768;
 
 /**
  * Main application layout for authenticated users
  *
  * Structure: TitleBar (top) + Sidebar (left) + Content area (right)
  * Contains the main navigation and content rendering area
+ * Sidebar auto-collapses on mobile screens
  */
 export const AppLayout = (): React.JSX.Element => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Handle responsive sidebar collapse
+  useEffect(() => {
+    const checkMobile = (): void => {
+      const mobile = window.innerWidth < MOBILE_BREAKPOINT;
+      setIsMobile(mobile);
+      // Auto-collapse on mobile
+      if (mobile) {
+        setIsSidebarCollapsed(true);
+      }
+    };
+
+    // Initial check
+    checkMobile();
+
+    // Listen for resize
+    window.addEventListener('resize', checkMobile);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   const toggleSidebar = (): void => {
     setIsSidebarCollapsed((prev) => !prev);
@@ -22,7 +48,7 @@ export const AppLayout = (): React.JSX.Element => {
 
       {/* Main content area: sidebar + content */}
       <main className="flex flex-1 overflow-hidden">
-        <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
+        <Sidebar isCollapsed={isSidebarCollapsed || isMobile} onToggle={toggleSidebar} />
 
         {/* Content area */}
         <section className="flex flex-1 flex-col overflow-hidden">
