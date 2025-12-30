@@ -1,8 +1,12 @@
-import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { navigationConfig } from '../config/navigation.config.js';
 import { useAuth } from '../hooks/useAuth.js';
 import { cn } from '../lib/utils.js';
+
+interface SidebarProps {
+  isCollapsed?: boolean;
+  onToggle?: () => void;
+}
 
 /**
  * Left sidebar navigation component
@@ -14,18 +18,13 @@ import { cn } from '../lib/utils.js';
  *   - User section at bottom (login/profile)
  *   - Settings and Help quick access
  */
-export const Sidebar = (): React.JSX.Element => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+export const Sidebar = ({ isCollapsed = false }: SidebarProps): React.JSX.Element => {
   const { user, isLoading, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleLogin = async (): Promise<void> => {
     await login();
-  };
-
-  const toggleCollapse = (): void => {
-    setIsCollapsed(!isCollapsed);
   };
 
   const handleNavItemClick = (path: string): void => {
@@ -42,22 +41,11 @@ export const Sidebar = (): React.JSX.Element => {
         isCollapsed ? 'w-14' : 'w-56'
       )}
     >
-      {/* Header - Title + Collapse Toggle */}
-      <div className="flex h-12 items-center justify-between px-3 border-b border-sidebar-border">
+      {/* Header - Title */}
+      <div className="flex h-12 items-center px-3 border-b border-sidebar-border">
         {!isCollapsed && (
           <span className="text-sm font-semibold text-sidebar-foreground">Agentage</span>
         )}
-        <button
-          onClick={toggleCollapse}
-          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={cn(
-            'flex h-8 w-8 items-center justify-center rounded-md',
-            'text-muted-foreground hover:bg-card hover:text-foreground',
-            'transition-colors'
-          )}
-        >
-          ☰
-        </button>
       </div>
 
       {/* Navigation Groups */}
