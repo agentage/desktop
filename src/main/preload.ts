@@ -44,6 +44,13 @@ interface ModelProvider {
   isDefault?: boolean;
 }
 
+interface ComposerSettings {
+  fontSize: 'small' | 'medium' | 'large';
+  iconSize: 'small' | 'medium' | 'large';
+  spacing: 'compact' | 'normal' | 'relaxed';
+  accentColor: string;
+}
+
 interface Settings {
   models: ModelProvider[];
   backendUrl: string;
@@ -51,6 +58,7 @@ interface Settings {
   defaultModelProvider?: string;
   logRetention: 7 | 30 | 90 | -1;
   language: string;
+  composer?: ComposerSettings;
 }
 
 export interface AgentageAPI {
