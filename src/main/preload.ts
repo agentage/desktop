@@ -61,6 +61,13 @@ interface Settings {
   composer?: ComposerSettings;
 }
 
+interface Workspace {
+  id: string;
+  name: string;
+  path: string;
+  isDefault?: boolean;
+}
+
 export interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
@@ -92,6 +99,16 @@ export interface AgentageAPI {
     getModelProvider: (id: string) => Promise<ModelProvider | undefined>;
     setModelProvider: (provider: ModelProvider) => Promise<void>;
     removeModelProvider: (id: string) => Promise<void>;
+  };
+  workspace: {
+    list: () => Promise<Workspace[]>;
+    getActive: () => Promise<Workspace | null>;
+    add: (path: string) => Promise<string>;
+    remove: (id: string) => Promise<void>;
+    switch: (id: string) => Promise<void>;
+    rename: (id: string, name: string) => Promise<void>;
+    browse: () => Promise<string | undefined>;
+    ensureDefault: () => Promise<void>;
   };
   window: {
     minimize: () => Promise<void>;
@@ -136,6 +153,16 @@ const api: AgentageAPI = {
     setModelProvider: (provider: ModelProvider) =>
       ipcRenderer.invoke('settings:setModelProvider', provider),
     removeModelProvider: (id: string) => ipcRenderer.invoke('settings:removeModelProvider', id),
+  },
+  workspace: {
+    list: () => ipcRenderer.invoke('workspace:list'),
+    getActive: () => ipcRenderer.invoke('workspace:getActive'),
+    add: (path: string) => ipcRenderer.invoke('workspace:add', path),
+    remove: (id: string) => ipcRenderer.invoke('workspace:remove', id),
+    switch: (id: string) => ipcRenderer.invoke('workspace:switch', id),
+    rename: (id: string, name: string) => ipcRenderer.invoke('workspace:rename', id, name),
+    browse: () => ipcRenderer.invoke('workspace:browse'),
+    ensureDefault: () => ipcRenderer.invoke('workspace:ensureDefault'),
   },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),

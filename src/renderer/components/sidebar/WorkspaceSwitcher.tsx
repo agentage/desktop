@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import type { Workspace } from '../../../shared/types/workspace.types.js';
 import { cn } from '../../lib/utils.js';
 
 // Chevron down icon (matching composer style)
@@ -25,30 +27,48 @@ const CheckIcon = (): React.JSX.Element => (
   </svg>
 );
 
-interface Workspace {
-  id: string;
-  name: string;
-  plan: string;
-}
-
 interface WorkspaceSwitcherProps {
   isCollapsed?: boolean;
 }
 
-const workspaces: Workspace[] = [
-  { id: '1', name: 'Personal', plan: 'Free' },
-  { id: '2', name: 'Acme Inc', plan: 'Pro' },
-];
-
 /**
  * Workspace switcher component for sidebar header
- * Allows switching between different workspaces/teams
+ * Allows switching between different workspaces
  */
 export const WorkspaceSwitcher = ({
   isCollapsed = false,
 }: WorkspaceSwitcherProps): React.JSX.Element => {
-  const [activeWorkspace, setActiveWorkspace] = useState(workspaces[0]);
+  const navigate = useNavigate();
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const loadWorkspaces = async (): Promise<void> => {
+      try {
+        const [list, active] = await Promise.all([
+          window.agentage.workspace.list(),
+          window.agentage.workspace.getActive(),
+        ]);
+        setWorkspaces(list);
+        setActiveWorkspace(active);
+      } catch (error) {
+        console.error('Failed to load workspaces:', error);
+      }
+    };
+    void loadWorkspaces();
+  }, []);
+
+  const handleSwitchWorkspace = async (id: string): Promise<void> => {
+    try {
+      await window.agentage.workspace.switch(id);
+      const workspace = workspaces.find((w) => w.id === id);
+      if (workspace) setActiveWorkspace(workspace);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Failed to switch workspace:', error);
+    }
+  };
 
   if (isCollapsed) {
     return (
@@ -59,7 +79,7 @@ export const WorkspaceSwitcher = ({
           'hover:bg-accent transition-colors',
           'focus:outline-none'
         )}
-        title={activeWorkspace.name}
+        title={activeWorkspace?.name ?? 'No workspace'}
       >
         <WorkspaceIcon />
       </button>
@@ -84,9 +104,11 @@ export const WorkspaceSwitcher = ({
         </div>
         <div className="grid flex-1 text-left leading-tight">
           <span className="truncate text-xs font-medium text-foreground">
-            {activeWorkspace.name}
+            {activeWorkspace?.name ?? 'No workspace'}
           </span>
-          <span className="truncate text-[10px] text-muted-foreground">{activeWorkspace.plan}</span>
+          <span className="truncate text-[10px] text-muted-foreground">
+            {activeWorkspace?.path ? activeWorkspace.path.split('/').pop() : 'Select workspace'}
+          </span>
         </div>
         <ChevronDownIcon />
       </button>
@@ -112,27 +134,38 @@ export const WorkspaceSwitcher = ({
                 <button
                   key={workspace.id}
                   onClick={() => {
-                    setActiveWorkspace(workspace);
-                    setIsOpen(false);
+                    void handleSwitchWorkspace(workspace.id);
                   }}
                   className={cn(
                     'w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm',
                     'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left',
-                    activeWorkspace.id === workspace.id && 'bg-accent/50'
+                    activeWorkspace?.id === workspace.id && 'bg-accent/50'
                   )}
                 >
                   <div className="flex size-5 items-center justify-center rounded-sm bg-muted/50">
                     <WorkspaceIcon />
                   </div>
                   <span className="flex-1 truncate">{workspace.name}</span>
-                  <span className="text-[10px] text-muted-foreground">{workspace.plan}</span>
-                  {activeWorkspace.id === workspace.id && (
+                  {workspace.isDefault && (
+                    <span className="text-[10px] text-muted-foreground">Default</span>
+                  )}
+                  {activeWorkspace?.id === workspace.id && (
                     <span className="text-primary">
                       <CheckIcon />
                     </span>
                   )}
                 </button>
               ))}
+              <div className="my-1 h-px bg-border" />
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  void navigate('/workspaces');
+                }}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left"
+              >
+                Manage workspaces...
+              </button>
             </div>
           </div>
         </>
