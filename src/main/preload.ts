@@ -75,6 +75,7 @@ export interface AgentageAPI {
     openExternal: (url: string) => Promise<void>;
     openPath: (path: string) => Promise<void>;
     getConfigDir: () => Promise<string>;
+    rendererReady: () => Promise<boolean>;
     quit: () => void;
   };
   settings: {
@@ -115,6 +116,7 @@ const api: AgentageAPI = {
     openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
     openPath: (path: string) => ipcRenderer.invoke('app:openPath', path),
     getConfigDir: () => ipcRenderer.invoke('app:getConfigDir'),
+    rendererReady: () => ipcRenderer.invoke('app:rendererReady'),
     quit: () => {
       ipcRenderer.send('app:quit');
     },

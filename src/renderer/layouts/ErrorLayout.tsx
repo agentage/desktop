@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from 'react';
 import { TitleBar } from '../components/TitleBar.js';
 
 interface ErrorLayoutProps {
@@ -5,23 +6,44 @@ interface ErrorLayoutProps {
   onRetry?: () => void;
 }
 
+// Auto-retry countdown in seconds
+const AUTO_RETRY_DELAY = 10;
+
 /**
  * Layout for critical errors (e.g., Electron IPC unavailable)
  *
  * Purpose: Full-screen error display when app cannot initialize
- * Features: Error message, retry button, troubleshooting tips
+ * Features: Error message, auto-retry countdown, manual retry button, troubleshooting tips
  */
 export const ErrorLayout = ({
   error = 'An unexpected error occurred',
   onRetry,
 }: ErrorLayoutProps): React.JSX.Element => {
-  const handleReload = (): void => {
+  const [countdown, setCountdown] = useState(AUTO_RETRY_DELAY);
+
+  const handleReload = useCallback((): void => {
     if (onRetry) {
       onRetry();
     } else {
       window.location.reload();
     }
-  };
+  }, [onRetry]);
+
+  // Auto-retry countdown
+  useEffect(() => {
+    if (countdown <= 0) {
+      handleReload();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => prev - 1);
+    }, 1000);
+
+    return (): void => {
+      clearTimeout(timer);
+    };
+  }, [countdown, handleReload]);
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -31,6 +53,7 @@ export const ErrorLayout = ({
         <p className="text-center text-muted-foreground max-w-md">
           The application failed to initialize properly. This may be a temporary issue.
         </p>
+        <p className="text-sm text-muted-foreground">Auto-retrying in {countdown} seconds...</p>
         <div className="rounded-lg bg-card p-4 max-w-md">
           <p className="text-sm font-medium text-foreground mb-2">What you can try:</p>
           <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
