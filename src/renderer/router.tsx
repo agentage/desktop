@@ -10,6 +10,7 @@ import {
   ContextPage,
   ErrorPage,
   HelpPage,
+  HomePage,
   LoginPage,
   ModelsPage,
   NewAgentPage,
@@ -17,6 +18,7 @@ import {
   SettingsPage,
   TasksPage,
   ToolsPage,
+  WorkspacesPage,
 } from './pages/index.js';
 
 /**
@@ -48,6 +50,10 @@ export const router = createHashRouter([
             children: [
               {
                 path: '/',
+                element: <HomePage />,
+              },
+              {
+                path: '/agents',
                 element: <AgentsPage />,
               },
               {
@@ -73,6 +79,10 @@ export const router = createHashRouter([
               {
                 path: '/context',
                 element: <ContextPage />,
+              },
+              {
+                path: '/workspaces',
+                element: <WorkspacesPage />,
               },
               {
                 path: '/account',

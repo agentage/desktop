@@ -1,14 +1,12 @@
-import '../styles/pages/placeholder-pages.css';
-
 /**
  * AgentPage - Single agent view and execution
- * Placeholder page for Week 1 MVP
+ *
+ * Purpose: Run individual agent with prompt input, display output
+ * Features: Prompt input, execution controls, output display, logs
  */
 export const AgentPage = (): React.JSX.Element => (
-  <div className="page-placeholder">
-    <div className="placeholder-content">
-      <h1>🤖 Agent Runner</h1>
-      <p>Single agent view and execution coming soon</p>
-    </div>
+  <div>
+    <h1>Agent Runner</h1>
+    <p>Single agent view and execution - placeholder</p>
   </div>
 );

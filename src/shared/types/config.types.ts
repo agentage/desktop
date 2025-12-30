@@ -56,6 +56,17 @@ export interface SyncedSettings {
   defaultModelProvider?: string;
   logRetention: 7 | 30 | 90 | -1;
   language: string;
+  composer?: ComposerSettings;
+}
+
+/**
+ * Composer UI customization settings
+ */
+export interface ComposerSettings {
+  fontSize: 'small' | 'medium' | 'large';
+  iconSize: 'small' | 'medium' | 'large';
+  spacing: 'compact' | 'normal' | 'relaxed';
+  accentColor: string;
 }
 
 /**

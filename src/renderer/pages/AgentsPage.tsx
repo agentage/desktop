@@ -1,14 +1,12 @@
-import '../styles/pages/placeholder-pages.css';
-
 /**
  * AgentsPage - Agent list and management
- * Placeholder page for Week 1 MVP
+ *
+ * Purpose: Display list of available agents, allow user to select/manage agents
+ * Features: Agent list, search/filter, create new agent button
  */
 export const AgentsPage = (): React.JSX.Element => (
-  <div className="page-placeholder">
-    <div className="placeholder-content">
-      <h1>📝 Agents</h1>
-      <p>Agent list and management coming soon</p>
-    </div>
+  <div>
+    <h1>Agents</h1>
+    <p>Agent list and management - placeholder</p>
   </div>
 );

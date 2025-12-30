@@ -37,6 +37,32 @@ interface UnlinkProviderResult {
   error?: string;
 }
 
+interface ModelProvider {
+  id: string;
+  provider: 'openai' | 'anthropic' | 'ollama' | 'custom';
+  apiKey?: string;
+  baseUrl?: string;
+  defaultModel?: string;
+  isDefault?: boolean;
+}
+
+interface ComposerSettings {
+  fontSize: 'small' | 'medium' | 'large';
+  iconSize: 'small' | 'medium' | 'large';
+  spacing: 'compact' | 'normal' | 'relaxed';
+  accentColor: string;
+}
+
+interface Settings {
+  models: ModelProvider[];
+  backendUrl: string;
+  theme: 'light' | 'dark' | 'system';
+  defaultModelProvider?: string;
+  logRetention: 7 | 30 | 90 | -1;
+  language: string;
+  composer?: ComposerSettings;
+}
+
 interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
@@ -57,7 +83,16 @@ interface AgentageAPI {
   app: {
     getVersion: () => Promise<string>;
     openExternal: (url: string) => Promise<void>;
+    openPath: (path: string) => Promise<void>;
+    getConfigDir: () => Promise<string>;
     quit: () => void;
+  };
+  settings: {
+    get: () => Promise<Settings>;
+    update: (updates: Partial<Settings>) => Promise<void>;
+    getModelProvider: (id: string) => Promise<ModelProvider | undefined>;
+    setModelProvider: (provider: ModelProvider) => Promise<void>;
+    removeModelProvider: (id: string) => Promise<void>;
   };
   window: {
     minimize: () => Promise<void>;

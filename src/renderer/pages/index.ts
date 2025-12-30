@@ -13,3 +13,4 @@ export { SecretsPage } from './SecretsPage.js';
 export { SettingsPage } from './settings.js';
 export { TasksPage } from './TasksPage.js';
 export { ToolsPage } from './ToolsPage.js';
+export { WorkspacesPage } from './workspaces/index.js';

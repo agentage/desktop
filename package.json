@@ -35,9 +35,17 @@
     "package:win": "electron-builder --win"
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.1.11",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.6",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.562.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.11.0",
+    "simple-git": "^3.30.0",
+    "tailwind-merge": "^3.4.0",
     "zod": "^3.25.30"
   },
   "devDependencies": {

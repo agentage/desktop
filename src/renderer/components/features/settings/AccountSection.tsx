@@ -10,6 +10,12 @@ interface AccountSectionProps {
   onLogout: () => void;
 }
 
+/**
+ * Account settings section
+ * 
+ * Purpose: Display current user info, logout functionality
+ * Features: User avatar/initials, name, email, auth provider, logout button
+ */
 export const AccountSection = ({
   user,
   authProvider,
@@ -26,22 +32,20 @@ export const AccountSection = ({
 
   return (
     <SettingsSection title="Account">
-      <div className="account-info">
-        <div className="account-avatar">
+      <div>
+        <div>
           {user.avatar ? (
             <img src={user.avatar} alt={user.name ?? user.email} />
           ) : (
             <span>{initials}</span>
           )}
         </div>
-        <div className="account-details">
-          {user.name && <div className="account-name">{user.name}</div>}
-          <div className="account-email">{user.email}</div>
-          {authProvider && <div className="account-provider">Signed in with {authProvider}</div>}
+        <div>
+          {user.name && <div>{user.name}</div>}
+          <div>{user.email}</div>
+          {authProvider && <div>Signed in with {authProvider}</div>}
         </div>
-        <button className="btn btn-secondary" onClick={onLogout}>
-          Log Out
-        </button>
+        <button onClick={onLogout}>Log Out</button>
       </div>
     </SettingsSection>
   );

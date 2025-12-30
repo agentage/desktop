@@ -1,14 +1,12 @@
-import '../styles/pages/placeholder-pages.css';
-
 /**
  * SecretsPage - Encrypted credential storage
- * Placeholder page for Week 1 MVP
+ *
+ * Purpose: Securely store and manage API keys, credentials
+ * Features: Add/edit/delete secrets, encryption, visibility toggle
  */
 export const SecretsPage = (): React.JSX.Element => (
-  <div className="page-placeholder">
-    <div className="placeholder-content">
-      <h1>🔑 Secrets</h1>
-      <p>Encrypted credential storage coming soon</p>
-    </div>
+  <div>
+    <h1>Secrets</h1>
+    <p>Encrypted credential storage - placeholder</p>
   </div>
 );
