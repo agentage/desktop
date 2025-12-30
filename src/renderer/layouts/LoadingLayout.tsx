@@ -13,11 +13,12 @@ interface LoadingLayoutProps {
 export const LoadingLayout = ({
   message = 'Loading...',
 }: LoadingLayoutProps): React.JSX.Element => (
-  <div>
+  <div className="flex h-screen flex-col bg-background">
     <TitleBar title="Agentage" showLogo={false} simple={true} />
-    <div>
-      <h1>Agentage</h1>
-      <p>{message}</p>
+    <div className="flex flex-1 flex-col items-center justify-center gap-4">
+      <h1 className="text-2xl font-semibold text-primary">Agentage</h1>
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground border-t-primary" />
+      <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   </div>
 );

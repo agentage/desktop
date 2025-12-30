@@ -24,23 +24,30 @@ export const ErrorLayout = ({
   };
 
   return (
-    <div>
+    <div className="flex h-screen flex-col bg-background">
       <TitleBar title="Agentage" showLogo={false} simple={true} />
-      <div>
-        <h1>Unable to Start</h1>
-        <p>The application failed to initialize properly. This may be a temporary issue.</p>
-        <div>
-          <p>What you can try:</p>
-          <ul>
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 p-8">
+        <h1 className="text-2xl font-semibold text-destructive">Unable to Start</h1>
+        <p className="text-center text-muted-foreground max-w-md">
+          The application failed to initialize properly. This may be a temporary issue.
+        </p>
+        <div className="rounded-lg bg-card p-4 max-w-md">
+          <p className="text-sm font-medium text-foreground mb-2">What you can try:</p>
+          <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
             <li>Reload the application using the button below</li>
             <li>If the problem persists, restart the app completely</li>
             <li>Check if you&apos;re running the desktop app (not in a browser)</li>
           </ul>
         </div>
-        <button onClick={handleReload}>Reload Application</button>
-        <details>
-          <summary>Technical details</summary>
-          <code>{error}</code>
+        <button
+          onClick={handleReload}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          Reload Application
+        </button>
+        <details className="text-xs text-muted-foreground">
+          <summary className="cursor-pointer hover:text-foreground">Technical details</summary>
+          <code className="mt-2 block rounded bg-card p-2 text-destructive">{error}</code>
         </details>
       </div>
     </div>
