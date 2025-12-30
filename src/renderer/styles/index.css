@@ -86,6 +86,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prevent text selection in UI elements */
+button,
+[role='button'],
+nav,
+aside,
+.sidebar,
+.nav-item {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Ensure buttons have pointer cursor */
+button:not(:disabled),
+[role='button']:not(:disabled) {
+  cursor: pointer;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

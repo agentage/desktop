@@ -157,7 +157,7 @@ export const Sidebar = ({ isCollapsed = false }: SidebarProps): React.JSX.Elemen
     <aside
       className={cn(
         'flex flex-col bg-sidebar border-r border-sidebar-border',
-        'transition-all duration-200',
+        'transition-all duration-200 select-none',
         isCollapsed ? 'w-14' : 'w-56'
       )}
     >
@@ -186,7 +186,7 @@ export const Sidebar = ({ isCollapsed = false }: SidebarProps): React.JSX.Elemen
                   title={isCollapsed ? item.title : undefined}
                   className={cn(
                     'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm',
-                    'transition-colors',
+                    'transition-colors cursor-pointer',
                     isActive(item.path)
                       ? 'bg-primary text-primary-foreground'
                       : 'text-sidebar-foreground hover:bg-card',
