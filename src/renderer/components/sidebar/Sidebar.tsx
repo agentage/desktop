@@ -121,6 +121,19 @@ const icons: Record<string, React.JSX.Element> = {
       <path d="M16 17H8" />
     </svg>
   ),
+  'message-square': (
+    <svg
+      className="size-4"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  ),
 };
 
 const NavIcon = ({ name }: { name?: string }): React.JSX.Element | null => {
@@ -131,6 +144,8 @@ const NavIcon = ({ name }: { name?: string }): React.JSX.Element | null => {
 interface SidebarProps {
   isCollapsed?: boolean;
   onToggle?: () => void;
+  onChatToggle?: () => void;
+  isChatOpen?: boolean;
 }
 
 /**
@@ -143,15 +158,27 @@ interface SidebarProps {
  *   - User section at bottom
  *   - Collapsible via external toggle (SiteHeader)
  */
-export const Sidebar = ({ isCollapsed = false }: SidebarProps): React.JSX.Element => {
+export const Sidebar = ({
+  isCollapsed = false,
+  onChatToggle,
+  isChatOpen = false,
+}: SidebarProps): React.JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleNavItemClick = (path: string): void => {
+    // Handle special paths like #chat
+    if (path === '#chat') {
+      onChatToggle?.();
+      return;
+    }
     void navigate(path);
   };
 
-  const isActive = (path: string): boolean => location.pathname === path;
+  const isActive = (path: string): boolean => {
+    if (path === '#chat') return false;
+    return location.pathname === path;
+  };
 
   return (
     <aside
