@@ -107,7 +107,7 @@ export const NavUser = ({ isCollapsed = false }: NavUserProps): React.JSX.Elemen
       <button
         onClick={() => void handleLogin()}
         className={cn(
-          'flex w-full items-center gap-2 rounded-lg p-2',
+          'flex w-full items-center gap-2 rounded-lg p-2 cursor-pointer',
           'hover:bg-card transition-colors',
           isCollapsed && 'justify-center'
         )}
@@ -128,7 +128,7 @@ export const NavUser = ({ isCollapsed = false }: NavUserProps): React.JSX.Elemen
       <button
         onClick={() => void navigate('/account')}
         className={cn(
-          'flex size-10 items-center justify-center rounded-lg mx-auto',
+          'flex size-10 items-center justify-center rounded-lg mx-auto cursor-pointer',
           'bg-primary text-primary-foreground text-sm font-medium',
           'hover:opacity-90 transition-opacity'
         )}
@@ -146,7 +146,7 @@ export const NavUser = ({ isCollapsed = false }: NavUserProps): React.JSX.Elemen
           setIsOpen(!isOpen);
         }}
         className={cn(
-          'flex w-full items-center gap-2 rounded-lg p-2',
+          'flex w-full items-center gap-2 rounded-lg p-2 cursor-pointer',
           'hover:bg-card transition-colors',
           isOpen && 'bg-card'
         )}
@@ -186,7 +186,7 @@ export const NavUser = ({ isCollapsed = false }: NavUserProps): React.JSX.Elemen
                 void navigate('/account');
                 setIsOpen(false);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer hover:bg-accent transition-colors"
             >
               <UserIcon />
               <span>Account</span>
@@ -196,7 +196,7 @@ export const NavUser = ({ isCollapsed = false }: NavUserProps): React.JSX.Elemen
                 void navigate('/settings');
                 setIsOpen(false);
               }}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer hover:bg-accent transition-colors"
             >
               <SettingsIcon />
               <span>Settings</span>
@@ -204,7 +204,7 @@ export const NavUser = ({ isCollapsed = false }: NavUserProps): React.JSX.Elemen
             <div className="my-1 h-px bg-border" />
             <button
               onClick={() => void handleLogout()}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer text-destructive hover:bg-destructive/10 transition-colors"
             >
               <LogOutIcon />
               <span>Log out</span>

@@ -67,7 +67,7 @@ export const WorkspaceSwitcher = ({
       <button
         className={cn(
           'flex h-10 w-10 items-center justify-center rounded-lg mx-auto',
-          'bg-primary text-primary-foreground',
+          'bg-primary text-primary-foreground cursor-pointer',
           'hover:opacity-90 transition-opacity'
         )}
         title={activeWorkspace.name}
@@ -84,7 +84,7 @@ export const WorkspaceSwitcher = ({
           setIsOpen(!isOpen);
         }}
         className={cn(
-          'flex w-full items-center gap-2 rounded-lg p-2',
+          'flex w-full items-center gap-2 rounded-lg p-2 cursor-pointer',
           'hover:bg-card transition-colors',
           isOpen && 'bg-card'
         )}
@@ -118,7 +118,7 @@ export const WorkspaceSwitcher = ({
                   setIsOpen(false);
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded-md p-2 text-sm',
+                  'flex w-full items-center gap-2 rounded-md p-2 text-sm cursor-pointer',
                   'hover:bg-accent transition-colors',
                   activeWorkspace.id === workspace.id && 'bg-accent'
                 )}
