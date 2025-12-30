@@ -2,6 +2,29 @@ import { useEffect, useState } from 'react';
 import type { ComposerSettings, Settings } from '../../shared/types/index.js';
 import { cn } from '../lib/utils.js';
 
+// Check icon for save
+const CheckIcon = (): React.JSX.Element => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+// X icon for cancel
+const XIcon = (): React.JSX.Element => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+// Edit icon
+const EditIcon = (): React.JSX.Element => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
 // Default composer settings
 const DEFAULT_COMPOSER_SETTINGS: ComposerSettings = {
   fontSize: 'medium',
@@ -142,7 +165,9 @@ export const SettingsPage = (): React.JSX.Element => {
   const [configDir, setConfigDir] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [backendUrl, setBackendUrl] = useState('');
+  const [originalUrl, setOriginalUrl] = useState('');
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [isEditingUrl, setIsEditingUrl] = useState(false);
 
   useEffect(() => {
     const loadSettings = async (): Promise<void> => {
@@ -154,6 +179,7 @@ export const SettingsPage = (): React.JSX.Element => {
         setSettings(settingsData);
         setConfigDir(configDirData);
         setBackendUrl(settingsData.backendUrl);
+        setOriginalUrl(settingsData.backendUrl);
         applyTheme(settingsData.theme);
       } catch (error) {
         console.error('Failed to load settings:', error);
@@ -173,15 +199,23 @@ export const SettingsPage = (): React.JSX.Element => {
     await window.agentage.settings.update({ theme });
   };
 
-  const handleBackendUrlBlur = async (): Promise<void> => {
+  const handleSaveUrl = async (): Promise<void> => {
     if (!settings) return;
     try {
       new URL(backendUrl);
       setUrlError(null);
       await window.agentage.settings.update({ backendUrl });
+      setOriginalUrl(backendUrl);
+      setIsEditingUrl(false);
     } catch {
       setUrlError('Invalid URL');
     }
+  };
+
+  const handleCancelUrl = (): void => {
+    setBackendUrl(originalUrl);
+    setUrlError(null);
+    setIsEditingUrl(false);
   };
 
   const handleOpenConfigDir = (): void => {
@@ -203,228 +237,256 @@ export const SettingsPage = (): React.JSX.Element => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-6">
-        <span className="text-xs text-muted-foreground">Loading...</span>
+      <div className="flex-1 p-6">
+        <div className="text-sm text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   if (!settings) {
     return (
-      <div className="flex items-center justify-center p-6">
-        <span className="text-xs text-destructive">Failed to load settings</span>
+      <div className="flex-1 p-6">
+        <div className="text-sm text-destructive">Failed to load settings</div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {/* Appearance */}
-      <SettingsSection
-        icon={<MoonIcon />}
-        iconColor="bg-violet-500/10 text-violet-500"
-        title="Appearance"
-        description="Choose your theme"
-      >
-        <div className="grid grid-cols-3 gap-2">
-          <OptionButton
-            selected={settings.theme === 'light'}
-            onClick={() => {
-              void handleThemeChange('light');
-            }}
-            className="flex-col gap-1 py-3"
+    <div className="flex-1 p-6 h-full">
+      <div className="max-w-2xl mx-auto space-y-6 pb-48">
+        <h1 className="text-lg font-semibold text-foreground">Settings</h1>
+
+        <div className="space-y-3">
+          {/* Appearance */}
+          <SettingsSection
+            icon={<MoonIcon />}
+            iconColor="bg-violet-500/10 text-violet-500"
+            title="Appearance"
+            description="Choose your theme"
           >
-            <SunIcon />
-            <span>Light</span>
-          </OptionButton>
-          <OptionButton
-            selected={settings.theme === 'dark'}
-            onClick={() => {
-              void handleThemeChange('dark');
-            }}
-            className="flex-col gap-1 py-3"
-          >
-            <MoonIcon />
-            <span>Dark</span>
-          </OptionButton>
-          <OptionButton
-            selected={settings.theme === 'system'}
-            onClick={() => {
-              void handleThemeChange('system');
-            }}
-            className="flex-col gap-1 py-3"
-          >
-            <MonitorIcon />
-            <span>System</span>
-          </OptionButton>
-        </div>
-      </SettingsSection>
-
-      {/* Composer Settings */}
-      <SettingsSection
-        icon={<PaletteIcon />}
-        iconColor="bg-blue-500/10 text-blue-500"
-        title="Composer"
-        description="Customize chat input appearance"
-      >
-        <div className="space-y-4">
-          {/* Font Size */}
-          <div>
-            <label className="mb-2 block text-xs font-medium text-muted-foreground">
-              Font Size
-            </label>
             <div className="grid grid-cols-3 gap-2">
-              {(['small', 'medium', 'large'] as const).map((size) => (
-                <OptionButton
-                  key={size}
-                  selected={composerSettings.fontSize === size}
-                  onClick={() => {
-                    void handleComposerSettingChange('fontSize', size);
-                  }}
-                  className="capitalize"
-                >
-                  {size}
-                </OptionButton>
-              ))}
-            </div>
-          </div>
-
-          {/* Icon Size */}
-          <div>
-            <label className="mb-2 block text-xs font-medium text-muted-foreground">
-              Icon Size
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['small', 'medium', 'large'] as const).map((size) => (
-                <OptionButton
-                  key={size}
-                  selected={composerSettings.iconSize === size}
-                  onClick={() => {
-                    void handleComposerSettingChange('iconSize', size);
-                  }}
-                  className="capitalize"
-                >
-                  {size}
-                </OptionButton>
-              ))}
-            </div>
-          </div>
-
-          {/* Spacing */}
-          <div>
-            <label className="mb-2 block text-xs font-medium text-muted-foreground">Spacing</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['compact', 'normal', 'relaxed'] as const).map((spacing) => (
-                <OptionButton
-                  key={spacing}
-                  selected={composerSettings.spacing === spacing}
-                  onClick={() => {
-                    void handleComposerSettingChange('spacing', spacing);
-                  }}
-                  className="capitalize"
-                >
-                  {spacing}
-                </OptionButton>
-              ))}
-            </div>
-          </div>
-
-          {/* Accent Color */}
-          <div>
-            <label className="mb-2 block text-xs font-medium text-muted-foreground">
-              Accent Color
-            </label>
-            <div className="flex gap-2">
-              {ACCENT_COLORS.map((color) => (
-                <button
-                  key={color.id}
-                  title={color.name}
-                  onClick={() => {
-                    void handleComposerSettingChange('accentColor', color.value);
-                  }}
-                  className={cn(
-                    'size-7 rounded-full transition-all duration-200',
-                    'hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                    composerSettings.accentColor === color.value &&
-                      'ring-2 ring-offset-2 ring-offset-sidebar'
-                  )}
-                  style={
-                    {
-                      backgroundColor: color.value,
-                      '--tw-ring-color':
-                        composerSettings.accentColor === color.value ? color.value : undefined,
-                    } as React.CSSProperties
-                  }
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </SettingsSection>
-
-      {/* Advanced */}
-      <SettingsSection
-        icon={<ServerIcon />}
-        iconColor="bg-amber-500/10 text-amber-500"
-        title="Advanced"
-        description="Backend & storage"
-      >
-        <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="backend-url"
-              className="mb-2 block text-xs font-medium text-muted-foreground"
-            >
-              Backend URL
-            </label>
-            <input
-              id="backend-url"
-              type="url"
-              className={cn(
-                'h-9 w-full rounded-md border bg-muted/30 px-3 text-sm transition-all duration-200',
-                'placeholder:text-muted-foreground/60 focus:outline-none',
-                'focus:border-ring focus:ring-2 focus:ring-ring/20 focus:bg-background',
-                urlError ? 'border-destructive' : 'border-border'
-              )}
-              placeholder="https://agentage.io"
-              value={backendUrl}
-              onChange={(e) => {
-                setBackendUrl(e.target.value);
-                setUrlError(null);
-              }}
-              onBlur={() => {
-                void handleBackendUrlBlur();
-              }}
-            />
-            {urlError && <div className="mt-1.5 text-xs text-destructive">{urlError}</div>}
-          </div>
-          <div>
-            <label className="mb-2 block text-xs font-medium text-muted-foreground">
-              Agent Directory
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                className="h-9 flex-1 rounded-md border border-border bg-muted/50 px-3 text-sm text-muted-foreground cursor-not-allowed"
-                value={configDir}
-                readOnly
-                disabled
-              />
-              <button
-                onClick={handleOpenConfigDir}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs',
-                  'text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
-                )}
+              <OptionButton
+                selected={settings.theme === 'light'}
+                onClick={() => {
+                  void handleThemeChange('light');
+                }}
+                className="flex-col gap-1 py-1.5"
               >
-                <FolderIcon />
-                <span>Open</span>
-              </button>
+                <SunIcon />
+                <span>Light</span>
+              </OptionButton>
+              <OptionButton
+                selected={settings.theme === 'dark'}
+                onClick={() => {
+                  void handleThemeChange('dark');
+                }}
+                className="flex-col gap-1 py-1.5"
+              >
+                <MoonIcon />
+                <span>Dark</span>
+              </OptionButton>
+              <OptionButton
+                selected={settings.theme === 'system'}
+                onClick={() => {
+                  void handleThemeChange('system');
+                }}
+                className="flex-col gap-1 py-1.5"
+              >
+                <MonitorIcon />
+                <span>System</span>
+              </OptionButton>
             </div>
-          </div>
+          </SettingsSection>
+
+          {/* Composer Settings */}
+          <SettingsSection
+            icon={<PaletteIcon />}
+            iconColor="bg-blue-500/10 text-blue-500"
+            title="Composer"
+            description="Customize chat input appearance"
+          >
+            <div className="space-y-4">
+              {/* Font Size */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground">
+                  Font Size
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['small', 'medium', 'large'] as const).map((size) => (
+                    <OptionButton
+                      key={size}
+                      selected={composerSettings.fontSize === size}
+                      onClick={() => {
+                        void handleComposerSettingChange('fontSize', size);
+                      }}
+                      className="capitalize"
+                    >
+                      {size}
+                    </OptionButton>
+                  ))}
+                </div>
+              </div>
+
+              {/* Icon Size */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground">
+                  Icon Size
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['small', 'medium', 'large'] as const).map((size) => (
+                    <OptionButton
+                      key={size}
+                      selected={composerSettings.iconSize === size}
+                      onClick={() => {
+                        void handleComposerSettingChange('iconSize', size);
+                      }}
+                      className="capitalize"
+                    >
+                      {size}
+                    </OptionButton>
+                  ))}
+                </div>
+              </div>
+
+              {/* Spacing */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground">
+                  Spacing
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['compact', 'normal', 'relaxed'] as const).map((spacing) => (
+                    <OptionButton
+                      key={spacing}
+                      selected={composerSettings.spacing === spacing}
+                      onClick={() => {
+                        void handleComposerSettingChange('spacing', spacing);
+                      }}
+                      className="capitalize"
+                    >
+                      {spacing}
+                    </OptionButton>
+                  ))}
+                </div>
+              </div>
+
+              {/* Accent Color */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground">
+                  Accent Color
+                </label>
+                <div className="flex gap-2">
+                  {ACCENT_COLORS.map((color) => (
+                    <button
+                      key={color.id}
+                      title={color.name}
+                      onClick={() => {
+                        void handleComposerSettingChange('accentColor', color.value);
+                      }}
+                      className={cn(
+                        'size-[18px] rounded-full transition-all duration-200',
+                        'hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                        composerSettings.accentColor === color.value &&
+                          'ring-2 ring-offset-2 ring-offset-sidebar'
+                      )}
+                      style={
+                        {
+                          backgroundColor: color.value,
+                          '--tw-ring-color':
+                            composerSettings.accentColor === color.value ? color.value : undefined,
+                        } as React.CSSProperties
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </SettingsSection>
+
+          {/* Advanced */}
+          <SettingsSection
+            icon={<ServerIcon />}
+            iconColor="bg-amber-500/10 text-amber-500"
+            title="Advanced"
+            description="Backend & storage"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground">
+                  Backend URL
+                </label>
+                {isEditingUrl ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="url"
+                      value={backendUrl}
+                      onChange={(e) => {
+                        setBackendUrl(e.target.value);
+                        setUrlError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') void handleSaveUrl();
+                        if (e.key === 'Escape') handleCancelUrl();
+                      }}
+                      className={cn(
+                        'flex-1 px-2 py-1 text-sm border rounded bg-background text-foreground',
+                        'focus:outline-none focus:border-primary',
+                        urlError ? 'border-destructive' : 'border-border'
+                      )}
+                      placeholder="https://agentage.io"
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => {
+                        void handleSaveUrl();
+                      }}
+                      className="p-1 text-green-500 hover:bg-green-500/10 rounded"
+                      title="Save"
+                    >
+                      <CheckIcon />
+                    </button>
+                    <button
+                      onClick={handleCancelUrl}
+                      className="p-1 text-muted-foreground hover:bg-muted rounded"
+                      title="Cancel"
+                    >
+                      <XIcon />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1 text-sm text-foreground truncate">{backendUrl}</span>
+                    <button
+                      onClick={() => {
+                        setIsEditingUrl(true);
+                      }}
+                      className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                      title="Edit"
+                    >
+                      <EditIcon />
+                    </button>
+                  </div>
+                )}
+                {urlError && <div className="mt-1.5 text-xs text-destructive">{urlError}</div>}
+              </div>
+              <div>
+                <label className="mb-2 block text-xs font-medium text-muted-foreground">
+                  Agent Directory
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 text-sm text-muted-foreground truncate">{configDir}</span>
+                  <button
+                    onClick={handleOpenConfigDir}
+                    className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+                    title="Open in file manager"
+                  >
+                    <FolderIcon />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </SettingsSection>
         </div>
-      </SettingsSection>
+      </div>
     </div>
   );
 };
