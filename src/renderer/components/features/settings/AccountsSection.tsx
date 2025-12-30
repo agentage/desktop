@@ -13,6 +13,12 @@ interface AccountsSectionProps {
   onUnlink?: (provider: string) => Promise<void>;
 }
 
+/**
+ * Connected accounts settings section
+ * 
+ * Purpose: Manage third-party account connections
+ * Features: List providers, link/unlink buttons, connection status
+ */
 export const AccountsSection = ({
   connectedAccounts = [],
   onLink,
@@ -21,9 +27,9 @@ export const AccountsSection = ({
   const [loading, setLoading] = useState<string | null>(null);
 
   const providers = [
-    { id: 'github', name: 'GitHub', icon: '🔗' },
-    { id: 'google', name: 'Google', icon: '🔗' },
-    { id: 'microsoft', name: 'Microsoft', icon: '🔗' },
+    { id: 'github', name: 'GitHub' },
+    { id: 'google', name: 'Google' },
+    { id: 'microsoft', name: 'Microsoft' },
   ];
 
   const handleLink = async (provider: string): Promise<void> => {
@@ -55,42 +61,27 @@ export const AccountsSection = ({
 
   return (
     <SettingsSection title="Connected Accounts">
-      <div className="accounts-list">
+      <div>
         {providers.map((provider) => {
           const connected = isConnected(provider.id);
           const isLoading = loading === provider.id;
 
           return (
-            <div key={provider.id} className="account-item">
-              <div className="account-item-info">
-                <div className="account-item-icon">{provider.icon}</div>
-                <div className="account-item-details">
-                  <div className="account-item-name">{provider.name}</div>
-                  {connected ? (
-                    <div className="account-item-email">{connected.email}</div>
-                  ) : (
-                    <div className="account-item-status">Not connected</div>
-                  )}
-                </div>
+            <div key={provider.id}>
+              <div>
+                <div>{provider.name}</div>
+                {connected ? (
+                  <div>{connected.email}</div>
+                ) : (
+                  <div>Not connected</div>
+                )}
               </div>
               {connected ? (
-                <button
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    void handleUnlink(provider.id);
-                  }}
-                  disabled={isLoading}
-                >
+                <button onClick={() => void handleUnlink(provider.id)} disabled={isLoading}>
                   {isLoading ? 'Unlinking...' : 'Unlink'}
                 </button>
               ) : (
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={() => {
-                    void handleLink(provider.id);
-                  }}
-                  disabled={isLoading}
-                >
+                <button onClick={() => void handleLink(provider.id)} disabled={isLoading}>
                   {isLoading ? 'Linking...' : 'Link'}
                 </button>
               )}

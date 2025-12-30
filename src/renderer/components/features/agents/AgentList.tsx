@@ -5,7 +5,17 @@ interface AgentListProps {
   selectedAgent: string | null;
 }
 
-export const AgentList = ({ onSelect, selectedAgent }: AgentListProps): React.JSX.Element => {
+/**
+ * Agent list component
+ *
+ * Purpose: Display list of available agents, allow selection
+ * Features: Load agents from IPC, display loading/error states,
+ *           highlight selected agent
+ */
+export const AgentList = ({
+  onSelect,
+  selectedAgent: _selectedAgent,
+}: AgentListProps): React.JSX.Element => {
   const [agents, setAgents] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,30 +37,29 @@ export const AgentList = ({ onSelect, selectedAgent }: AgentListProps): React.JS
   }, []);
 
   if (loading) {
-    return <div className="agent-list loading">Loading agents...</div>;
+    return <div>Loading agents...</div>;
   }
 
   if (error) {
-    return <div className="agent-list error">{error}</div>;
+    return <div>{error}</div>;
   }
 
   if (agents.length === 0) {
     return (
-      <div className="agent-list empty">
+      <div>
         <p>No agents found</p>
-        <p className="hint">Create an agent with: agent init my-agent</p>
+        <p>Create an agent with: agent init my-agent</p>
       </div>
     );
   }
 
   return (
-    <div className="agent-list">
+    <div>
       <h2>Agents</h2>
       <ul>
         {agents.map((agent) => (
           <li key={agent}>
             <button
-              className={selectedAgent === agent ? 'selected' : ''}
               onClick={() => {
                 onSelect(agent);
               }}

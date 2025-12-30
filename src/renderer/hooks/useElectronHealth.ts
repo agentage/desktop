@@ -85,6 +85,14 @@ export const useElectronHealth = (): ElectronHealthState => {
           // Use app:version as health check - it's simple and always available
           await Promise.race([window.agentage.app.getVersion(), timeoutPromise]);
 
+          // Signal to main process that renderer is ready
+          // This prevents auto-reload from main process
+          try {
+            await window.agentage.app.rendererReady();
+          } catch {
+            // Ignore errors - this is just a signal
+          }
+
           // Success!
           setState({
             isChecking: false,

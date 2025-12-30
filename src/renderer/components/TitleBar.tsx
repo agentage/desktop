@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { cn } from '../lib/utils.js';
 
 interface TitleBarProps {
   title?: string;
@@ -13,26 +14,27 @@ interface TitleBarProps {
  * Detect if running on macOS
  */
 const isMacOS = (): boolean => {
-  // Use userAgentData if available (modern approach)
   const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
   if (nav.userAgentData?.platform) {
     return nav.userAgentData.platform.toLowerCase() === 'macos';
   }
-  // Fallback to userAgent string
   return nav.userAgent.toLowerCase().includes('mac');
 };
 
 /**
- * Custom draggable titlebar with window controls (VS Code style)
- * Works cross-platform: Linux, macOS, Windows
+ * Custom draggable titlebar with window controls
  *
- * Use `simple={true}` for screens where IPC may not be available (error, loading)
+ * Purpose: Cross-platform window title bar with minimize/maximize/close controls
+ * Features:
+ *   - macOS: traffic light buttons on left
+ *   - Windows/Linux: standard buttons on right
+ *   - Drag region for window movement
+ *   - Optional logo display
  */
 export const TitleBar = ({
   title = 'Agentage',
   showLogo = true,
   simple = false,
-  dark = false,
 }: TitleBarProps): React.JSX.Element => {
   const [isMaximized, setIsMaximized] = useState(false);
   const isMac = isMacOS();
@@ -52,7 +54,6 @@ export const TitleBar = ({
 
     void checkMaximized();
 
-    // Check maximized state on window resize
     const handleResize = (): void => {
       void checkMaximized();
     };
@@ -78,93 +79,109 @@ export const TitleBar = ({
     void window.agentage.window.close();
   };
 
+  // Windows 10 style button - taller, narrower rectangle
+  const winButtonBase = cn(
+    'flex h-full w-12 items-center justify-center',
+    'text-muted-foreground transition-colors',
+    'hover:bg-card hover:text-foreground',
+    'focus:outline-none'
+  );
+
+  // macOS traffic light style - small circles
+  const macButtonBase = cn(
+    'flex h-3 w-3 items-center justify-center rounded-full',
+    'text-[8px] leading-none transition-colors',
+    'focus:outline-none'
+  );
+
   return (
-    <header className={`titlebar${dark ? ' titlebar--dark' : ''}`}>
+    <header
+      className={cn('flex h-8 items-center border-b border-border bg-sidebar', 'select-none')}
+      style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+    >
       {/* macOS: controls on left */}
       {isMac && (
-        <div className="titlebar-controls titlebar-controls--mac">
+        <div
+          className="flex items-center gap-2 px-3"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
           <button
-            className="titlebar-btn titlebar-btn--close"
             onClick={handleClose}
             title="Close"
             type="button"
+            className={cn(macButtonBase, 'bg-destructive hover:brightness-110')}
           >
-            <span className="titlebar-btn-icon">×</span>
+            <span className="opacity-0 hover:opacity-100">×</span>
           </button>
           <button
-            className="titlebar-btn titlebar-btn--minimize"
             onClick={handleMinimize}
             title="Minimize"
             type="button"
+            className={cn(macButtonBase, 'bg-warning hover:brightness-110')}
           >
-            <span className="titlebar-btn-icon">−</span>
+            <span className="opacity-0 hover:opacity-100">−</span>
           </button>
           <button
-            className="titlebar-btn titlebar-btn--maximize"
             onClick={() => void handleMaximize()}
             title={isMaximized ? 'Restore' : 'Maximize'}
             type="button"
+            className={cn(macButtonBase, 'bg-success hover:brightness-110')}
           >
-            <span className="titlebar-btn-icon">{isMaximized ? '⧉' : '+'}</span>
+            <span className="opacity-0 hover:opacity-100">+</span>
           </button>
         </div>
       )}
 
       {/* Logo */}
       {showLogo && (
-        <div className="titlebar-logo">
-          <div className="titlebar-logo-icon">
-            <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-            </svg>
-          </div>
-          <span className="titlebar-title">{title}</span>
+        <div className="flex items-center gap-2 px-3">
+          <span className="text-xs font-medium text-foreground">{title}</span>
         </div>
       )}
 
       {/* Drag region (fills remaining space) */}
-      <div className="titlebar-drag-region" />
+      <div className="flex-1" />
 
-      {/* Windows/Linux: controls on right */}
+      {/* Windows/Linux: controls on right - Windows 10 style */}
       {!isMac && (
-        <div className="titlebar-controls titlebar-controls--win">
-          <button
-            className="titlebar-btn titlebar-btn--minimize"
-            onClick={handleMinimize}
-            title="Minimize"
-            type="button"
-          >
-            <svg width="10" height="10" viewBox="0 0 10 10">
-              <path d="M0 5h10v1H0z" fill="currentColor" />
+        <div className="flex h-full" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+          <button onClick={handleMinimize} title="Minimize" type="button" className={winButtonBase}>
+            <svg width="10" height="1" viewBox="0 0 10 1" fill="currentColor">
+              <rect width="10" height="1" />
             </svg>
           </button>
           <button
-            className="titlebar-btn titlebar-btn--maximize"
             onClick={() => void handleMaximize()}
             title={isMaximized ? 'Restore' : 'Maximize'}
             type="button"
+            className={winButtonBase}
           >
             {isMaximized ? (
-              <svg width="10" height="10" viewBox="0 0 10 10">
-                <path
-                  d="M2 0v2H0v8h8V8h2V0H2zm6 8H1V3h7v5zm1-6H3V1h6v5h-1V2z"
-                  fill="currentColor"
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor">
+                <rect x="2" y="0" width="8" height="8" strokeWidth="1" />
+                <rect
+                  x="0"
+                  y="2"
+                  width="8"
+                  height="8"
+                  strokeWidth="1"
+                  fill="var(--color-sidebar)"
                 />
               </svg>
             ) : (
-              <svg width="10" height="10" viewBox="0 0 10 10">
-                <path d="M0 0v10h10V0H0zm9 9H1V1h8v8z" fill="currentColor" />
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor">
+                <rect x="0.5" y="0.5" width="9" height="9" strokeWidth="1" />
               </svg>
             )}
           </button>
           <button
-            className="titlebar-btn titlebar-btn--close"
             onClick={handleClose}
             title="Close"
             type="button"
+            className={cn(winButtonBase, 'hover:bg-destructive hover:text-white')}
           >
-            <svg width="10" height="10" viewBox="0 0 10 10">
-              <path d="M1 0L0 1l4 4-4 4 1 1 4-4 4 4 1-1-4-4 4-4-1-1-4 4-4-4z" fill="currentColor" />
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor">
+              <path d="M0 0L10 10M10 0L0 10" strokeWidth="1" />
             </svg>
           </button>
         </div>

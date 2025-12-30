@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, Menu, nativeImage } from 'electron';
 import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { registerIpcHandlers } from './ipc/index.js';
+import { registerIpcHandlers, setupRendererReadyMonitor } from './ipc/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -127,11 +127,15 @@ const initialize = async (): Promise<void> => {
   await app.whenReady();
 
   registerIpcHandlers(ipcMain, getMainWindow);
-  createWindow();
+  const win = createWindow();
+
+  // Start monitoring for renderer ready signal - will auto-reload if not ready
+  setupRendererReadyMonitor(win);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      const newWin = createWindow();
+      setupRendererReadyMonitor(newWin);
     }
   });
 };

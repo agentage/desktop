@@ -11,10 +11,16 @@ export const navigationConfig: NavigationConfig = {
       label: '', // No label for main navigation
       items: [
         {
+          id: 'home',
+          title: 'Home',
+          icon: 'home',
+          path: '/',
+        },
+        {
           id: 'agents',
           title: 'Agents',
           icon: 'bot',
-          path: '/',
+          path: '/agents',
         },
       ],
     },
@@ -57,6 +63,18 @@ export const navigationConfig: NavigationConfig = {
           title: 'Context',
           icon: 'file-text',
           path: '/context',
+        },
+      ],
+    },
+    {
+      id: 'communication',
+      label: '',
+      items: [
+        {
+          id: 'chat',
+          title: 'Chat',
+          icon: 'message-square',
+          path: '#chat',
         },
       ],
     },

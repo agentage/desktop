@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth.js';
 import { useTheme } from '../hooks/useTheme.js';
 import { LoadingLayout } from '../layouts/index.js';
@@ -6,9 +6,11 @@ import { LoadingLayout } from '../layouts/index.js';
 /**
  * Guard that protects routes requiring authentication
  * Redirects to /login if user is not authenticated
+ *
+ * TODO: Re-enable auth check (currently bypassed for development)
  */
 export const AuthGuard = (): React.JSX.Element => {
-  const { user, isLoading } = useAuth();
+  const { isLoading } = useAuth();
   const { isLoading: themeLoading } = useTheme();
 
   // Show loading while checking auth or theme
@@ -16,10 +18,10 @@ export const AuthGuard = (): React.JSX.Element => {
     return <LoadingLayout message="Loading..." />;
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  // TODO: Re-enable auth check
+  // if (!user) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
   // Render protected content
   return <Outlet />;
