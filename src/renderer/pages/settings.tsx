@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { Settings } from '../../shared/types/index.js';
-import { Button, Card, CardContent, CardHeader } from '../components/ui/index.js';
+import type { ComposerSettings, Settings } from '../../shared/types/index.js';
+import { cn } from '../lib/utils.js';
+
+// Default composer settings
+const DEFAULT_COMPOSER_SETTINGS: ComposerSettings = {
+  fontSize: 'medium',
+  iconSize: 'medium',
+  spacing: 'normal',
+  accentColor: '#3B82F6',
+};
 
 // Icons (size-4 for smaller)
 const MoonIcon = (): React.JSX.Element => (
@@ -44,6 +52,84 @@ const ServerIcon = (): React.JSX.Element => (
     <line x1="6" y1="6" x2="6.01" y2="6" />
     <line x1="6" y1="18" x2="6.01" y2="18" />
   </svg>
+);
+
+const PaletteIcon = (): React.JSX.Element => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="13.5" cy="6.5" r=".5" />
+    <circle cx="17.5" cy="10.5" r=".5" />
+    <circle cx="8.5" cy="7.5" r=".5" />
+    <circle cx="6.5" cy="12.5" r=".5" />
+    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z" />
+  </svg>
+);
+
+const ACCENT_COLORS = [
+  { id: 'blue', value: '#3B82F6', name: 'Blue' },
+  { id: 'purple', value: '#8B5CF6', name: 'Purple' },
+  { id: 'green', value: '#22C55E', name: 'Green' },
+  { id: 'orange', value: '#F97316', name: 'Orange' },
+  { id: 'pink', value: '#EC4899', name: 'Pink' },
+  { id: 'cyan', value: '#06B6D4', name: 'Cyan' },
+];
+
+/** Reusable settings section component - matches composer styling */
+interface SettingsSectionProps {
+  icon: React.ReactNode;
+  iconColor: string;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}
+
+const SettingsSection = ({
+  icon,
+  iconColor,
+  title,
+  description,
+  children,
+}: SettingsSectionProps): React.JSX.Element => (
+  <div className="rounded-lg border border-border bg-sidebar p-4">
+    <div className="flex items-center gap-3 mb-4">
+      <div className={cn('flex size-8 items-center justify-center rounded-md', iconColor)}>
+        {icon}
+      </div>
+      <div>
+        <div className="text-sm font-medium text-foreground">{title}</div>
+        <div className="text-xs text-muted-foreground">{description}</div>
+      </div>
+    </div>
+    {children}
+  </div>
+);
+
+/** Option button for toggle groups - matches composer styling */
+interface OptionButtonProps {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const OptionButton = ({
+  selected,
+  onClick,
+  children,
+  className,
+}: OptionButtonProps): React.JSX.Element => (
+  <button
+    onClick={onClick}
+    className={cn(
+      'flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs transition-all duration-200',
+      'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+      selected
+        ? 'bg-primary text-primary-foreground'
+        : 'bg-muted/30 text-muted-foreground hover:bg-accent hover:text-foreground border border-border',
+      className
+    )}
+  >
+    {children}
+  </button>
 );
 
 /**
@@ -102,6 +188,19 @@ export const SettingsPage = (): React.JSX.Element => {
     window.agentage.app.openPath(configDir).catch(console.error);
   };
 
+  const composerSettings = settings?.composer ?? DEFAULT_COMPOSER_SETTINGS;
+
+  const handleComposerSettingChange = async <K extends keyof ComposerSettings>(
+    key: K,
+    value: ComposerSettings[K]
+  ): Promise<void> => {
+    if (!settings) return;
+    const newComposer = { ...composerSettings, [key]: value };
+    const updated = { ...settings, composer: newComposer };
+    setSettings(updated);
+    await window.agentage.settings.update({ composer: newComposer });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-6">
@@ -119,81 +218,174 @@ export const SettingsPage = (): React.JSX.Element => {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4">
+    <div className="flex flex-col gap-4 p-4">
       {/* Appearance */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-full bg-violet-500/10 text-violet-500">
-              <MoonIcon />
-            </div>
-            <div>
-              <div className="text-sm font-medium">Appearance</div>
-              <div className="text-xs text-muted-foreground">Choose your theme</div>
+      <SettingsSection
+        icon={<MoonIcon />}
+        iconColor="bg-violet-500/10 text-violet-500"
+        title="Appearance"
+        description="Choose your theme"
+      >
+        <div className="grid grid-cols-3 gap-2">
+          <OptionButton
+            selected={settings.theme === 'light'}
+            onClick={() => {
+              void handleThemeChange('light');
+            }}
+            className="flex-col gap-1 py-3"
+          >
+            <SunIcon />
+            <span>Light</span>
+          </OptionButton>
+          <OptionButton
+            selected={settings.theme === 'dark'}
+            onClick={() => {
+              void handleThemeChange('dark');
+            }}
+            className="flex-col gap-1 py-3"
+          >
+            <MoonIcon />
+            <span>Dark</span>
+          </OptionButton>
+          <OptionButton
+            selected={settings.theme === 'system'}
+            onClick={() => {
+              void handleThemeChange('system');
+            }}
+            className="flex-col gap-1 py-3"
+          >
+            <MonitorIcon />
+            <span>System</span>
+          </OptionButton>
+        </div>
+      </SettingsSection>
+
+      {/* Composer Settings */}
+      <SettingsSection
+        icon={<PaletteIcon />}
+        iconColor="bg-blue-500/10 text-blue-500"
+        title="Composer"
+        description="Customize chat input appearance"
+      >
+        <div className="space-y-4">
+          {/* Font Size */}
+          <div>
+            <label className="mb-2 block text-xs font-medium text-muted-foreground">
+              Font Size
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['small', 'medium', 'large'] as const).map((size) => (
+                <OptionButton
+                  key={size}
+                  selected={composerSettings.fontSize === size}
+                  onClick={() => {
+                    void handleComposerSettingChange('fontSize', size);
+                  }}
+                  className="capitalize"
+                >
+                  {size}
+                </OptionButton>
+              ))}
             </div>
           </div>
-        </CardHeader>
-        <CardContent className="pt-2">
-          <div className="grid grid-cols-3 gap-1.5">
-            <Button
-              variant={settings.theme === 'light' ? 'default' : 'outline'}
-              size="sm"
-              className="flex flex-col gap-0.5 py-3"
-              onClick={() => {
-                void handleThemeChange('light');
-              }}
-            >
-              <SunIcon />
-              <span className="text-[10px]">Light</span>
-            </Button>
-            <Button
-              variant={settings.theme === 'dark' ? 'default' : 'outline'}
-              size="sm"
-              className="flex flex-col gap-0.5 py-3"
-              onClick={() => {
-                void handleThemeChange('dark');
-              }}
-            >
-              <MoonIcon />
-              <span className="text-[10px]">Dark</span>
-            </Button>
-            <Button
-              variant={settings.theme === 'system' ? 'default' : 'outline'}
-              size="sm"
-              className="flex flex-col gap-0.5 py-3"
-              onClick={() => {
-                void handleThemeChange('system');
-              }}
-            >
-              <MonitorIcon />
-              <span className="text-[10px]">System</span>
-            </Button>
+
+          {/* Icon Size */}
+          <div>
+            <label className="mb-2 block text-xs font-medium text-muted-foreground">
+              Icon Size
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['small', 'medium', 'large'] as const).map((size) => (
+                <OptionButton
+                  key={size}
+                  selected={composerSettings.iconSize === size}
+                  onClick={() => {
+                    void handleComposerSettingChange('iconSize', size);
+                  }}
+                  className="capitalize"
+                >
+                  {size}
+                </OptionButton>
+              ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Spacing */}
+          <div>
+            <label className="mb-2 block text-xs font-medium text-muted-foreground">Spacing</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['compact', 'normal', 'relaxed'] as const).map((spacing) => (
+                <OptionButton
+                  key={spacing}
+                  selected={composerSettings.spacing === spacing}
+                  onClick={() => {
+                    void handleComposerSettingChange('spacing', spacing);
+                  }}
+                  className="capitalize"
+                >
+                  {spacing}
+                </OptionButton>
+              ))}
+            </div>
+          </div>
+
+          {/* Accent Color */}
+          <div>
+            <label className="mb-2 block text-xs font-medium text-muted-foreground">
+              Accent Color
+            </label>
+            <div className="flex gap-2">
+              {ACCENT_COLORS.map((color) => (
+                <button
+                  key={color.id}
+                  title={color.name}
+                  onClick={() => {
+                    void handleComposerSettingChange('accentColor', color.value);
+                  }}
+                  className={cn(
+                    'size-7 rounded-full transition-all duration-200',
+                    'hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                    composerSettings.accentColor === color.value &&
+                      'ring-2 ring-offset-2 ring-offset-sidebar'
+                  )}
+                  style={
+                    {
+                      backgroundColor: color.value,
+                      '--tw-ring-color':
+                        composerSettings.accentColor === color.value ? color.value : undefined,
+                    } as React.CSSProperties
+                  }
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </SettingsSection>
 
       {/* Advanced */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center gap-2">
-            <div className="flex size-7 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
-              <ServerIcon />
-            </div>
-            <div>
-              <div className="text-sm font-medium">Advanced</div>
-              <div className="text-xs text-muted-foreground">Backend & storage</div>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3 pt-2">
+      <SettingsSection
+        icon={<ServerIcon />}
+        iconColor="bg-amber-500/10 text-amber-500"
+        title="Advanced"
+        description="Backend & storage"
+      >
+        <div className="space-y-4">
           <div>
-            <label htmlFor="backend-url" className="mb-1 block text-xs font-medium">
+            <label
+              htmlFor="backend-url"
+              className="mb-2 block text-xs font-medium text-muted-foreground"
+            >
               Backend URL
             </label>
             <input
               id="backend-url"
               type="url"
-              className="h-8 w-full rounded-md border border-input bg-background px-2 text-xs outline-none focus:border-ring focus:ring-1 focus:ring-ring"
+              className={cn(
+                'h-9 w-full rounded-md border bg-muted/30 px-3 text-sm transition-all duration-200',
+                'placeholder:text-muted-foreground/60 focus:outline-none',
+                'focus:border-ring focus:ring-2 focus:ring-ring/20 focus:bg-background',
+                urlError ? 'border-destructive' : 'border-border'
+              )}
               placeholder="https://agentage.io"
               value={backendUrl}
               onChange={(e) => {
@@ -204,26 +396,35 @@ export const SettingsPage = (): React.JSX.Element => {
                 void handleBackendUrlBlur();
               }}
             />
-            {urlError && <div className="mt-1 text-[10px] text-destructive">{urlError}</div>}
+            {urlError && <div className="mt-1.5 text-xs text-destructive">{urlError}</div>}
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium">Agent Directory</label>
+            <label className="mb-2 block text-xs font-medium text-muted-foreground">
+              Agent Directory
+            </label>
             <div className="flex gap-2">
               <input
                 type="text"
-                className="h-8 flex-1 rounded-md border border-input bg-muted px-2 text-xs text-muted-foreground"
+                className="h-9 flex-1 rounded-md border border-border bg-muted/50 px-3 text-sm text-muted-foreground cursor-not-allowed"
                 value={configDir}
                 readOnly
                 disabled
               />
-              <Button variant="outline" size="sm" onClick={handleOpenConfigDir}>
+              <button
+                onClick={handleOpenConfigDir}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-md border border-border bg-muted/30 px-3 py-2 text-xs',
+                  'text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-200',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50'
+                )}
+              >
                 <FolderIcon />
-                <span className="text-xs">Open</span>
-              </Button>
+                <span>Open</span>
+              </button>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </SettingsSection>
     </div>
   );
 };

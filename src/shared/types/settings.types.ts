@@ -1,4 +1,4 @@
-import type { ModelProvider, SyncedSettings } from './config.types.js';
+import type { ComposerSettings, ModelProvider, SyncedSettings } from './config.types.js';
 
 /**
  * Settings state (combines local and synced)
@@ -13,9 +13,10 @@ export interface Settings {
   defaultModelProvider?: string;
   logRetention: 7 | 30 | 90 | -1;
   language: string;
+  composer?: ComposerSettings;
 }
 
 /**
  * Re-export for convenience
  */
-export type { ModelProvider, SyncedSettings };
+export type { ComposerSettings, ModelProvider, SyncedSettings };
