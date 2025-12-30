@@ -145,7 +145,6 @@ interface SidebarProps {
   isCollapsed?: boolean;
   onToggle?: () => void;
   onChatToggle?: () => void;
-  isChatOpen?: boolean;
 }
 
 /**
@@ -158,11 +157,7 @@ interface SidebarProps {
  *   - User section at bottom
  *   - Collapsible via external toggle (SiteHeader)
  */
-export const Sidebar = ({
-  isCollapsed = false,
-  onChatToggle,
-  isChatOpen = false,
-}: SidebarProps): React.JSX.Element => {
+export const Sidebar = ({ isCollapsed = false, onChatToggle }: SidebarProps): React.JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
 

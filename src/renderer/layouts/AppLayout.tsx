@@ -58,7 +58,6 @@ export const AppLayout = (): React.JSX.Element => {
           isCollapsed={isSidebarCollapsed || isMobile}
           onToggle={toggleSidebar}
           onChatToggle={toggleChat}
-          isChatOpen={isChatOpen}
         />
 
         {/* Content area */}
