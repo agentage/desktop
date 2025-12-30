@@ -17,6 +17,7 @@ export interface Workspace {
   name: string;
   path: string;
   icon?: string;
+  color?: string;
   isDefault?: boolean;
   gitStatus?: WorkspaceGitStatus;
 }
@@ -27,6 +28,7 @@ export interface Workspace {
 export interface WorkspaceUpdate {
   name?: string;
   icon?: string;
+  color?: string;
 }
 
 /**

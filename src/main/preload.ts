@@ -66,6 +66,7 @@ interface Workspace {
   name: string;
   path: string;
   icon?: string;
+  color?: string;
   isDefault?: boolean;
   gitStatus?: {
     isGitRepo: boolean;
@@ -79,6 +80,7 @@ interface Workspace {
 interface WorkspaceUpdate {
   name?: string;
   icon?: string;
+  color?: string;
 }
 
 export interface AgentageAPI {
