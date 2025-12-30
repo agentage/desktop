@@ -1,19 +1,9 @@
 import { useLocation } from 'react-router-dom';
 import { cn } from '../lib/utils.js';
 
-// Panel Left icon
+// Panel Left icon (matching composer style)
 const PanelLeftIcon = (): React.JSX.Element => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect width="18" height="18" x="3" y="3" rx="2" />
     <path d="M9 3v18" />
   </svg>
@@ -48,21 +38,21 @@ export const SiteHeader = ({ onToggleSidebar }: SiteHeaderProps): React.JSX.Elem
   };
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-sidebar px-4">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b border-border bg-sidebar px-3">
       <button
         onClick={onToggleSidebar}
         title="Toggle Sidebar"
         className={cn(
-          'inline-flex h-7 w-7 items-center justify-center rounded-md -ml-1',
-          'text-muted-foreground transition-colors',
-          'hover:bg-accent hover:text-foreground'
+          'flex size-7 items-center justify-center rounded-md',
+          'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors',
+          'focus:outline-none focus:text-foreground'
         )}
       >
         <PanelLeftIcon />
         <span className="sr-only">Toggle Sidebar</span>
       </button>
-      <div className="mx-2 h-4 w-px bg-border" />
-      <h1 className="text-sm font-medium text-foreground">{getPageTitle()}</h1>
+      <div className="h-4 w-px bg-border" />
+      <h1 className="text-xs font-medium text-foreground">{getPageTitle()}</h1>
     </header>
   );
 };
