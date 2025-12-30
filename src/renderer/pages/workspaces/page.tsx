@@ -98,14 +98,9 @@ export const WorkspacesPage = (): React.JSX.Element => {
   }
 
   return (
-    <div className="flex-1 p-6 h-full overflow-hidden">
+    <div className="flex-1 p-6 h-full">
       <div className="max-w-2xl mx-auto space-y-6 pb-48">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">Workspaces</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your workspaces and switch between them
-          </p>
-        </div>
+        <h1 className="text-lg font-semibold text-foreground">Workspaces</h1>
 
         <div className="space-y-3 relative">
           {workspaces.map((workspace) => (
