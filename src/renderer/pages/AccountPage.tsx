@@ -61,7 +61,13 @@ export const AccountPage = (): React.JSX.Element => {
   return (
     <div className="flex-1 p-6 h-full">
       <div className="max-w-2xl mx-auto space-y-6 pb-48">
-        <h1 className="text-lg font-semibold text-foreground">Account</h1>
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-blue-500/10">
+            <UserIcon />
+          </div>
+          <h1 className="text-lg font-semibold text-foreground">Account</h1>
+        </div>
 
         <div className="space-y-3">
           {/* Profile Section */}

@@ -3,6 +3,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import type { Workspace } from '../../../shared/types/workspace.types.js';
+import { FolderIcon } from '../../components/ui/index.js';
 import { DropZone } from './DropZone.js';
 import { WorkspaceCard } from './WorkspaceCard.js';
 
@@ -100,7 +101,13 @@ export const WorkspacesPage = (): React.JSX.Element => {
   return (
     <div className="flex-1 p-6 h-full">
       <div className="max-w-2xl mx-auto space-y-6 pb-48">
-        <h1 className="text-lg font-semibold text-foreground">Workspaces</h1>
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <FolderIcon />
+          </div>
+          <h1 className="text-lg font-semibold text-foreground">Workspaces</h1>
+        </div>
 
         <div className="space-y-3 relative">
           {workspaces.map((workspace) => (
