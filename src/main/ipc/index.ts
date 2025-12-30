@@ -17,5 +17,5 @@ export const registerIpcHandlers = (
   registerConfigHandlers(ipcMain);
   registerAppHandlers(ipcMain, getMainWindow);
   registerWindowHandlers(ipcMain, getMainWindow);
-  registerWorkspaceHandlers(ipcMain);
+  registerWorkspaceHandlers(ipcMain, getMainWindow);
 };

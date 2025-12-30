@@ -1,4 +1,14 @@
 /**
+ * Git status for workspace
+ */
+export interface WorkspaceGitStatus {
+  isGitRepo: boolean;
+  isDirty: boolean;
+  changedFiles: number;
+  branch?: string;
+}
+
+/**
  * Workspace data model
  */
 export interface Workspace {
@@ -6,6 +16,7 @@ export interface Workspace {
   name: string;
   path: string;
   isDefault?: boolean;
+  gitStatus?: WorkspaceGitStatus;
 }
 
 /**

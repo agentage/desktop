@@ -136,10 +136,7 @@ const icons: Record<string, React.JSX.Element> = {
   ),
 };
 
-const NavIcon = ({ name }: { name?: string }): React.JSX.Element | null => {
-  if (!name || !icons[name]) return null;
-  return icons[name];
-};
+const NavIcon = ({ name }: { name: string }): React.JSX.Element | null => icons[name] ?? null;
 
 interface SidebarProps {
   isCollapsed?: boolean;

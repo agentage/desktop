@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Workspace } from '../../../shared/types/workspace.types.js';
 import { cn } from '../../lib/utils.js';
@@ -43,21 +43,31 @@ export const WorkspaceSwitcher = ({
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    const loadWorkspaces = async (): Promise<void> => {
-      try {
-        const [list, active] = await Promise.all([
-          window.agentage.workspace.list(),
-          window.agentage.workspace.getActive(),
-        ]);
-        setWorkspaces(list);
-        setActiveWorkspace(active);
-      } catch (error) {
-        console.error('Failed to load workspaces:', error);
-      }
-    };
-    void loadWorkspaces();
+  const loadWorkspaces = useCallback(async (): Promise<void> => {
+    try {
+      const [list, active] = await Promise.all([
+        window.agentage.workspace.list(),
+        window.agentage.workspace.getActive(),
+      ]);
+      setWorkspaces(list);
+      setActiveWorkspace(active);
+    } catch (error) {
+      console.error('Failed to load workspaces:', error);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadWorkspaces();
+
+    // Subscribe to workspace changes
+    const unsubscribe = window.agentage.workspace.onChanged((): void => {
+      void loadWorkspaces();
+    });
+
+    return (): void => {
+      unsubscribe();
+    };
+  }, [loadWorkspaces]);
 
   const handleSwitchWorkspace = async (id: string): Promise<void> => {
     try {
