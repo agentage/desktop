@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Sidebar, SiteHeader, TitleBar } from '../components/index.js';
+import { Footer, Sidebar, SiteHeader, TitleBar } from '../components/index.js';
 
 // Mobile breakpoint (matches Tailwind's 'md')
 const MOBILE_BREAKPOINT = 768;
@@ -61,6 +61,9 @@ export const AppLayout = (): React.JSX.Element => {
           </div>
         </section>
       </main>
+
+      {/* Footer at bottom - full width */}
+      <Footer />
     </div>
   );
 };
