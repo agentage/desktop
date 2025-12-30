@@ -18,6 +18,7 @@ import {
   SettingsPage,
   TasksPage,
   ToolsPage,
+  WorkspacesPage,
 } from './pages/index.js';
 
 /**
@@ -78,6 +79,10 @@ export const router = createHashRouter([
               {
                 path: '/context',
                 element: <ContextPage />,
+              },
+              {
+                path: '/workspaces',
+                element: <WorkspacesPage />,
               },
               {
                 path: '/account',

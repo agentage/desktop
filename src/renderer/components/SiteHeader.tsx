@@ -31,6 +31,7 @@ export const SiteHeader = ({ onToggleSidebar }: SiteHeaderProps): React.JSX.Elem
     if (path === '/models') return 'Models';
     if (path === '/secrets') return 'Secrets';
     if (path === '/context') return 'Context';
+    if (path === '/workspaces') return 'Workspaces';
     if (path === '/settings') return 'Settings';
     if (path === '/help') return 'Help';
     if (path === '/account') return 'Account';

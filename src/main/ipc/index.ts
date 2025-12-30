@@ -4,6 +4,7 @@ import { registerAppHandlers, setupRendererReadyMonitor } from './app.handler.js
 import { registerAuthHandlers } from './auth.handler.js';
 import { registerConfigHandlers } from './config.handler.js';
 import { registerWindowHandlers } from './window.handler.js';
+import { registerWorkspaceHandlers } from './workspace.handler.js';
 
 export { setupRendererReadyMonitor };
 
@@ -16,4 +17,5 @@ export const registerIpcHandlers = (
   registerConfigHandlers(ipcMain);
   registerAppHandlers(ipcMain, getMainWindow);
   registerWindowHandlers(ipcMain, getMainWindow);
+  registerWorkspaceHandlers(ipcMain);
 };
