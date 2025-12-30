@@ -26,7 +26,7 @@ export const WORKSPACE_ICONS = [
   { id: 'globe', label: 'Globe' },
 ] as const;
 
-// Available workspace colors
+// Available workspace colors (10 colors for 2 rows of 5)
 export const WORKSPACE_COLORS = [
   { id: 'slate', value: '#64748b', label: 'Slate' },
   { id: 'red', value: '#ef4444', label: 'Red' },
@@ -37,6 +37,7 @@ export const WORKSPACE_COLORS = [
   { id: 'blue', value: '#3b82f6', label: 'Blue' },
   { id: 'violet', value: '#8b5cf6', label: 'Violet' },
   { id: 'pink', value: '#ec4899', label: 'Pink' },
+  { id: 'rose', value: '#f43f5e', label: 'Rose' },
 ] as const;
 
 export type WorkspaceIconId = (typeof WORKSPACE_ICONS)[number]['id'];

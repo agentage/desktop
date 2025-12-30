@@ -270,6 +270,9 @@ export const updateWorkspace = async (id: string, updates: WorkspaceUpdate): Pro
   if (updates.icon !== undefined) {
     workspace.icon = updates.icon;
   }
+  if (updates.color !== undefined) {
+    workspace.color = updates.color;
+  }
 
   await saveWorkspaceState(state);
   notifyWorkspaceListChanged();

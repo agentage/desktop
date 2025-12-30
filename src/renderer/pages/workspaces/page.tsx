@@ -98,8 +98,8 @@ export const WorkspacesPage = (): React.JSX.Element => {
   }
 
   return (
-    <div className="flex-1 p-6 overflow-auto">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="flex-1 p-6 h-full overflow-hidden">
+      <div className="max-w-2xl mx-auto space-y-6 pb-48">
         <div>
           <h1 className="text-lg font-semibold text-foreground">Workspaces</h1>
           <p className="text-sm text-muted-foreground">
@@ -107,7 +107,7 @@ export const WorkspacesPage = (): React.JSX.Element => {
           </p>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 relative">
           {workspaces.map((workspace) => (
             <WorkspaceCard
               key={workspace.id}
