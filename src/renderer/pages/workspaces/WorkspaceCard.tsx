@@ -3,10 +3,25 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { Workspace } from '../../../shared/types/workspace.types.js';
+import {
+  Button,
+  CheckIcon,
+  ColorPicker,
+  EditIcon,
+  IconButton,
+  TrashIcon,
+  XIcon,
+} from '../../components/ui/index.js';
 import { cn } from '../../lib/utils.js';
 import { WORKSPACE_COLORS, WORKSPACE_ICONS } from './constants.js';
-import { CheckIcon, EditIcon, TrashIcon, XIcon } from './icons.js';
 import { WorkspaceIconDisplay } from './WorkspaceIconDisplay.js';
+
+// Map WORKSPACE_COLORS to ColorPicker format
+const WORKSPACE_COLOR_OPTIONS = WORKSPACE_COLORS.map((c) => ({
+  id: c.id,
+  value: c.value,
+  label: c.label,
+}));
 
 export interface WorkspaceCardProps {
   workspace: Workspace;
@@ -39,6 +54,7 @@ export const WorkspaceCard = ({
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+    // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -92,30 +108,16 @@ export const WorkspaceCard = ({
 
           {showIconPicker && (
             <div className="absolute top-12 left-0 z-50 p-3 rounded-lg shadow-xl w-[180px] border border-border bg-popover text-popover-foreground">
-              {/* Color picker - 5 columns, 2 rows */}
-              <div className="grid grid-cols-5 gap-2 pb-3 border-b border-border mb-3">
-                {WORKSPACE_COLORS.map((color) => (
-                  <button
-                    key={color.id}
-                    type="button"
-                    title={color.label}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleColorSelect(color.id);
-                    }}
-                    className={cn(
-                      'size-[18px] rounded-full transition-all duration-200',
-                      'hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
-                      currentColor === color.id && 'ring-2 ring-offset-2 ring-offset-popover'
-                    )}
-                    style={
-                      {
-                        backgroundColor: color.value,
-                        '--tw-ring-color': currentColor === color.id ? color.value : undefined,
-                      } as React.CSSProperties
-                    }
-                  />
-                ))}
+              {/* Color picker */}
+              <div className="pb-3 border-b border-border mb-3">
+                <ColorPicker
+                  value={currentColor}
+                  onChange={(colorId) => {
+                    handleColorSelect(colorId);
+                  }}
+                  colors={WORKSPACE_COLOR_OPTIONS}
+                  columns={5}
+                />
               </div>
 
               {/* Icon picker - 5 columns */}
@@ -155,20 +157,13 @@ export const WorkspaceCard = ({
                 className="flex-1 px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:border-primary"
                 autoFocus
               />
-              <button
+              <IconButton
+                icon={<CheckIcon />}
                 onClick={handleSave}
-                className="p-1 text-green-500 hover:bg-green-500/10 rounded"
+                className="text-green-500 hover:bg-green-500/10"
                 title="Save"
-              >
-                <CheckIcon />
-              </button>
-              <button
-                onClick={handleCancel}
-                className="p-1 text-muted-foreground hover:bg-muted rounded"
-                title="Cancel"
-              >
-                <XIcon />
-              </button>
+              />
+              <IconButton icon={<XIcon />} onClick={handleCancel} title="Cancel" />
             </div>
           ) : (
             <div className="flex items-center gap-2">
@@ -193,34 +188,33 @@ export const WorkspaceCard = ({
         {!isEditing && (
           <div className="flex items-center gap-1">
             {!isActive && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   onSwitch(workspace.id);
                 }}
-                className="px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 rounded transition-colors"
+                className="text-primary"
               >
                 Switch
-              </button>
+              </Button>
             )}
-            <button
+            <IconButton
+              icon={<EditIcon />}
               onClick={() => {
                 setIsEditing(true);
               }}
-              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
               title="Rename"
-            >
-              <EditIcon />
-            </button>
+            />
             {!workspace.isDefault && (
-              <button
+              <IconButton
+                icon={<TrashIcon />}
+                variant="destructive"
                 onClick={() => {
                   onRemove(workspace.id);
                 }}
-                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded transition-colors"
                 title="Remove"
-              >
-                <TrashIcon />
-              </button>
+              />
             )}
           </div>
         )}
