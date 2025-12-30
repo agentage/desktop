@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
 import { cn } from '../../lib/utils.js';
+import { ComposerInput } from '../composer/index.js';
 
 // Close icon
 const CloseIcon = (): React.JSX.Element => (
@@ -18,10 +19,25 @@ const CloseIcon = (): React.JSX.Element => (
   </svg>
 );
 
+// Chat icon for messages
+const ChatIcon = (): React.JSX.Element => (
+  <svg
+    className="size-8 text-muted-foreground"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+  </svg>
+);
+
 // Default, min, max widths for the chat panel
-const DEFAULT_WIDTH = 384; // 24rem (w-96)
-const MIN_WIDTH = 280;
-const MAX_WIDTH = 600;
+const DEFAULT_WIDTH = 420;
+const MIN_WIDTH = 320;
+const MAX_WIDTH = 700;
 
 interface ChatPanelProps {
   isOpen: boolean;
@@ -32,7 +48,7 @@ interface ChatPanelProps {
  * Chat panel component - right side panel for AI chat
  *
  * Purpose: Provide a chat interface for interacting with AI agents
- * Currently a placeholder for future implementation
+ * Features: Resizable panel, composer input with model selector and context breakdown
  */
 export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Element | null => {
   const [width, setWidth] = useState(DEFAULT_WIDTH);
@@ -66,6 +82,11 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
     [width]
   );
 
+  const handleSubmit = (message: string): void => {
+    // TODO: Implement actual message handling
+    console.log('Message submitted:', message);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -94,49 +115,18 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
         </button>
       </div>
 
-      {/* Chat content - placeholder */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+      {/* Chat content - messages area */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
         <div className="mb-4 rounded-full bg-muted p-4">
-          <svg
-            className="size-8 text-muted-foreground"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
+          <ChatIcon />
         </div>
-        <h3 className="text-sm font-medium text-foreground mb-2">Chat placeholder</h3>
-        <p className="text-xs text-muted-foreground">Chat functionality coming soon</p>
+        <h3 className="text-sm font-medium text-foreground mb-2">Start a conversation</h3>
+        <p className="text-xs text-muted-foreground">Type a message below to begin</p>
       </div>
 
-      {/* Input area - placeholder */}
-      <div className="border-t border-sidebar-border p-4">
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="What do you want to do?"
-            disabled
-            className="flex-1 rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground placeholder:text-muted-foreground/50 cursor-not-allowed"
-          />
-          <button disabled className="rounded-md bg-primary/50 p-2 cursor-not-allowed" title="Send">
-            <svg
-              className="size-4 text-primary-foreground/50"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m22 2-7 20-4-9-9-4Z" />
-              <path d="M22 2 11 13" />
-            </svg>
-          </button>
-        </div>
+      {/* Composer input area */}
+      <div className="p-3">
+        <ComposerInput onSubmit={handleSubmit} placeholder="How could I help you today?" />
       </div>
     </aside>
   );
