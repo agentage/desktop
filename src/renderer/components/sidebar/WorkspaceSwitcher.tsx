@@ -2,21 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Workspace } from '../../../shared/types/workspace.types.js';
 import { cn } from '../../lib/utils.js';
+import { WorkspaceIconDisplay } from '../../pages/workspaces/WorkspaceIconDisplay.js';
 
 // Chevron down icon (matching composer style)
 const ChevronDownIcon = (): React.JSX.Element => (
   <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="m6 9 6 6 6-6" />
-  </svg>
-);
-
-// Workspace icon
-const WorkspaceIcon = (): React.JSX.Element => (
-  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect width="7" height="9" x="3" y="3" rx="1" />
-    <rect width="7" height="5" x="14" y="3" rx="1" />
-    <rect width="7" height="9" x="14" y="12" rx="1" />
-    <rect width="7" height="5" x="3" y="16" rx="1" />
   </svg>
 );
 
@@ -85,13 +76,17 @@ export const WorkspaceSwitcher = ({
       <button
         className={cn(
           'flex size-8 items-center justify-center rounded-md mx-auto',
-          'bg-primary/10 text-primary',
+          'bg-muted',
           'hover:bg-accent transition-colors',
           'focus:outline-none'
         )}
         title={activeWorkspace?.name ?? 'No workspace'}
       >
-        <WorkspaceIcon />
+        <WorkspaceIconDisplay
+          icon={activeWorkspace?.icon}
+          color={activeWorkspace?.color}
+          className="size-4"
+        />
       </button>
     );
   }
@@ -109,8 +104,12 @@ export const WorkspaceSwitcher = ({
           isOpen && 'bg-accent text-foreground'
         )}
       >
-        <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <WorkspaceIcon />
+        <div className="flex size-8 items-center justify-center rounded-md bg-muted">
+          <WorkspaceIconDisplay
+            icon={activeWorkspace?.icon}
+            color={activeWorkspace?.color}
+            className="size-4"
+          />
         </div>
         <div className="grid flex-1 text-left leading-tight">
           <span className="truncate text-xs font-medium text-foreground">
@@ -153,7 +152,11 @@ export const WorkspaceSwitcher = ({
                   )}
                 >
                   <div className="flex size-5 items-center justify-center rounded-sm bg-muted/50">
-                    <WorkspaceIcon />
+                    <WorkspaceIconDisplay
+                      icon={workspace.icon}
+                      color={workspace.color}
+                      className="size-3.5"
+                    />
                   </div>
                   <span className="flex-1 truncate">{workspace.name}</span>
                   {workspace.isDefault && (
