@@ -79,7 +79,7 @@ export const WorkspaceSwitcher = ({
           isOpen && 'bg-accent text-foreground'
         )}
       >
-        <div className="flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+        <div className="flex size-8 items-center justify-center rounded-md bg-primary/10 text-primary">
           <WorkspaceIcon />
         </div>
         <div className="grid flex-1 text-left leading-tight">
