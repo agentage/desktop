@@ -10,3 +10,4 @@ export {
   CardHeader,
   CardTitle,
 } from './card.js';
+export { Switch } from './switch.js';
