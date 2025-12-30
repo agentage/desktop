@@ -11,10 +11,16 @@ export const navigationConfig: NavigationConfig = {
       label: '', // No label for main navigation
       items: [
         {
+          id: 'home',
+          title: 'Home',
+          icon: 'home',
+          path: '/',
+        },
+        {
           id: 'agents',
           title: 'Agents',
           icon: 'bot',
-          path: '/',
+          path: '/agents',
         },
       ],
     },
