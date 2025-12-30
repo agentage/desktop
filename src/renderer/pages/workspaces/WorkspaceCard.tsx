@@ -1,7 +1,7 @@
 /**
  * Workspace card component
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Workspace } from '../../../shared/types/workspace.types.js';
 import { cn } from '../../lib/utils.js';
 import { WORKSPACE_COLORS, WORKSPACE_ICONS } from './constants.js';
@@ -26,6 +26,23 @@ export const WorkspaceCard = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(workspace.name);
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!showIconPicker) return;
+
+    const handleClickOutside = (e: MouseEvent): void => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowIconPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showIconPicker]);
 
   const handleSave = (): void => {
     if (editName.trim() && editName !== workspace.name) {
@@ -62,7 +79,7 @@ export const WorkspaceCard = ({
       )}
     >
       <div className="flex items-start gap-3">
-        <div className="relative">
+        <div className="relative" ref={pickerRef}>
           <button
             onClick={() => {
               setShowIconPicker(!showIconPicker);
@@ -74,36 +91,45 @@ export const WorkspaceCard = ({
           </button>
 
           {showIconPicker && (
-            <div className="absolute top-12 left-0 z-10 p-3 bg-popover border border-border rounded-lg shadow-lg min-w-[200px]">
-              {/* Color picker */}
-              <div className="flex gap-1.5 pb-3 border-b border-border mb-3">
+            <div className="absolute top-12 left-0 z-50 p-3 rounded-lg shadow-xl w-[180px] border border-border bg-popover text-popover-foreground">
+              {/* Color picker - 5 columns, 2 rows */}
+              <div className="grid grid-cols-5 gap-2 pb-3 border-b border-border mb-3">
                 {WORKSPACE_COLORS.map((color) => (
                   <button
                     key={color.id}
-                    onClick={() => {
+                    type="button"
+                    title={color.label}
+                    onClick={(e) => {
+                      e.stopPropagation();
                       handleColorSelect(color.id);
                     }}
                     className={cn(
-                      'size-6 rounded-full transition-all',
-                      currentColor === color.id &&
-                        'ring-2 ring-offset-2 ring-offset-popover ring-foreground'
+                      'size-[18px] rounded-full transition-all duration-200',
+                      'hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                      currentColor === color.id && 'ring-2 ring-offset-2 ring-offset-popover'
                     )}
-                    style={{ backgroundColor: color.value }}
-                    title={color.label}
+                    style={
+                      {
+                        backgroundColor: color.value,
+                        '--tw-ring-color': currentColor === color.id ? color.value : undefined,
+                      } as React.CSSProperties
+                    }
                   />
                 ))}
               </div>
 
-              {/* Icon picker */}
-              <div className="grid grid-cols-5 gap-1">
+              {/* Icon picker - 5 columns */}
+              <div className="grid grid-cols-5 gap-1.5">
                 {WORKSPACE_ICONS.map((icon) => (
                   <button
                     key={icon.id}
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       handleIconSelect(icon.id);
                     }}
                     className={cn(
-                      'flex size-8 items-center justify-center rounded hover:bg-accent transition-colors',
+                      'flex size-6 items-center justify-center rounded hover:bg-accent transition-colors',
                       workspace.icon === icon.id && 'bg-accent'
                     )}
                     title={icon.label}
