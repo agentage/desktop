@@ -66,6 +66,12 @@ interface Workspace {
   name: string;
   path: string;
   isDefault?: boolean;
+  gitStatus?: {
+    isGitRepo: boolean;
+    isDirty: boolean;
+    changedFiles: number;
+    branch?: string;
+  };
 }
 
 export interface AgentageAPI {
@@ -109,6 +115,9 @@ export interface AgentageAPI {
     rename: (id: string, name: string) => Promise<void>;
     browse: () => Promise<string | undefined>;
     ensureDefault: () => Promise<void>;
+    save: (id: string, message?: string) => Promise<void>;
+    getDiff: (id: string) => Promise<string>;
+    onChanged: (callback: () => void) => () => void;
   };
   window: {
     minimize: () => Promise<void>;
@@ -163,6 +172,17 @@ const api: AgentageAPI = {
     rename: (id: string, name: string) => ipcRenderer.invoke('workspace:rename', id, name),
     browse: () => ipcRenderer.invoke('workspace:browse'),
     ensureDefault: () => ipcRenderer.invoke('workspace:ensureDefault'),
+    save: (id: string, message?: string) => ipcRenderer.invoke('workspace:save', id, message),
+    getDiff: (id: string) => ipcRenderer.invoke('workspace:getDiff', id),
+    onChanged: (callback: () => void) => {
+      const handler = (): void => {
+        callback();
+      };
+      ipcRenderer.on('workspace:changed', handler);
+      return () => {
+        ipcRenderer.removeListener('workspace:changed', handler);
+      };
+    },
   },
   window: {
     minimize: () => ipcRenderer.invoke('window:minimize'),

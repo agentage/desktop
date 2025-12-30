@@ -18,6 +18,11 @@ export const useAuth = (): UseAuthReturn => {
       try {
         const currentUser = await window.agentage.auth.getUser();
         setUser(currentUser);
+
+        // Ensure default workspace exists if user is authenticated
+        if (currentUser) {
+          await window.agentage.workspace.ensureDefault();
+        }
       } catch {
         setUser(null);
       } finally {
@@ -33,6 +38,8 @@ export const useAuth = (): UseAuthReturn => {
       const result = await window.agentage.auth.login();
       if (result.success && result.user) {
         setUser(result.user);
+        // Create default workspace after successful login
+        await window.agentage.workspace.ensureDefault();
       }
       return result;
     } finally {

@@ -34,7 +34,7 @@ export const AppLayout = (): React.JSX.Element => {
 
     // Listen for resize
     window.addEventListener('resize', checkMobile);
-    return () => {
+    return (): void => {
       window.removeEventListener('resize', checkMobile);
     };
   }, []);
