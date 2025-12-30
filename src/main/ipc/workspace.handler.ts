@@ -1,16 +1,15 @@
 import type { BrowserWindow, IpcMain } from 'electron';
+import type { WorkspaceUpdate } from '../../shared/types/workspace.types.js';
 import {
   addWorkspace,
   browseWorkspaceFolder,
-  ensureDefaultWorkspace,
   getActiveWorkspace,
-  getWorkspaceDiff,
   listWorkspaces,
   removeWorkspace,
-  renameWorkspace,
   saveWorkspace,
   setMainWindow,
   switchWorkspace,
+  updateWorkspace,
 } from '../services/workspace.service.js';
 
 export const registerWorkspaceHandlers = (
@@ -40,19 +39,13 @@ export const registerWorkspaceHandlers = (
     await switchWorkspace(id);
   });
 
-  ipcMain.handle('workspace:rename', async (_event, id: string, name: string) => {
-    await renameWorkspace(id, name);
+  ipcMain.handle('workspace:update', async (_event, id: string, updates: WorkspaceUpdate) => {
+    await updateWorkspace(id, updates);
   });
 
   ipcMain.handle('workspace:browse', async () => browseWorkspaceFolder());
 
-  ipcMain.handle('workspace:ensureDefault', async () => {
-    await ensureDefaultWorkspace();
-  });
-
   ipcMain.handle('workspace:save', async (_event, id: string, message?: string) => {
     await saveWorkspace(id, message);
   });
-
-  ipcMain.handle('workspace:getDiff', async (_event, id: string) => getWorkspaceDiff(id));
 };
