@@ -83,6 +83,60 @@ interface WorkspaceUpdate {
   color?: string;
 }
 
+// Keys management types
+type KeyProvider = 'anthropic' | 'openai';
+
+interface ValidateKeyRequest {
+  provider: KeyProvider;
+  key: string;
+}
+
+interface ValidateKeyResponse {
+  valid: boolean;
+  models?: string[];
+  error?: 'invalid_key' | 'network_error';
+}
+
+interface ProviderKeyConfig {
+  provider: KeyProvider;
+  key: string;
+  enabledModels: string[];
+}
+
+interface AutodiscoverResult {
+  anthropic?: string;
+  openai?: string;
+}
+
+interface LoadKeysResult {
+  providers: ProviderKeyConfig[];
+}
+
+interface SaveKeyResult {
+  success: boolean;
+  error?: string;
+}
+
+// OAuth types
+interface OAuthTokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+  scopes: string[];
+}
+
+interface OAuthAuthorizeResult {
+  success: boolean;
+  tokens?: OAuthTokens;
+  error?: string;
+}
+
+interface CreateApiKeyResult {
+  success: boolean;
+  apiKey?: string;
+  error?: string;
+}
+
 export interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
@@ -95,6 +149,17 @@ export interface AgentageAPI {
     linkProvider: (provider: OAuthProvider) => Promise<LinkProviderResult>;
     unlinkProvider: (provider: OAuthProvider) => Promise<UnlinkProviderResult>;
     getProviders: () => Promise<LinkedProvider[]>;
+  };
+  keys: {
+    autodiscover: () => Promise<AutodiscoverResult>;
+    validate: (request: ValidateKeyRequest) => Promise<ValidateKeyResponse>;
+    save: (config: ProviderKeyConfig) => Promise<SaveKeyResult>;
+    load: () => Promise<LoadKeysResult>;
+  };
+  oauth: {
+    getExistingTokens: () => Promise<OAuthAuthorizeResult>;
+    authorize: () => Promise<OAuthAuthorizeResult>;
+    createApiKey: (accessToken: string, name?: string) => Promise<CreateApiKeyResult>;
   };
   config: {
     get: () => Promise<Record<string, unknown>>;
@@ -147,6 +212,18 @@ const api: AgentageAPI = {
     unlinkProvider: (provider: OAuthProvider) =>
       ipcRenderer.invoke('auth:unlinkProvider', provider),
     getProviders: () => ipcRenderer.invoke('auth:getProviders'),
+  },
+  keys: {
+    autodiscover: () => ipcRenderer.invoke('keys:autodiscover'),
+    validate: (request: ValidateKeyRequest) => ipcRenderer.invoke('keys:validate', request),
+    save: (config: ProviderKeyConfig) => ipcRenderer.invoke('keys:save', config),
+    load: () => ipcRenderer.invoke('keys:load'),
+  },
+  oauth: {
+    getExistingTokens: () => ipcRenderer.invoke('oauth:getExistingTokens'),
+    authorize: () => ipcRenderer.invoke('oauth:authorize'),
+    createApiKey: (accessToken: string, name?: string) =>
+      ipcRenderer.invoke('oauth:createApiKey', accessToken, name),
   },
   config: {
     get: () => ipcRenderer.invoke('config:get'),
