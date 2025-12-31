@@ -23,6 +23,38 @@ const ANTHROPIC_FALLBACK_MODELS: ModelInfo[] = [
 ];
 
 /**
+ * Fallback OpenAI models for ChatGPT OAuth tokens
+ * Based on Codex CLI's embedded models.json - these are the primary models available
+ * when using ChatGPT authentication. The backend /models endpoint may not be accessible
+ * to all users, so we provide these defaults.
+ */
+const OPENAI_CHATGPT_FALLBACK_MODELS: ModelInfo[] = [
+  { id: 'gpt-5.2-codex', displayName: 'gpt-5.2-codex', enabled: false },
+  { id: 'gpt-5.1-codex-max', displayName: 'gpt-5.1-codex-max', enabled: false },
+  { id: 'gpt-5.1-codex-mini', displayName: 'gpt-5.1-codex-mini', enabled: false },
+  { id: 'gpt-5.2', displayName: 'gpt-5.2', enabled: false },
+  { id: 'gpt-5.1', displayName: 'gpt-5.1', enabled: false },
+  { id: 'gpt-5', displayName: 'gpt-5', enabled: false },
+  { id: 'o4-mini', displayName: 'o4-mini', enabled: false },
+  { id: 'o3', displayName: 'o3', enabled: false },
+  { id: 'gpt-4.1', displayName: 'gpt-4.1', enabled: false },
+  { id: 'gpt-4o', displayName: 'gpt-4o', enabled: false },
+];
+
+/**
+ * Fallback OpenAI models for API keys (public API)
+ */
+const OPENAI_API_FALLBACK_MODELS: ModelInfo[] = [
+  { id: 'gpt-4.1', displayName: 'gpt-4.1', enabled: false },
+  { id: 'gpt-4o', displayName: 'gpt-4o', enabled: false },
+  { id: 'gpt-4o-mini', displayName: 'gpt-4o-mini', enabled: false },
+  { id: 'o3', displayName: 'o3', enabled: false },
+  { id: 'o4-mini', displayName: 'o4-mini', enabled: false },
+  { id: 'gpt-4-turbo', displayName: 'gpt-4-turbo', enabled: false },
+  { id: 'gpt-3.5-turbo', displayName: 'gpt-3.5-turbo', enabled: false },
+];
+
+/**
  * Validate a provider token by making a test request
  */
 export const validateToken = async (
@@ -40,9 +72,129 @@ export const validateToken = async (
 };
 
 /**
- * Validate OpenAI token by fetching models list
+ * Check if token is a JWT (OAuth token from ChatGPT)
  */
-const validateOpenAIToken = async (token: string): Promise<ValidateTokenResponse> => {
+const isJWTToken = (token: string): boolean => token.startsWith('eyJ');
+
+/**
+ * Extract account_id from JWT access token
+ * Tries: 1) 'acc' claim at root, 2) 'chatgpt_account_id' under auth claims
+ */
+const extractAccountIdFromJWT = (token: string): string | undefined => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return undefined;
+
+    // Handle URL-safe base64
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(Buffer.from(base64, 'base64').toString()) as {
+      acc?: string;
+      'https://api.openai.com/auth'?: {
+        chatgpt_account_id?: string;
+      };
+    };
+
+    // Try 'acc' at root first (personal accounts), then chatgpt_account_id (org accounts)
+    return payload.acc ?? payload['https://api.openai.com/auth']?.chatgpt_account_id;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Fetch models from ChatGPT backend API (for OAuth JWT tokens)
+ * This is the same API that Codex CLI uses
+ */
+const fetchChatGPTModels = async (token: string): Promise<ValidateTokenResponse> => {
+  console.log('[OpenAI ChatGPT] Fetching models from ChatGPT backend API');
+  try {
+    // Extract account ID from JWT token
+    const accountId = extractAccountIdFromJWT(token);
+    console.log('[OpenAI ChatGPT] Account ID from token:', accountId);
+
+    // client_version is required - use stable released version
+    const clientVersion = '0.77.0';
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      originator: 'codex_cli_rs',
+      'User-Agent': `codex_cli_rs/${clientVersion} (Linux; x86_64)`,
+    };
+
+    // Add ChatGPT-Account-ID header if available (required for API access)
+    if (accountId) {
+      headers['ChatGPT-Account-ID'] = accountId;
+    }
+
+    const response = await fetch(
+      `https://chatgpt.com/backend-api/codex/models?client_version=${clientVersion}`,
+      {
+        method: 'GET',
+        headers,
+      }
+    );
+
+    console.log('[OpenAI ChatGPT] Response status:', response.status);
+
+    if (response.status === 401 || response.status === 403) {
+      const errorText = await response.text();
+      console.log('[OpenAI ChatGPT] Auth error:', errorText);
+      return { valid: false, error: 'invalid_token' };
+    }
+
+    // 404 means the /models endpoint is not available for this account
+    // This is expected for some accounts - use fallback models instead
+    if (response.status === 404) {
+      console.log('[OpenAI ChatGPT] Models endpoint not available (404), using fallback models');
+      return { valid: true, models: OPENAI_CHATGPT_FALLBACK_MODELS };
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log('[OpenAI ChatGPT] Non-OK response:', response.status, errorText);
+      // For other errors, still return valid with fallback models
+      // The token is valid (not 401/403), just the models endpoint has issues
+      console.log('[OpenAI ChatGPT] Using fallback models due to API error');
+      return { valid: true, models: OPENAI_CHATGPT_FALLBACK_MODELS };
+    }
+
+    // ChatGPT backend API returns models with 'slug' and 'display_name' fields
+    const data = (await response.json()) as {
+      models?: {
+        slug: string;
+        display_name: string;
+        description?: string;
+        priority?: number;
+      }[];
+      etag?: string;
+    };
+    console.log('[OpenAI ChatGPT] Models response:', JSON.stringify(data).substring(0, 500));
+
+    const models: ModelInfo[] =
+      data.models
+        ?.map((m) => ({
+          id: m.slug,
+          displayName: m.display_name,
+          enabled: false,
+        }))
+        .sort((a, b) => a.displayName.localeCompare(b.displayName)) ?? [];
+
+    console.log('[OpenAI ChatGPT] Models count:', models.length);
+    return { valid: true, models };
+  } catch (err) {
+    console.error('[OpenAI ChatGPT] Error:', err);
+    // Network errors shouldn't invalidate the token - use fallback models
+    console.log('[OpenAI ChatGPT] Using fallback models due to network error');
+    return { valid: true, models: OPENAI_CHATGPT_FALLBACK_MODELS };
+  }
+};
+
+/**
+ * Fetch models from public OpenAI API (for API keys)
+ */
+const fetchOpenAIPublicModels = async (token: string): Promise<ValidateTokenResponse> => {
+  console.log('[OpenAI API] Fetching models from public API');
   try {
     const response = await fetch('https://api.openai.com/v1/models', {
       method: 'GET',
@@ -51,18 +203,34 @@ const validateOpenAIToken = async (token: string): Promise<ValidateTokenResponse
       },
     });
 
+    console.log('[OpenAI API] Response status:', response.status);
+
     if (response.status === 401) {
+      const errorText = await response.text();
+      console.log('[OpenAI API] 401 error:', errorText);
       return { valid: false, error: 'invalid_token' };
     }
 
     if (!response.ok) {
-      return { valid: false, error: 'network_error' };
+      const errorText = await response.text();
+      console.log('[OpenAI API] Non-OK response:', response.status, errorText);
+      // For non-auth errors, use fallback models
+      console.log('[OpenAI API] Using fallback models due to API error');
+      return { valid: true, models: OPENAI_API_FALLBACK_MODELS };
     }
 
     const data = (await response.json()) as { data?: { id: string; created?: number }[] };
+    console.log('[OpenAI API] Models response, count:', data.data?.length ?? 0);
+
     const models: ModelInfo[] =
       data.data
-        ?.filter((m) => m.id.startsWith('gpt-') || m.id.startsWith('o1') || m.id.startsWith('o3'))
+        ?.filter(
+          (m) =>
+            m.id.startsWith('gpt-') ||
+            m.id.startsWith('o1') ||
+            m.id.startsWith('o3') ||
+            m.id.startsWith('o4')
+        )
         .map((m) => ({
           id: m.id,
           displayName: m.id,
@@ -71,10 +239,37 @@ const validateOpenAIToken = async (token: string): Promise<ValidateTokenResponse
         }))
         .sort((a, b) => a.id.localeCompare(b.id)) ?? [];
 
+    console.log('[OpenAI API] Filtered models count:', models.length);
+    // If API returned no matching models, use fallback
+    if (models.length === 0) {
+      console.log('[OpenAI API] No models from API, using fallback models');
+      return { valid: true, models: OPENAI_API_FALLBACK_MODELS };
+    }
     return { valid: true, models };
-  } catch {
-    return { valid: false, error: 'network_error' };
+  } catch (err) {
+    console.error('[OpenAI API] Error:', err);
+    // Network errors shouldn't invalidate the token - use fallback models
+    console.log('[OpenAI API] Using fallback models due to network error');
+    return { valid: true, models: OPENAI_API_FALLBACK_MODELS };
   }
+};
+
+/**
+ * Validate OpenAI token by fetching models list
+ * Uses ChatGPT backend API for JWT tokens (OAuth), public API for API keys
+ */
+const validateOpenAIToken = async (token: string): Promise<ValidateTokenResponse> => {
+  console.log('[OpenAI] Validating token, prefix:', token.substring(0, 15) + '...');
+
+  // JWT tokens (from OAuth) use ChatGPT backend API
+  if (isJWTToken(token)) {
+    console.log('[OpenAI] Detected JWT token, using ChatGPT backend API');
+    return fetchChatGPTModels(token);
+  }
+
+  // API keys (sk-...) use public OpenAI API
+  console.log('[OpenAI] Detected API key, using public OpenAI API');
+  return fetchOpenAIPublicModels(token);
 };
 
 /**

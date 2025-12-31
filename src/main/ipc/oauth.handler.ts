@@ -2,59 +2,52 @@ import type { IpcMain } from 'electron';
 import {
   authorizeWithAnthropic,
   createApiKeyWithOAuth,
-  getExistingClaudeTokens,
   type OAuthTokens,
-} from '../services/oauth.service.js';
+} from '../services/anthropic.oauth.service.js';
+import {
+  authorizeWithOpenAI,
+  exchangeIdTokenForApiKey,
+  type OpenAIOAuthTokens,
+} from '../services/openai.oauth.service.js';
 
-interface OAuthAuthorizeResult {
+interface AnthropicOAuthResult {
   success: boolean;
   tokens?: OAuthTokens;
+  apiKey?: string;
   error?: string;
 }
 
-interface CreateApiKeyResult {
+interface OpenAIOAuthResult {
   success: boolean;
+  tokens?: OpenAIOAuthTokens;
   apiKey?: string;
   error?: string;
 }
 
 export const registerOAuthHandlers = (ipcMain: IpcMain): void => {
   /**
-   * Get existing OAuth tokens from Claude CLI credentials
-   * Returns tokens if user has already authenticated with Claude CLI
+   * Anthropic OAuth: Start authorization flow
    */
-  ipcMain.handle('oauth:getExistingTokens', async (): Promise<OAuthAuthorizeResult> => {
+  ipcMain.handle('models:anthropic:authorize', async (): Promise<AnthropicOAuthResult> => {
     try {
-      console.log('[ipc] oauth:getExistingTokens called');
-      const tokens = await getExistingClaudeTokens();
-      if (tokens) {
-        return { success: true, tokens };
-      }
-      return {
-        success: false,
-        error: 'No valid tokens found. Please run "claude" CLI to authenticate first.',
-      };
-    } catch (error) {
-      console.error('[ipc] oauth:getExistingTokens error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
-  });
-
-  /**
-   * Start OAuth authorization flow with Anthropic
-   * Opens browser for user to authenticate
-   * NOTE: This may fail due to Cloudflare protection
-   */
-  ipcMain.handle('oauth:authorize', async (): Promise<OAuthAuthorizeResult> => {
-    try {
-      console.log('[ipc] oauth:authorize called');
+      console.log('[ipc] models:anthropic:authorize called');
       const tokens = await authorizeWithAnthropic();
-      return { success: true, tokens };
+
+      // Try to create API key using OAuth token
+      let apiKey: string | undefined;
+      try {
+        apiKey = await createApiKeyWithOAuth(tokens.accessToken);
+        console.log('[ipc] models:anthropic:authorize - API key created');
+      } catch (keyError) {
+        console.log(
+          '[ipc] models:anthropic:authorize - API key creation failed (optional):',
+          keyError instanceof Error ? keyError.message : String(keyError)
+        );
+      }
+
+      return { success: true, tokens, apiKey };
     } catch (error) {
-      console.error('[ipc] oauth:authorize error:', error);
+      console.error('[ipc] models:anthropic:authorize error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -63,22 +56,40 @@ export const registerOAuthHandlers = (ipcMain: IpcMain): void => {
   });
 
   /**
-   * Create an API key using OAuth token
+   * OpenAI OAuth: Start authorization flow via ChatGPT login
    */
-  ipcMain.handle(
-    'oauth:createApiKey',
-    async (_event, accessToken: string, name?: string): Promise<CreateApiKeyResult> => {
+  ipcMain.handle('models:openai:authorize', async (): Promise<OpenAIOAuthResult> => {
+    try {
+      console.log('[ipc] models:openai:authorize called');
+      const tokens = await authorizeWithOpenAI();
+      console.log('[ipc] models:openai:authorize - tokens received:', {
+        hasIdToken: !!tokens.idToken,
+        idTokenPrefix: tokens.idToken.substring(0, 20) + '...',
+        hasAccessToken: !!tokens.accessToken,
+        accessTokenPrefix: tokens.accessToken.substring(0, 20) + '...',
+        hasRefreshToken: !!tokens.refreshToken,
+        accountId: tokens.accountId,
+      });
+
+      // Try to exchange id_token for a long-lived API key (optional)
+      let apiKey: string | undefined;
       try {
-        console.log('[ipc] oauth:createApiKey called');
-        const apiKey = await createApiKeyWithOAuth(accessToken, name);
-        return { success: true, apiKey };
-      } catch (error) {
-        console.error('[ipc] oauth:createApiKey error:', error);
-        return {
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        };
+        apiKey = await exchangeIdTokenForApiKey(tokens.idToken);
+        console.log('[ipc] models:openai:authorize - API key obtained');
+      } catch (exchangeError) {
+        console.log(
+          '[ipc] models:openai:authorize - API key exchange failed (will use access token):',
+          exchangeError instanceof Error ? exchangeError.message : String(exchangeError)
+        );
       }
+
+      return { success: true, tokens, apiKey };
+    } catch (error) {
+      console.error('[ipc] models:openai:authorize error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
-  );
+  });
 };
