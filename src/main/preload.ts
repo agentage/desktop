@@ -83,36 +83,49 @@ interface WorkspaceUpdate {
   color?: string;
 }
 
-// Keys management types
-type KeyProvider = 'anthropic' | 'openai';
+// Model providers types
+type ModelProviderType = 'anthropic' | 'openai';
 
-interface ValidateKeyRequest {
-  provider: KeyProvider;
-  key: string;
+interface ValidateTokenRequest {
+  provider: ModelProviderType;
+  token: string;
 }
 
-interface ValidateKeyResponse {
+interface ModelInfo {
+  id: string;
+  displayName: string;
+  createdAt?: string;
+  enabled: boolean;
+  isDefault?: boolean;
+}
+
+interface ValidateTokenResponse {
   valid: boolean;
-  models?: string[];
-  error?: 'invalid_key' | 'network_error';
+  models?: ModelInfo[];
+  error?: 'invalid_token' | 'network_error';
 }
 
-interface ProviderKeyConfig {
-  provider: KeyProvider;
-  key: string;
-  enabledModels: string[];
+interface ModelProviderConfig {
+  provider: ModelProviderType;
+  token: string;
+  enabled: boolean;
+  lastFetchedAt?: string;
+  models: ModelInfo[];
 }
 
-interface AutodiscoverResult {
-  anthropic?: string;
-  openai?: string;
+interface SaveProviderRequest {
+  provider: ModelProviderType;
+  token: string;
+  enabled: boolean;
+  lastFetchedAt?: string;
+  models: ModelInfo[];
 }
 
-interface LoadKeysResult {
-  providers: ProviderKeyConfig[];
+interface LoadProvidersResult {
+  providers: ModelProviderConfig[];
 }
 
-interface SaveKeyResult {
+interface SaveProviderResult {
   success: boolean;
   error?: string;
 }
@@ -150,11 +163,12 @@ export interface AgentageAPI {
     unlinkProvider: (provider: OAuthProvider) => Promise<UnlinkProviderResult>;
     getProviders: () => Promise<LinkedProvider[]>;
   };
-  keys: {
-    autodiscover: () => Promise<AutodiscoverResult>;
-    validate: (request: ValidateKeyRequest) => Promise<ValidateKeyResponse>;
-    save: (config: ProviderKeyConfig) => Promise<SaveKeyResult>;
-    load: () => Promise<LoadKeysResult>;
+  models: {
+    providers: {
+      load: (autoRefresh?: boolean) => Promise<LoadProvidersResult>;
+      save: (request: SaveProviderRequest) => Promise<SaveProviderResult>;
+    };
+    validate: (request: ValidateTokenRequest) => Promise<ValidateTokenResponse>;
   };
   oauth: {
     getExistingTokens: () => Promise<OAuthAuthorizeResult>;
@@ -213,11 +227,12 @@ const api: AgentageAPI = {
       ipcRenderer.invoke('auth:unlinkProvider', provider),
     getProviders: () => ipcRenderer.invoke('auth:getProviders'),
   },
-  keys: {
-    autodiscover: () => ipcRenderer.invoke('keys:autodiscover'),
-    validate: (request: ValidateKeyRequest) => ipcRenderer.invoke('keys:validate', request),
-    save: (config: ProviderKeyConfig) => ipcRenderer.invoke('keys:save', config),
-    load: () => ipcRenderer.invoke('keys:load'),
+  models: {
+    providers: {
+      load: (autoRefresh?: boolean) => ipcRenderer.invoke('models:providers:load', autoRefresh),
+      save: (request: SaveProviderRequest) => ipcRenderer.invoke('models:providers:save', request),
+    },
+    validate: (request: ValidateTokenRequest) => ipcRenderer.invoke('models:validate', request),
   },
   oauth: {
     getExistingTokens: () => ipcRenderer.invoke('oauth:getExistingTokens'),

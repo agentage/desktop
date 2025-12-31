@@ -63,6 +63,53 @@ interface Settings {
   composer?: ComposerSettings;
 }
 
+// Model providers types
+type ModelProviderType = 'anthropic' | 'openai';
+
+interface ValidateTokenRequest {
+  provider: ModelProviderType;
+  token: string;
+}
+
+interface ModelInfo {
+  id: string;
+  displayName: string;
+  createdAt?: string;
+  enabled: boolean;
+  isDefault?: boolean;
+}
+
+interface ValidateTokenResponse {
+  valid: boolean;
+  models?: ModelInfo[];
+  error?: 'invalid_token' | 'network_error';
+}
+
+interface ModelProviderConfig {
+  provider: ModelProviderType;
+  token: string;
+  enabled: boolean;
+  lastFetchedAt?: string;
+  models: ModelInfo[];
+}
+
+interface SaveProviderRequest {
+  provider: ModelProviderType;
+  token: string;
+  enabled: boolean;
+  lastFetchedAt?: string;
+  models: ModelInfo[];
+}
+
+interface LoadProvidersResult {
+  providers: ModelProviderConfig[];
+}
+
+interface SaveProviderResult {
+  success: boolean;
+  error?: string;
+}
+
 interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
@@ -75,6 +122,13 @@ interface AgentageAPI {
     linkProvider: (provider: OAuthProvider) => Promise<LinkProviderResult>;
     unlinkProvider: (provider: OAuthProvider) => Promise<UnlinkProviderResult>;
     getProviders: () => Promise<LinkedProvider[]>;
+  };
+  models: {
+    providers: {
+      load: (autoRefresh?: boolean) => Promise<LoadProvidersResult>;
+      save: (request: SaveProviderRequest) => Promise<SaveProviderResult>;
+    };
+    validate: (request: ValidateTokenRequest) => Promise<ValidateTokenResponse>;
   };
   config: {
     get: () => Promise<Record<string, unknown>>;

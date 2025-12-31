@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 import { z } from 'zod';
-import { modelProviderSchema, syncedSettingsSchema } from '../../shared/schemas/index.js';
+import { modelProviderConfigSchema, syncedSettingsSchema } from '../../shared/schemas/index.js';
 import type {
   AppConfig,
   ExternalToken,
@@ -54,6 +54,18 @@ const registryConfigSchema = z.object({
 });
 
 /**
+ * Model provider schema for settings system
+ */
+const modelProviderSchema = z.object({
+  id: z.string(),
+  provider: z.enum(['openai', 'anthropic', 'ollama', 'custom']),
+  apiKey: z.string().optional(),
+  baseUrl: z.string().url().optional(),
+  defaultModel: z.string().optional(),
+  isDefault: z.boolean().optional(),
+});
+
+/**
  * Complete config schema - compatible with CLI ~/.agentage/config.json
  */
 export const configSchema = z.object({
@@ -62,6 +74,7 @@ export const configSchema = z.object({
   deviceId: z.string().optional(),
   tokens: z.array(externalTokenSchema).default([]),
   models: z.array(modelProviderSchema).default([]),
+  modelProviders: z.array(modelProviderConfigSchema).default([]),
   settings: syncedSettingsSchema.optional(),
 });
 
@@ -69,7 +82,7 @@ export type { AppConfig, ExternalToken };
 
 const DEFAULT_CONFIG: AppConfig = {
   tokens: [],
-  models: [],
+  modelProviders: [],
 };
 
 const DEFAULT_SETTINGS: SyncedSettings = {
