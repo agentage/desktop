@@ -70,6 +70,7 @@ export const ModelsPage = (): React.JSX.Element => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<ModelProviderType | null>(null);
   const [authorizing, setAuthorizing] = useState(false);
+  const [authorizingOpenAI, setAuthorizingOpenAI] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   /**
@@ -292,8 +293,8 @@ export const ModelsPage = (): React.JSX.Element => {
   const handleAuthorizeWithClaude = useCallback(async (): Promise<void> => {
     setAuthorizing(true);
     try {
-      // Step 1: OAuth flow - open browser for user authentication
-      const authResult = await window.agentage.oauth.authorize();
+      // OAuth flow - open browser for user authentication
+      const authResult = await window.agentage.models.anthropic.authorize();
 
       if (!authResult.success || !authResult.tokens) {
         console.error('OAuth authorization failed:', authResult.error);
@@ -307,18 +308,8 @@ export const ModelsPage = (): React.JSX.Element => {
         return;
       }
 
-      const { accessToken, scopes } = authResult.tokens;
-      const hasApiKeyScope = scopes.includes('org:create_api_key');
-
-      // Try to create an API key if we have the scope, otherwise use OAuth token directly
-      let tokenToUse: string;
-
-      if (hasApiKeyScope) {
-        const keyResult = await window.agentage.oauth.createApiKey(accessToken, 'Agentage Desktop');
-        tokenToUse = keyResult.success && keyResult.apiKey ? keyResult.apiKey : accessToken;
-      } else {
-        tokenToUse = accessToken;
-      }
+      // Use API key if created, otherwise fallback to access token
+      const tokenToUse = authResult.apiKey ?? authResult.tokens.accessToken;
 
       // Set the token
       setProviders((prev) => ({
@@ -344,6 +335,69 @@ export const ModelsPage = (): React.JSX.Element => {
       }));
     } finally {
       setAuthorizing(false);
+    }
+  }, [validateProviderToken]);
+
+  /**
+   * Handle "Sign in with OpenAI" button click
+   * Opens browser for ChatGPT OAuth flow, gets access token for ChatGPT backend API
+   */
+  const handleAuthorizeWithOpenAI = useCallback(async (): Promise<void> => {
+    setAuthorizingOpenAI(true);
+    try {
+      // OAuth flow - open browser for ChatGPT authentication
+      const authResult = await window.agentage.models.openai.authorize();
+
+      if (!authResult.success) {
+        console.error('OpenAI OAuth authorization failed:', authResult.error);
+        setProviders((prev) => ({
+          ...prev,
+          openai: {
+            ...prev.openai,
+            error: authResult.error ?? 'Authorization failed',
+          },
+        }));
+        return;
+      }
+
+      // Use the access token (JWT) for ChatGPT backend API
+      const tokenToUse = authResult.tokens?.accessToken;
+
+      if (!tokenToUse) {
+        setProviders((prev) => ({
+          ...prev,
+          openai: {
+            ...prev.openai,
+            error: 'No access token received',
+          },
+        }));
+        return;
+      }
+
+      // Set the token
+      setProviders((prev) => ({
+        ...prev,
+        openai: {
+          ...prev.openai,
+          token: tokenToUse,
+          maskedToken: maskToken(tokenToUse),
+          isDirty: true,
+          error: undefined,
+        },
+      }));
+
+      // Validate the token (will use ChatGPT backend API)
+      void validateProviderToken('openai', tokenToUse);
+    } catch {
+      setProviders((prev) => ({
+        ...prev,
+        openai: {
+          ...prev.openai,
+          error: 'Authorization failed',
+        },
+      }));
+    } finally {
+      setAuthorizingOpenAI(false);
     }
   }, [validateProviderToken]);
 
@@ -488,6 +542,26 @@ export const ModelsPage = (): React.JSX.Element => {
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 Opens claude.ai to authenticate and automatically create an API key for you.
+              </p>
+            </div>
+          )}
+
+          {/* Sign in with OpenAI button (OpenAI only) */}
+          {provider === 'openai' && !state.token && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">Don't have a token?</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleAuthorizeWithOpenAI()}
+                  disabled={authorizingOpenAI}
+                >
+                  {authorizingOpenAI ? 'Authorizing...' : 'Sign in with OpenAI'}
+                </Button>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Opens ChatGPT to authenticate and get access to models.
               </p>
             </div>
           )}
