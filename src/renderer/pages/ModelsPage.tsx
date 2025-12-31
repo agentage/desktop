@@ -17,6 +17,7 @@ import {
   RefreshIcon,
   Section,
 } from '../components/ui/index.js';
+import { cn } from '../lib/utils.js';
 
 interface ProviderState {
   token: string;
@@ -407,16 +408,12 @@ export const ModelsPage = (): React.JSX.Element => {
   const handleRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      // Force refresh all providers by calling load with autoRefresh
-      // First, trigger revalidation for each provider with a token
-      for (const [provider, state] of Object.entries(providers) as [
-        ModelProviderType,
-        ProviderState,
-      ][]) {
-        if (state.token) {
-          await validateProviderToken(provider, state.token);
-        }
-      }
+      // Force refresh all providers in parallel
+      const refreshPromises = (Object.entries(providers) as [ModelProviderType, ProviderState][])
+        .filter(([, state]) => state.token)
+        .map(([provider, state]) => validateProviderToken(provider, state.token));
+
+      await Promise.all(refreshPromises);
     } catch (error) {
       console.error('Failed to refresh providers:', error);
     } finally {
@@ -594,7 +591,10 @@ export const ModelsPage = (): React.JSX.Element => {
             icon={<RefreshIcon />}
             onClick={() => void handleRefresh()}
             disabled={refreshing}
-            className={`ml-auto text-muted-foreground hover:text-foreground ${refreshing ? 'animate-spin' : ''}`}
+            className={cn(
+              'ml-auto text-muted-foreground hover:text-foreground',
+              refreshing && 'animate-spin hover:bg-transparent'
+            )}
             title="Refresh models from API"
           />
         </div>
