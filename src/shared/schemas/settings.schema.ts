@@ -1,15 +1,25 @@
 import { z } from 'zod';
 
 /**
- * Model provider schema
+ * Model info schema - individual model from API
  */
-export const modelProviderSchema = z.object({
+export const modelInfoSchema = z.object({
   id: z.string(),
-  provider: z.enum(['openai', 'anthropic', 'ollama', 'custom']),
-  apiKey: z.string().optional(),
-  baseUrl: z.string().url().optional(),
-  defaultModel: z.string().optional(),
+  displayName: z.string(),
+  createdAt: z.string().optional(),
+  enabled: z.boolean().default(false),
   isDefault: z.boolean().optional(),
+});
+
+/**
+ * Model provider schema - provider with token and models
+ */
+export const modelProviderConfigSchema = z.object({
+  provider: z.enum(['openai', 'anthropic']),
+  token: z.string(),
+  enabled: z.boolean().default(true),
+  lastFetchedAt: z.string().optional(),
+  models: z.array(modelInfoSchema).default([]),
 });
 
 /**
@@ -26,7 +36,7 @@ export const syncedSettingsSchema = z.object({
  * Settings schema (complete)
  */
 export const settingsSchema = z.object({
-  models: z.array(modelProviderSchema).default([]),
+  modelProviders: z.array(modelProviderConfigSchema).default([]),
   backendUrl: z.string().url().default('https://agentage.io'),
   theme: z.enum(['light', 'dark', 'system']).default('system'),
   defaultModelProvider: z.string().optional(),

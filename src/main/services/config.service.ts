@@ -2,11 +2,10 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 import { z } from 'zod';
-import { modelProviderSchema, syncedSettingsSchema } from '../../shared/schemas/index.js';
+import { modelProviderConfigSchema, syncedSettingsSchema } from '../../shared/schemas/index.js';
 import type {
   AppConfig,
   ExternalToken,
-  ModelProvider,
   Settings,
   SyncedSettings,
 } from '../../shared/types/index.js';
@@ -54,6 +53,18 @@ const registryConfigSchema = z.object({
 });
 
 /**
+ * Model provider schema for settings system
+ */
+const modelProviderSchema = z.object({
+  id: z.string(),
+  provider: z.enum(['openai', 'anthropic', 'ollama', 'custom']),
+  apiKey: z.string().optional(),
+  baseUrl: z.string().url().optional(),
+  defaultModel: z.string().optional(),
+  isDefault: z.boolean().optional(),
+});
+
+/**
  * Complete config schema - compatible with CLI ~/.agentage/config.json
  */
 export const configSchema = z.object({
@@ -62,6 +73,7 @@ export const configSchema = z.object({
   deviceId: z.string().optional(),
   tokens: z.array(externalTokenSchema).default([]),
   models: z.array(modelProviderSchema).default([]),
+  modelProviders: z.array(modelProviderConfigSchema).default([]),
   settings: syncedSettingsSchema.optional(),
 });
 
@@ -69,7 +81,7 @@ export type { AppConfig, ExternalToken };
 
 const DEFAULT_CONFIG: AppConfig = {
   tokens: [],
-  models: [],
+  modelProviders: [],
 };
 
 const DEFAULT_SETTINGS: SyncedSettings = {
@@ -188,38 +200,4 @@ export const updateSettings = async (updates: Partial<Settings>): Promise<void> 
   };
 
   await saveConfig(updatedConfig);
-};
-
-/**
- * Get model provider by ID
- */
-export const getModelProvider = async (id: string): Promise<ModelProvider | undefined> => {
-  const config = await loadConfig();
-  return config.models?.find((m) => m.id === id);
-};
-
-/**
- * Add or update model provider
- */
-export const setModelProvider = async (provider: ModelProvider): Promise<void> => {
-  const config = await loadConfig();
-  const models = config.models ?? [];
-  const index = models.findIndex((m) => m.id === provider.id);
-
-  if (index >= 0) {
-    models[index] = provider;
-  } else {
-    models.push(provider);
-  }
-
-  await saveConfig({ ...config, models });
-};
-
-/**
- * Remove model provider by ID
- */
-export const removeModelProvider = async (id: string): Promise<void> => {
-  const config = await loadConfig();
-  const models = (config.models ?? []).filter((m) => m.id !== id);
-  await saveConfig({ ...config, models });
 };
