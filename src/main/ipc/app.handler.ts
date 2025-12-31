@@ -61,7 +61,6 @@ export const registerAppHandlers = (
     const win = getMainWindow();
     if (win) {
       rendererReadyWindows.add(win);
-      console.log('Renderer signaled ready');
     }
     return true;
   });

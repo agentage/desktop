@@ -1,83 +1,85 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
-  KeyProvider,
-  ProviderKeyConfig,
-  ValidateKeyResponse,
+  ModelInfo,
+  ModelProviderType,
+  SaveProviderRequest,
+  ValidateTokenResponse,
 } from '../../shared/types/index.js';
 import {
   AlertCircleIcon,
+  AnthropicIcon,
   BrainIcon,
   Button,
   CheckCircleIcon,
   CheckIcon,
   IconButton,
-  KeyIcon,
+  OpenAIIcon,
   RefreshIcon,
   Section,
 } from '../components/ui/index.js';
+import { cn } from '../lib/utils.js';
 
 interface ProviderState {
-  key: string;
-  maskedKey: string;
+  token: string;
+  maskedToken: string;
   status: 'empty' | 'validating' | 'valid' | 'invalid';
-  models: string[];
-  enabledModels: string[];
+  models: ModelInfo[];
   error?: string;
   isDirty: boolean;
 }
 
-const PROVIDER_LABELS: Record<KeyProvider, string> = {
+const PROVIDER_LABELS: Record<ModelProviderType, string> = {
   anthropic: 'Anthropic',
   openai: 'OpenAI',
 };
 
-const PROVIDER_KEY_PREFIXES: Record<KeyProvider, string> = {
+const PROVIDER_TOKEN_PREFIXES: Record<ModelProviderType, string> = {
   anthropic: 'sk-ant-',
   openai: 'sk-',
 };
 
 /**
- * Mask API key for display (show last 4 chars only)
+ * Mask token for display (show last 4 chars only)
  */
-const maskKey = (key: string): string => {
-  if (!key || key.length < 8) return key;
-  return `${'•'.repeat(key.length - 4)}${key.slice(-4)}`;
+const maskToken = (token: string): string => {
+  if (!token || token.length < 8) return token;
+  return `${'•'.repeat(token.length - 4)}${token.slice(-4)}`;
 };
 
 /**
- * Models page - manage API keys for LLM providers
+ * Models page - manage tokens for LLM providers
  * Route: /models
  */
 export const ModelsPage = (): React.JSX.Element => {
-  const [providers, setProviders] = useState<Record<KeyProvider, ProviderState>>({
+  const [providers, setProviders] = useState<Record<ModelProviderType, ProviderState>>({
     anthropic: {
-      key: '',
-      maskedKey: '',
+      token: '',
+      maskedToken: '',
       status: 'empty',
       models: [],
-      enabledModels: [],
       isDirty: false,
     },
     openai: {
-      key: '',
-      maskedKey: '',
+      token: '',
+      maskedToken: '',
       status: 'empty',
       models: [],
-      enabledModels: [],
       isDirty: false,
     },
   });
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState<KeyProvider | null>(null);
+  const [saving, setSaving] = useState<ModelProviderType | null>(null);
   const [authorizing, setAuthorizing] = useState(false);
+  const [authorizingOpenAI, setAuthorizingOpenAI] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   /**
-   * Validate a provider's API key
+   * Validate a provider's token
    */
-  const validateProviderKey = useCallback(
-    async (provider: KeyProvider, key: string): Promise<void> => {
-      if (!key) {
+  const validateProviderToken = useCallback(
+    async (provider: ModelProviderType, token: string): Promise<void> => {
+      if (!token) {
         setProviders((prev) => ({
           ...prev,
           [provider]: { ...prev[provider], status: 'empty', models: [], error: undefined },
@@ -91,32 +93,63 @@ export const ModelsPage = (): React.JSX.Element => {
       }));
 
       try {
-        const result: ValidateKeyResponse = await window.agentage.keys.validate({
+        const result: ValidateTokenResponse = await window.agentage.models.validate({
           provider,
-          key,
+          token,
         });
 
-        setProviders((prev) => ({
-          ...prev,
-          [provider]: {
-            ...prev[provider],
+        console.log(`[ModelsPage] Validation result for ${provider}:`, {
+          valid: result.valid,
+          models: result.models,
+          modelsCount: result.models?.length ?? 0,
+          error: result.error,
+        });
+
+        setProviders((prev) => {
+          const existingModels = prev[provider].models;
+          let newModels: ModelInfo[] = [];
+
+          if (result.valid && result.models) {
+            // Merge with existing enabled state
+            newModels = result.models.map((m) => {
+              const existing = existingModels.find((e) => e.id === m.id);
+              return {
+                ...m,
+                enabled: existing?.enabled ?? m.enabled,
+                isDefault: existing?.isDefault ?? m.isDefault,
+              };
+            });
+
+            // If no models were previously enabled, enable first 3 by default
+            const anyEnabled = newModels.some((m) => m.enabled);
+            if (!anyEnabled && newModels.length > 0) {
+              newModels = newModels.map((m, i) => ({
+                ...m,
+                enabled: i < 3,
+              }));
+            }
+          }
+
+          console.log(`[ModelsPage] Setting ${provider} state:`, {
             status: result.valid ? 'valid' : 'invalid',
-            models: result.models ?? [],
-            enabledModels:
-              result.valid && result.models
-                ? prev[provider].enabledModels.length > 0
-                  ? prev[provider].enabledModels.filter((m) => result.models?.includes(m))
-                  : result.models.slice(0, 3) // Default to first 3 models
-                : [],
-            error: result.error
-              ? result.error === 'oauth_token'
-                ? 'This is a Claude CLI OAuth token, not an API key. Get your API key from console.anthropic.com/settings/keys'
-                : result.error === 'invalid_key'
-                  ? 'Invalid API key'
+            modelsCount: newModels.length,
+            enabledCount: newModels.filter((m) => m.enabled).length,
+          });
+
+          return {
+            ...prev,
+            [provider]: {
+              ...prev[provider],
+              status: result.valid ? 'valid' : 'invalid',
+              models: newModels,
+              error: result.error
+                ? result.error === 'invalid_token'
+                  ? 'Invalid token'
                   : 'Network error - please try again'
-              : undefined,
-          },
-        }));
+                : undefined,
+            },
+          };
+        });
       } catch {
         setProviders((prev) => ({
           ...prev,
@@ -132,55 +165,54 @@ export const ModelsPage = (): React.JSX.Element => {
   );
 
   /**
-   * Load saved keys on mount
+   * Load saved providers on mount
    */
   useEffect(() => {
-    const loadSavedKeys = async (): Promise<void> => {
+    const loadSavedProviders = async (): Promise<void> => {
       try {
-        const result = await window.agentage.keys.load();
-        const updates: Partial<Record<KeyProvider, ProviderState>> = {};
+        // Load providers with auto-refresh (will refresh models if > 1 day old)
+        const result = await window.agentage.models.providers.load(true);
+        console.log('[ModelsPage] Loaded saved providers:', result);
+        const updates: Partial<Record<ModelProviderType, ProviderState>> = {};
 
         for (const config of result.providers) {
+          console.log(`[ModelsPage] Loading config for ${config.provider}:`, {
+            hasToken: !!config.token,
+            modelsCount: config.models.length,
+            enabled: config.enabled,
+          });
           updates[config.provider] = {
-            key: config.key,
-            maskedKey: maskKey(config.key),
-            status: 'valid', // Assume saved keys are valid
-            models: [],
-            enabledModels: config.enabledModels,
+            token: config.token,
+            maskedToken: maskToken(config.token),
+            status: 'valid', // Assume saved tokens are valid
+            models: config.models,
             isDirty: false,
           };
         }
 
         if (Object.keys(updates).length > 0) {
           setProviders((prev) => ({ ...prev, ...updates }));
-          // Validate saved keys to get model list
-          for (const provider of Object.keys(updates) as KeyProvider[]) {
-            const state = updates[provider];
-            if (state?.key) {
-              void validateProviderKey(provider, state.key);
-            }
-          }
         }
       } catch (error) {
-        console.error('Failed to load keys:', error);
+        console.error('Failed to load providers:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    void loadSavedKeys();
-  }, [validateProviderKey]);
+    void loadSavedProviders();
+  }, [validateProviderToken]);
 
   /**
-   * Handle key input change
+   * Handle token input change
    */
-  const handleKeyChange = useCallback((provider: KeyProvider, value: string): void => {
+  const handleTokenChange = useCallback((provider: ModelProviderType, value: string): void => {
     setProviders((prev) => ({
       ...prev,
       [provider]: {
         ...prev[provider],
-        key: value,
-        maskedKey: maskKey(value),
+        token: value,
+        maskedToken: maskToken(value),
         status: value ? 'empty' : 'empty',
         isDirty: true,
       },
@@ -191,30 +223,30 @@ export const ModelsPage = (): React.JSX.Element => {
    * Handle validate button click
    */
   const handleValidate = useCallback(
-    (provider: KeyProvider): void => {
-      const key = providers[provider].key;
-      if (key) {
-        void validateProviderKey(provider, key);
+    (provider: ModelProviderType): void => {
+      const token = providers[provider].token;
+      if (token) {
+        void validateProviderToken(provider, token);
       }
     },
-    [providers, validateProviderKey]
+    [providers, validateProviderToken]
   );
 
   /**
    * Handle model selection toggle
    */
-  const handleModelToggle = useCallback((provider: KeyProvider, model: string): void => {
+  const handleModelToggle = useCallback((provider: ModelProviderType, modelId: string): void => {
     setProviders((prev) => {
       const current = prev[provider];
-      const enabled = current.enabledModels.includes(model)
-        ? current.enabledModels.filter((m) => m !== model)
-        : [...current.enabledModels, model];
+      const updatedModels = current.models.map((m) =>
+        m.id === modelId ? { ...m, enabled: !m.enabled } : m
+      );
 
       return {
         ...prev,
         [provider]: {
           ...current,
-          enabledModels: enabled,
+          models: updatedModels,
           isDirty: true,
         },
       };
@@ -225,16 +257,18 @@ export const ModelsPage = (): React.JSX.Element => {
    * Save provider configuration
    */
   const handleSave = useCallback(
-    async (provider: KeyProvider): Promise<void> => {
+    async (provider: ModelProviderType): Promise<void> => {
       setSaving(provider);
       try {
         const state = providers[provider];
-        const config: ProviderKeyConfig = {
+        const request: SaveProviderRequest = {
           provider,
-          key: state.key,
-          enabledModels: state.enabledModels,
+          token: state.token,
+          enabled: true,
+          lastFetchedAt: new Date().toISOString(),
+          models: state.models,
         };
-        const result = await window.agentage.keys.save(config);
+        const result = await window.agentage.models.providers.save(request);
 
         if (result.success) {
           setProviders((prev) => ({
@@ -260,8 +294,8 @@ export const ModelsPage = (): React.JSX.Element => {
   const handleAuthorizeWithClaude = useCallback(async (): Promise<void> => {
     setAuthorizing(true);
     try {
-      // Step 1: OAuth flow - open browser for user authentication
-      const authResult = await window.agentage.oauth.authorize();
+      // OAuth flow - open browser for user authentication
+      const authResult = await window.agentage.models.anthropic.authorize();
 
       if (!authResult.success || !authResult.tokens) {
         console.error('OAuth authorization failed:', authResult.error);
@@ -275,33 +309,23 @@ export const ModelsPage = (): React.JSX.Element => {
         return;
       }
 
-      const { accessToken, scopes } = authResult.tokens;
-      const hasApiKeyScope = scopes.includes('org:create_api_key');
+      // Use API key if created, otherwise fallback to access token
+      const tokenToUse = authResult.apiKey ?? authResult.tokens.accessToken;
 
-      // Try to create an API key if we have the scope, otherwise use OAuth token directly
-      let tokenToUse: string;
-
-      if (hasApiKeyScope) {
-        const keyResult = await window.agentage.oauth.createApiKey(accessToken, 'Agentage Desktop');
-        tokenToUse = keyResult.success && keyResult.apiKey ? keyResult.apiKey : accessToken;
-      } else {
-        tokenToUse = accessToken;
-      }
-
-      // Set the token (API key or OAuth token)
+      // Set the token
       setProviders((prev) => ({
         ...prev,
         anthropic: {
           ...prev.anthropic,
-          key: tokenToUse,
-          maskedKey: maskKey(tokenToUse),
+          token: tokenToUse,
+          maskedToken: maskToken(tokenToUse),
           isDirty: true,
           error: undefined,
         },
       }));
 
       // Validate the token
-      void validateProviderKey('anthropic', tokenToUse);
+      void validateProviderToken('anthropic', tokenToUse);
     } catch {
       setProviders((prev) => ({
         ...prev,
@@ -313,32 +337,116 @@ export const ModelsPage = (): React.JSX.Element => {
     } finally {
       setAuthorizing(false);
     }
-  }, [validateProviderKey]);
+  }, [validateProviderToken]);
+
+  /**
+   * Handle "Sign in with OpenAI" button click
+   * Opens browser for ChatGPT OAuth flow, gets access token for ChatGPT backend API
+   */
+  const handleAuthorizeWithOpenAI = useCallback(async (): Promise<void> => {
+    setAuthorizingOpenAI(true);
+    try {
+      // OAuth flow - open browser for ChatGPT authentication
+      const authResult = await window.agentage.models.openai.authorize();
+
+      if (!authResult.success) {
+        console.error('OpenAI OAuth authorization failed:', authResult.error);
+        setProviders((prev) => ({
+          ...prev,
+          openai: {
+            ...prev.openai,
+            error: authResult.error ?? 'Authorization failed',
+          },
+        }));
+        return;
+      }
+
+      // Use the access token (JWT) for ChatGPT backend API
+      const tokenToUse = authResult.tokens?.accessToken;
+
+      if (!tokenToUse) {
+        setProviders((prev) => ({
+          ...prev,
+          openai: {
+            ...prev.openai,
+            error: 'No access token received',
+          },
+        }));
+        return;
+      }
+
+      // Set the token
+      setProviders((prev) => ({
+        ...prev,
+        openai: {
+          ...prev.openai,
+          token: tokenToUse,
+          maskedToken: maskToken(tokenToUse),
+          isDirty: true,
+          error: undefined,
+        },
+      }));
+
+      // Validate the token (will use ChatGPT backend API)
+      void validateProviderToken('openai', tokenToUse);
+    } catch {
+      setProviders((prev) => ({
+        ...prev,
+        openai: {
+          ...prev.openai,
+          error: 'Authorization failed',
+        },
+      }));
+    } finally {
+      setAuthorizingOpenAI(false);
+    }
+  }, [validateProviderToken]);
+
+  /**
+   * Handle refresh button - force re-fetch models from all providers
+   */
+  const handleRefresh = useCallback(async (): Promise<void> => {
+    setRefreshing(true);
+    try {
+      // Force refresh all providers in parallel
+      const refreshPromises = (Object.entries(providers) as [ModelProviderType, ProviderState][])
+        .filter(([, state]) => state.token)
+        .map(([provider, state]) => validateProviderToken(provider, state.token));
+
+      await Promise.all(refreshPromises);
+    } catch (error) {
+      console.error('Failed to refresh providers:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [providers, validateProviderToken]);
 
   /**
    * Render provider section
    */
-  const renderProvider = (provider: KeyProvider): React.JSX.Element => {
+  const renderProvider = (provider: ModelProviderType): React.JSX.Element => {
     const state = providers[provider];
     const label = PROVIDER_LABELS[provider];
-    const prefix = PROVIDER_KEY_PREFIXES[provider];
+    const prefix = PROVIDER_TOKEN_PREFIXES[provider];
+    const icon = provider === 'anthropic' ? <AnthropicIcon /> : <OpenAIIcon />;
+    const iconColor = provider === 'anthropic' ? 'amber' : 'green';
 
     return (
       <Section
         key={provider}
-        icon={<KeyIcon />}
-        iconColor={provider === 'anthropic' ? 'amber' : 'green'}
+        icon={icon}
+        iconColor={iconColor}
         title={label}
-        description={`Configure your ${label} API key`}
+        description={`Configure your ${label} token`}
       >
         <div className="space-y-4">
-          {/* Key input */}
+          {/* Token input */}
           <div className="flex items-center gap-2">
             <input
               type="password"
-              value={state.key}
+              value={state.token}
               onChange={(e) => {
-                handleKeyChange(provider, e.target.value);
+                handleTokenChange(provider, e.target.value);
               }}
               placeholder={`${prefix}...`}
               className="flex-1 px-2 py-1 text-sm font-mono border border-border rounded bg-background text-foreground focus:outline-none focus:border-primary"
@@ -355,37 +463,47 @@ export const ModelsPage = (): React.JSX.Element => {
               <span className="flex items-center text-destructive" title={state.error}>
                 <AlertCircleIcon />
               </span>
-            ) : state.key ? (
+            ) : state.token ? (
               <IconButton
                 icon={<CheckIcon />}
                 onClick={() => {
                   handleValidate(provider);
                 }}
                 className="text-primary hover:bg-primary/10"
-                title="Validate key"
+                title="Validate token"
               />
             ) : null}
           </div>
 
           {/* Model selection (only show when valid) */}
+          {((): null => {
+            console.log(`[ModelsPage] Rendering ${provider}:`, {
+              status: state.status,
+              modelsCount: state.models.length,
+              models: state.models,
+            });
+            return null;
+          })()}
           {state.status === 'valid' && state.models.length > 0 && (
             <div className="space-y-2">
               <div className="text-xs text-muted-foreground">Available Models</div>
               <div className="grid grid-cols-2 gap-2">
                 {state.models.map((model) => (
                   <label
-                    key={model}
+                    key={model.id}
                     className="flex items-center gap-2 p-2 rounded-md border border-border hover:bg-accent/50 cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
-                      checked={state.enabledModels.includes(model)}
+                      checked={model.enabled}
                       onChange={() => {
-                        handleModelToggle(provider, model);
+                        handleModelToggle(provider, model.id);
                       }}
                       className="rounded border-border"
                     />
-                    <span className="text-sm font-mono truncate">{model}</span>
+                    <span className="text-sm font-mono truncate" title={model.id}>
+                      {model.displayName}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -406,10 +524,10 @@ export const ModelsPage = (): React.JSX.Element => {
           )}
 
           {/* Authorize with Claude button (Anthropic only) */}
-          {provider === 'anthropic' && !state.key && (
+          {provider === 'anthropic' && !state.token && (
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">Don't have an API key?</div>
+                <div className="text-sm text-muted-foreground">Don't have a token?</div>
                 <Button
                   variant="outline"
                   size="sm"
@@ -421,6 +539,26 @@ export const ModelsPage = (): React.JSX.Element => {
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
                 Opens claude.ai to authenticate and automatically create an API key for you.
+              </p>
+            </div>
+          )}
+
+          {/* Sign in with OpenAI button (OpenAI only) */}
+          {provider === 'openai' && !state.token && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">Don't have a token?</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleAuthorizeWithOpenAI()}
+                  disabled={authorizingOpenAI}
+                >
+                  {authorizingOpenAI ? 'Authorizing...' : 'Sign in with OpenAI'}
+                </Button>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Opens ChatGPT to authenticate and get access to models.
               </p>
             </div>
           )}
@@ -449,6 +587,16 @@ export const ModelsPage = (): React.JSX.Element => {
             <BrainIcon />
           </div>
           <h1 className="text-lg font-semibold text-foreground">Models</h1>
+          <IconButton
+            icon={<RefreshIcon />}
+            onClick={() => void handleRefresh()}
+            disabled={refreshing}
+            className={cn(
+              'ml-auto text-muted-foreground hover:text-foreground',
+              refreshing && 'animate-spin hover:bg-transparent'
+            )}
+            title="Refresh models from API"
+          />
         </div>
 
         {/* Provider sections */}

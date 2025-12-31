@@ -37,7 +37,7 @@ export interface RegistryConfig {
 }
 
 /**
- * Model provider configuration
+ * Model provider configuration (for settings system)
  */
 export interface ModelProvider {
   id: string;
@@ -78,5 +78,6 @@ export interface AppConfig {
   deviceId?: string;
   tokens?: ExternalToken[];
   models?: ModelProvider[];
+  modelProviders?: import('./model.providers.types.js').ModelProviderConfig[];
   settings?: SyncedSettings;
 }

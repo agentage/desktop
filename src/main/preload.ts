@@ -83,56 +83,79 @@ interface WorkspaceUpdate {
   color?: string;
 }
 
-// Keys management types
-type KeyProvider = 'anthropic' | 'openai';
+// Model providers types
+type ModelProviderType = 'anthropic' | 'openai';
 
-interface ValidateKeyRequest {
-  provider: KeyProvider;
-  key: string;
+interface ValidateTokenRequest {
+  provider: ModelProviderType;
+  token: string;
 }
 
-interface ValidateKeyResponse {
+interface ModelInfo {
+  id: string;
+  displayName: string;
+  createdAt?: string;
+  enabled: boolean;
+  isDefault?: boolean;
+}
+
+interface ValidateTokenResponse {
   valid: boolean;
-  models?: string[];
-  error?: 'invalid_key' | 'network_error';
+  models?: ModelInfo[];
+  error?: 'invalid_token' | 'network_error';
 }
 
-interface ProviderKeyConfig {
-  provider: KeyProvider;
-  key: string;
-  enabledModels: string[];
+interface ModelProviderConfig {
+  provider: ModelProviderType;
+  token: string;
+  enabled: boolean;
+  lastFetchedAt?: string;
+  models: ModelInfo[];
 }
 
-interface AutodiscoverResult {
-  anthropic?: string;
-  openai?: string;
+interface SaveProviderRequest {
+  provider: ModelProviderType;
+  token: string;
+  enabled: boolean;
+  lastFetchedAt?: string;
+  models: ModelInfo[];
 }
 
-interface LoadKeysResult {
-  providers: ProviderKeyConfig[];
+interface LoadProvidersResult {
+  providers: ModelProviderConfig[];
 }
 
-interface SaveKeyResult {
+interface SaveProviderResult {
   success: boolean;
   error?: string;
 }
 
-// OAuth types
-interface OAuthTokens {
+// OAuth types for Anthropic
+interface AnthropicOAuthTokens {
   accessToken: string;
   refreshToken: string;
   expiresAt: number;
   scopes: string[];
 }
 
-interface OAuthAuthorizeResult {
+interface AnthropicOAuthResult {
   success: boolean;
-  tokens?: OAuthTokens;
+  tokens?: AnthropicOAuthTokens;
+  apiKey?: string;
   error?: string;
 }
 
-interface CreateApiKeyResult {
+// OAuth types for OpenAI
+interface OpenAIOAuthTokens {
+  idToken: string;
+  accessToken: string;
+  refreshToken: string;
+  accountId?: string;
+}
+
+interface OpenAIOAuthResult {
   success: boolean;
+  tokens?: OpenAIOAuthTokens;
   apiKey?: string;
   error?: string;
 }
@@ -150,16 +173,18 @@ export interface AgentageAPI {
     unlinkProvider: (provider: OAuthProvider) => Promise<UnlinkProviderResult>;
     getProviders: () => Promise<LinkedProvider[]>;
   };
-  keys: {
-    autodiscover: () => Promise<AutodiscoverResult>;
-    validate: (request: ValidateKeyRequest) => Promise<ValidateKeyResponse>;
-    save: (config: ProviderKeyConfig) => Promise<SaveKeyResult>;
-    load: () => Promise<LoadKeysResult>;
-  };
-  oauth: {
-    getExistingTokens: () => Promise<OAuthAuthorizeResult>;
-    authorize: () => Promise<OAuthAuthorizeResult>;
-    createApiKey: (accessToken: string, name?: string) => Promise<CreateApiKeyResult>;
+  models: {
+    anthropic: {
+      authorize: () => Promise<AnthropicOAuthResult>;
+    };
+    openai: {
+      authorize: () => Promise<OpenAIOAuthResult>;
+    };
+    providers: {
+      load: (autoRefresh?: boolean) => Promise<LoadProvidersResult>;
+      save: (request: SaveProviderRequest) => Promise<SaveProviderResult>;
+    };
+    validate: (request: ValidateTokenRequest) => Promise<ValidateTokenResponse>;
   };
   config: {
     get: () => Promise<Record<string, unknown>>;
@@ -176,9 +201,6 @@ export interface AgentageAPI {
   settings: {
     get: () => Promise<Settings>;
     update: (updates: Partial<Settings>) => Promise<void>;
-    getModelProvider: (id: string) => Promise<ModelProvider | undefined>;
-    setModelProvider: (provider: ModelProvider) => Promise<void>;
-    removeModelProvider: (id: string) => Promise<void>;
   };
   workspace: {
     list: () => Promise<Workspace[]>;
@@ -213,17 +235,18 @@ const api: AgentageAPI = {
       ipcRenderer.invoke('auth:unlinkProvider', provider),
     getProviders: () => ipcRenderer.invoke('auth:getProviders'),
   },
-  keys: {
-    autodiscover: () => ipcRenderer.invoke('keys:autodiscover'),
-    validate: (request: ValidateKeyRequest) => ipcRenderer.invoke('keys:validate', request),
-    save: (config: ProviderKeyConfig) => ipcRenderer.invoke('keys:save', config),
-    load: () => ipcRenderer.invoke('keys:load'),
-  },
-  oauth: {
-    getExistingTokens: () => ipcRenderer.invoke('oauth:getExistingTokens'),
-    authorize: () => ipcRenderer.invoke('oauth:authorize'),
-    createApiKey: (accessToken: string, name?: string) =>
-      ipcRenderer.invoke('oauth:createApiKey', accessToken, name),
+  models: {
+    anthropic: {
+      authorize: () => ipcRenderer.invoke('models:anthropic:authorize'),
+    },
+    openai: {
+      authorize: () => ipcRenderer.invoke('models:openai:authorize'),
+    },
+    providers: {
+      load: (autoRefresh?: boolean) => ipcRenderer.invoke('models:providers:load', autoRefresh),
+      save: (request: SaveProviderRequest) => ipcRenderer.invoke('models:providers:save', request),
+    },
+    validate: (request: ValidateTokenRequest) => ipcRenderer.invoke('models:validate', request),
   },
   config: {
     get: () => ipcRenderer.invoke('config:get'),
@@ -242,10 +265,6 @@ const api: AgentageAPI = {
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
     update: (updates: Partial<Settings>) => ipcRenderer.invoke('settings:update', updates),
-    getModelProvider: (id: string) => ipcRenderer.invoke('settings:getModelProvider', id),
-    setModelProvider: (provider: ModelProvider) =>
-      ipcRenderer.invoke('settings:setModelProvider', provider),
-    removeModelProvider: (id: string) => ipcRenderer.invoke('settings:removeModelProvider', id),
   },
   workspace: {
     list: () => ipcRenderer.invoke('workspace:list'),
