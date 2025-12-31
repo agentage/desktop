@@ -6,7 +6,6 @@ import { modelProviderConfigSchema, syncedSettingsSchema } from '../../shared/sc
 import type {
   AppConfig,
   ExternalToken,
-  ModelProvider,
   Settings,
   SyncedSettings,
 } from '../../shared/types/index.js';
@@ -201,38 +200,4 @@ export const updateSettings = async (updates: Partial<Settings>): Promise<void> 
   };
 
   await saveConfig(updatedConfig);
-};
-
-/**
- * Get model provider by ID
- */
-export const getModelProvider = async (id: string): Promise<ModelProvider | undefined> => {
-  const config = await loadConfig();
-  return config.models?.find((m) => m.id === id);
-};
-
-/**
- * Add or update model provider
- */
-export const setModelProvider = async (provider: ModelProvider): Promise<void> => {
-  const config = await loadConfig();
-  const models = config.models ?? [];
-  const index = models.findIndex((m) => m.id === provider.id);
-
-  if (index >= 0) {
-    models[index] = provider;
-  } else {
-    models.push(provider);
-  }
-
-  await saveConfig({ ...config, models });
-};
-
-/**
- * Remove model provider by ID
- */
-export const removeModelProvider = async (id: string): Promise<void> => {
-  const config = await loadConfig();
-  const models = (config.models ?? []).filter((m) => m.id !== id);
-  await saveConfig({ ...config, models });
 };

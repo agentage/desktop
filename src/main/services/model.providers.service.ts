@@ -106,11 +106,9 @@ const extractAccountIdFromJWT = (token: string): string | undefined => {
  * This is the same API that Codex CLI uses
  */
 const fetchChatGPTModels = async (token: string): Promise<ValidateTokenResponse> => {
-  console.log('[OpenAI ChatGPT] Fetching models from ChatGPT backend API');
   try {
     // Extract account ID from JWT token
     const accountId = extractAccountIdFromJWT(token);
-    console.log('[OpenAI ChatGPT] Account ID from token:', accountId);
 
     // client_version is required - use stable released version
     const clientVersion = '0.77.0';
@@ -135,27 +133,19 @@ const fetchChatGPTModels = async (token: string): Promise<ValidateTokenResponse>
       }
     );
 
-    console.log('[OpenAI ChatGPT] Response status:', response.status);
-
     if (response.status === 401 || response.status === 403) {
-      const errorText = await response.text();
-      console.log('[OpenAI ChatGPT] Auth error:', errorText);
       return { valid: false, error: 'invalid_token' };
     }
 
     // 404 means the /models endpoint is not available for this account
     // This is expected for some accounts - use fallback models instead
     if (response.status === 404) {
-      console.log('[OpenAI ChatGPT] Models endpoint not available (404), using fallback models');
       return { valid: true, models: OPENAI_CHATGPT_FALLBACK_MODELS };
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.log('[OpenAI ChatGPT] Non-OK response:', response.status, errorText);
       // For other errors, still return valid with fallback models
       // The token is valid (not 401/403), just the models endpoint has issues
-      console.log('[OpenAI ChatGPT] Using fallback models due to API error');
       return { valid: true, models: OPENAI_CHATGPT_FALLBACK_MODELS };
     }
 
@@ -169,7 +159,6 @@ const fetchChatGPTModels = async (token: string): Promise<ValidateTokenResponse>
       }[];
       etag?: string;
     };
-    console.log('[OpenAI ChatGPT] Models response:', JSON.stringify(data).substring(0, 500));
 
     const models: ModelInfo[] =
       data.models
@@ -180,12 +169,9 @@ const fetchChatGPTModels = async (token: string): Promise<ValidateTokenResponse>
         }))
         .sort((a, b) => a.displayName.localeCompare(b.displayName)) ?? [];
 
-    console.log('[OpenAI ChatGPT] Models count:', models.length);
-    return { valid: true, models };
-  } catch (err) {
-    console.error('[OpenAI ChatGPT] Error:', err);
+    return { valid: true, models: models.length > 0 ? models : OPENAI_CHATGPT_FALLBACK_MODELS };
+  } catch {
     // Network errors shouldn't invalidate the token - use fallback models
-    console.log('[OpenAI ChatGPT] Using fallback models due to network error');
     return { valid: true, models: OPENAI_CHATGPT_FALLBACK_MODELS };
   }
 };
@@ -194,7 +180,6 @@ const fetchChatGPTModels = async (token: string): Promise<ValidateTokenResponse>
  * Fetch models from public OpenAI API (for API keys)
  */
 const fetchOpenAIPublicModels = async (token: string): Promise<ValidateTokenResponse> => {
-  console.log('[OpenAI API] Fetching models from public API');
   try {
     const response = await fetch('https://api.openai.com/v1/models', {
       method: 'GET',
@@ -203,24 +188,16 @@ const fetchOpenAIPublicModels = async (token: string): Promise<ValidateTokenResp
       },
     });
 
-    console.log('[OpenAI API] Response status:', response.status);
-
     if (response.status === 401) {
-      const errorText = await response.text();
-      console.log('[OpenAI API] 401 error:', errorText);
       return { valid: false, error: 'invalid_token' };
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.log('[OpenAI API] Non-OK response:', response.status, errorText);
       // For non-auth errors, use fallback models
-      console.log('[OpenAI API] Using fallback models due to API error');
       return { valid: true, models: OPENAI_API_FALLBACK_MODELS };
     }
 
     const data = (await response.json()) as { data?: { id: string; created?: number }[] };
-    console.log('[OpenAI API] Models response, count:', data.data?.length ?? 0);
 
     const models: ModelInfo[] =
       data.data
@@ -239,17 +216,10 @@ const fetchOpenAIPublicModels = async (token: string): Promise<ValidateTokenResp
         }))
         .sort((a, b) => a.id.localeCompare(b.id)) ?? [];
 
-    console.log('[OpenAI API] Filtered models count:', models.length);
     // If API returned no matching models, use fallback
-    if (models.length === 0) {
-      console.log('[OpenAI API] No models from API, using fallback models');
-      return { valid: true, models: OPENAI_API_FALLBACK_MODELS };
-    }
-    return { valid: true, models };
-  } catch (err) {
-    console.error('[OpenAI API] Error:', err);
+    return { valid: true, models: models.length > 0 ? models : OPENAI_API_FALLBACK_MODELS };
+  } catch {
     // Network errors shouldn't invalidate the token - use fallback models
-    console.log('[OpenAI API] Using fallback models due to network error');
     return { valid: true, models: OPENAI_API_FALLBACK_MODELS };
   }
 };
@@ -259,16 +229,12 @@ const fetchOpenAIPublicModels = async (token: string): Promise<ValidateTokenResp
  * Uses ChatGPT backend API for JWT tokens (OAuth), public API for API keys
  */
 const validateOpenAIToken = async (token: string): Promise<ValidateTokenResponse> => {
-  console.log('[OpenAI] Validating token, prefix:', token.substring(0, 15) + '...');
-
   // JWT tokens (from OAuth) use ChatGPT backend API
   if (isJWTToken(token)) {
-    console.log('[OpenAI] Detected JWT token, using ChatGPT backend API');
     return fetchChatGPTModels(token);
   }
 
   // API keys (sk-...) use public OpenAI API
-  console.log('[OpenAI] Detected API key, using public OpenAI API');
   return fetchOpenAIPublicModels(token);
 };
 
@@ -276,8 +242,6 @@ const validateOpenAIToken = async (token: string): Promise<ValidateTokenResponse
  * Validate Anthropic token by making a minimal API call
  */
 const validateAnthropicToken = async (token: string): Promise<ValidateTokenResponse> => {
-  console.log('[Anthropic] Validating token, prefix:', token.substring(0, 10) + '...');
-
   // Detect token type from prefix
   const isOAuthToken = token.startsWith('sk-ant-oat');
   const isJWT = token.startsWith('eyJ');
@@ -305,8 +269,6 @@ const validateAnthropicToken = async (token: string): Promise<ValidateTokenRespo
       headers,
     });
 
-    console.log('[Anthropic] Models API status:', modelsResponse.status);
-
     if (modelsResponse.status === 401) {
       return { valid: false, error: 'invalid_token' };
     }
@@ -315,8 +277,6 @@ const validateAnthropicToken = async (token: string): Promise<ValidateTokenRespo
       const data = (await modelsResponse.json()) as {
         data?: { id: string; display_name: string; created_at: string; type: string }[];
       };
-
-      console.log('[Anthropic] Models API response data:', JSON.stringify(data, null, 2));
 
       if (data.data && data.data.length > 0) {
         const models: ModelInfo[] = data.data
@@ -327,13 +287,11 @@ const validateAnthropicToken = async (token: string): Promise<ValidateTokenRespo
             createdAt: m.created_at,
             enabled: false,
           }));
-        console.log('[Anthropic] Token validated successfully, models from API:', models);
         return { valid: true, models };
       }
     }
 
     // Fallback: validate with messages endpoint if models endpoint fails
-    console.log('[Anthropic] Models endpoint failed, trying messages endpoint...');
     headers['Content-Type'] = 'application/json';
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -351,17 +309,11 @@ const validateAnthropicToken = async (token: string): Promise<ValidateTokenRespo
     }
 
     if (response.status === 200 || response.status === 429 || response.status === 400) {
-      console.log(
-        '[Anthropic] Token validated via messages, using fallback models:',
-        ANTHROPIC_FALLBACK_MODELS
-      );
       return { valid: true, models: ANTHROPIC_FALLBACK_MODELS };
     }
 
-    console.log('[Anthropic] Validation failed with status:', response.status);
     return { valid: false, error: 'network_error' };
-  } catch (error) {
-    console.log('[Anthropic] Validation error:', error);
+  } catch {
     return { valid: false, error: 'network_error' };
   }
 };
@@ -397,7 +349,6 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
 
       // Check if models need refresh
       if (isStale(providerConfig.lastFetchedAt)) {
-        console.log(`[loadProviders] Refreshing stale models for ${providerConfig.provider}`);
         const result = await validateToken(providerConfig.provider, providerConfig.token);
 
         if (result.valid && result.models) {

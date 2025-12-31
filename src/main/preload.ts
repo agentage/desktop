@@ -201,9 +201,6 @@ export interface AgentageAPI {
   settings: {
     get: () => Promise<Settings>;
     update: (updates: Partial<Settings>) => Promise<void>;
-    getModelProvider: (id: string) => Promise<ModelProvider | undefined>;
-    setModelProvider: (provider: ModelProvider) => Promise<void>;
-    removeModelProvider: (id: string) => Promise<void>;
   };
   workspace: {
     list: () => Promise<Workspace[]>;
@@ -268,10 +265,6 @@ const api: AgentageAPI = {
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
     update: (updates: Partial<Settings>) => ipcRenderer.invoke('settings:update', updates),
-    getModelProvider: (id: string) => ipcRenderer.invoke('settings:getModelProvider', id),
-    setModelProvider: (provider: ModelProvider) =>
-      ipcRenderer.invoke('settings:setModelProvider', provider),
-    removeModelProvider: (id: string) => ipcRenderer.invoke('settings:removeModelProvider', id),
   },
   workspace: {
     list: () => ipcRenderer.invoke('workspace:list'),
