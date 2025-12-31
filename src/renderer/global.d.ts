@@ -144,9 +144,6 @@ interface AgentageAPI {
   settings: {
     get: () => Promise<Settings>;
     update: (updates: Partial<Settings>) => Promise<void>;
-    getModelProvider: (id: string) => Promise<ModelProvider | undefined>;
-    setModelProvider: (provider: ModelProvider) => Promise<void>;
-    removeModelProvider: (id: string) => Promise<void>;
   };
   window: {
     minimize: () => Promise<void>;

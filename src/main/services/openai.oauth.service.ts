@@ -131,9 +131,6 @@ const buildAuthorizeUrl = (codeChallenge: string, state: string, redirectUri: st
   const queryString = params.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
   const url = `${OPENAI_OAUTH_CONFIG.AUTHORIZE_URL}?${queryString}`;
 
-  // Debug: log the URL
-  console.log('[OpenAI OAuth] Authorization URL:', url);
-
   return url;
 };
 
@@ -226,15 +223,6 @@ const extractAccountIdFromIdToken = (idToken: string): string | undefined =>
  * NOTE: Requires the id_token to have organization_id claim embedded
  */
 export const exchangeIdTokenForApiKey = async (idToken: string): Promise<string> => {
-  // Log claims for debugging
-  const claims = extractAuthClaimsFromIdToken(idToken);
-  console.log('[OpenAI] Token exchange - id_token claims:', {
-    hasOrgId: !!claims?.organization_id,
-    orgId: claims?.organization_id,
-    orgsCount: claims?.organizations?.length ?? 0,
-    organizations: claims?.organizations?.map((o) => o.id),
-  });
-
   // Standard token exchange - no organization_id parameter (it must be in the id_token)
   const body = new URLSearchParams({
     grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange',
