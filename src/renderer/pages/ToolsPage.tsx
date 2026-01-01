@@ -143,12 +143,12 @@ export const ToolsPage = (): React.JSX.Element => {
     const msg = messages[source];
 
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="p-3 rounded-full bg-muted mb-4">
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="p-2 rounded-full bg-muted mb-2">
           <WrenchIcon />
         </div>
-        <h3 className="text-sm font-medium text-foreground mb-1">{msg.title}</h3>
-        <p className="text-sm text-muted-foreground">{msg.description}</p>
+        <h3 className="text-xs font-medium text-foreground mb-0.5">{msg.title}</h3>
+        <p className="text-xs text-muted-foreground">{msg.description}</p>
       </div>
     );
   };
@@ -162,14 +162,14 @@ export const ToolsPage = (): React.JSX.Element => {
   }
 
   return (
-    <div className="flex-1 p-6 h-full">
-      <div className="max-w-2xl mx-auto space-y-6 pb-48">
+    <div className="flex-1 p-4 h-full">
+      <div className="max-w-3xl mx-auto space-y-4 pb-48">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-md bg-primary/10">
             <WrenchIcon />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">Tools</h1>
+          <h1 className="text-base font-semibold text-foreground">Tools</h1>
           <IconButton
             icon={<RefreshIcon />}
             onClick={() => void handleRefresh()}
@@ -186,7 +186,7 @@ export const ToolsPage = (): React.JSX.Element => {
         <ToggleGroup value={activeTab} onChange={setActiveTab} options={TAB_OPTIONS} columns={4} />
 
         {/* Tool List */}
-        <div className="space-y-3">
+        <div className="space-y-1">
           {hasToolsForTab(activeTab)
             ? filteredTools.map((tool) => (
                 <ToolCard
@@ -203,7 +203,7 @@ export const ToolsPage = (): React.JSX.Element => {
         </div>
 
         {/* Footer */}
-        <div className="text-sm text-muted-foreground text-center">
+        <div className="text-xs text-muted-foreground text-center">
           {totalCount} {totalCount === 1 ? 'tool' : 'tools'} • {enabledCount} enabled
         </div>
       </div>

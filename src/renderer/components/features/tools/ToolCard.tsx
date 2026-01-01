@@ -1,6 +1,6 @@
 import type { ToolSource, ToolStatus } from '../../../../shared/types/index.js';
 import { cn } from '../../../lib/utils.js';
-import { Badge, Switch } from '../../ui/index.js';
+import { Switch } from '../../ui/index.js';
 
 export interface ToolCardProps {
   name: string;
@@ -12,41 +12,24 @@ export interface ToolCardProps {
 }
 
 /**
- * Status indicator component
+ * Status indicator - compact dot
  */
-const StatusIndicator = ({ status }: { status: ToolStatus }): React.JSX.Element => {
-  const statusConfig: Record<ToolStatus, { emoji: string; label: string }> = {
-    ready: { emoji: '🟢', label: 'Ready' },
-    warning: { emoji: '⚠️', label: 'Warning' },
-    error: { emoji: '🔴', label: 'Error' },
+const StatusDot = ({ status }: { status: ToolStatus }): React.JSX.Element => {
+  const statusConfig: Record<ToolStatus, { color: string; label: string }> = {
+    ready: { color: 'bg-success', label: 'Ready' },
+    warning: { color: 'bg-warning', label: 'Warning' },
+    error: { color: 'bg-destructive', label: 'Error' },
   };
 
   const config = statusConfig[status];
 
-  return (
-    <span title={config.label} className="text-sm">
-      {config.emoji}
-    </span>
-  );
+  return <span title={config.label} className={cn('w-2 h-2 rounded-full', config.color)} />;
 };
 
 /**
- * Source badge component
- */
-const SourceBadge = ({ source }: { source: ToolSource }): React.JSX.Element => {
-  const variantMap: Record<ToolSource, 'secondary' | 'outline'> = {
-    builtin: 'secondary',
-    global: 'outline',
-    workspace: 'outline',
-  };
-
-  return <Badge variant={variantMap[source]}>{source}</Badge>;
-};
-
-/**
- * ToolCard - Individual tool display component
+ * ToolCard - Compact single-row tool display
  *
- * Displays tool information with enable/disable toggle.
+ * Optimized for lists with 200+ tools.
  *
  * @example
  * <ToolCard
@@ -68,24 +51,23 @@ export const ToolCard = ({
 }: ToolCardProps): React.JSX.Element => (
   <div
     className={cn(
-      'flex flex-col gap-2 p-4 rounded-lg border border-border bg-card',
-      'hover:border-primary/30 transition-colors'
+      'flex items-center gap-3 px-3 py-2 rounded-md border border-border bg-card',
+      'hover:border-primary/30 transition-colors group'
     )}
   >
-    {/* Header: Checkbox + Name */}
-    <div className="flex items-center gap-3">
-      <Switch checked={enabled} onCheckedChange={onToggle} aria-label={`Enable ${name}`} />
-      <span className="font-mono text-sm font-medium text-foreground">{name}</span>
-    </div>
-
-    {/* Description */}
-    <p className="text-sm text-muted-foreground pl-12">{description}</p>
-
-    {/* Footer: Source badge + Status */}
-    <div className="flex items-center justify-end gap-2 pl-12">
-      <SourceBadge source={source} />
-      <span className="text-muted-foreground">•</span>
-      <StatusIndicator status={status} />
-    </div>
+    <Switch
+      checked={enabled}
+      onCheckedChange={onToggle}
+      aria-label={`Enable ${name}`}
+      className="shrink-0"
+    />
+    <StatusDot status={status} />
+    <span className="font-mono text-xs font-medium text-foreground shrink-0">{name}</span>
+    <span className="text-xs text-muted-foreground truncate flex-1" title={description}>
+      {description}
+    </span>
+    <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider shrink-0">
+      {source}
+    </span>
   </div>
 );
