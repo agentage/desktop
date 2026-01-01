@@ -14,9 +14,25 @@ import type {
 import { loadProviders, resolveProviderToken } from './model.providers.service.js';
 
 /**
+ * Required system prompt for OAuth tokens (Claude Pro/Max)
+ * CRITICAL: Must be the FIRST element in system prompt array
+ */
+const CLAUDE_CODE_SYSTEM_PROMPT = "You are Claude Code, Anthropic's official CLI for Claude.";
+
+/**
+ * Required beta header for OAuth tokens
+ */
+const ANTHROPIC_BETA = 'oauth-2025-04-20,claude-code-20250219,interleaved-thinking-2025-05-14';
+
+/**
  * Active session configuration
  */
 let currentConfig: SessionConfig | null = null;
+
+/**
+ * Track if current token is OAuth (for system prompt requirements)
+ */
+let isOAuthToken = false;
 
 /**
  * In-memory conversation storage
@@ -36,8 +52,8 @@ const generateId = (prefix: string): string =>
 
 /**
  * Get Anthropic client with current token
- * Note: Only API keys (sk-ant-api*) are supported. OAuth access tokens
- * (sk-ant-oat*) are restricted to Claude Code and cannot be used.
+ * Supports both API keys (sk-ant-api*) and OAuth tokens (sk-ant-oat*)
+ * OAuth tokens require special headers and system prompt
  */
 const getAnthropicClient = async (): Promise<Anthropic> => {
   const token = await resolveProviderToken('anthropic');
@@ -46,14 +62,20 @@ const getAnthropicClient = async (): Promise<Anthropic> => {
     throw new Error('Anthropic API key not configured');
   }
 
-  // Reject OAuth access tokens - they're restricted to Claude Code only
-  if (token.startsWith('sk-ant-oat')) {
-    throw new Error(
-      'OAuth access tokens cannot be used directly. ' +
-        'Please re-authorize to generate an API key, or enter an API key from console.anthropic.com'
-    );
+  // Detect OAuth token (sk-ant-oat*)
+  isOAuthToken = token.startsWith('sk-ant-oat');
+
+  if (isOAuthToken) {
+    // OAuth tokens use authToken and require beta headers
+    return new Anthropic({
+      authToken: token,
+      defaultHeaders: {
+        'anthropic-beta': ANTHROPIC_BETA,
+      },
+    });
   }
 
+  // API keys use apiKey
   return new Anthropic({ apiKey: token });
 };
 
@@ -187,13 +209,31 @@ const streamResponse = async (
     const client = await getAnthropicClient();
     const messages = buildMessages(conversation, request);
 
+    // Build system prompt - OAuth tokens require Claude Code prompt FIRST
+    let systemPrompt: string | Anthropic.TextBlockParam[] | undefined;
+
+    if (isOAuthToken) {
+      // OAuth: Required system prompt must be first
+      if (config.system) {
+        systemPrompt = [
+          { type: 'text', text: CLAUDE_CODE_SYSTEM_PROMPT },
+          { type: 'text', text: config.system },
+        ];
+      } else {
+        systemPrompt = CLAUDE_CODE_SYSTEM_PROMPT;
+      }
+    } else {
+      // API key: Use custom system prompt as-is
+      systemPrompt = config.system;
+    }
+
     const stream = client.messages.stream(
       {
         model: config.model,
         max_tokens: config.options?.maxTokens ?? 4096,
         temperature: config.options?.temperature,
         top_p: config.options?.topP,
-        system: config.system,
+        system: systemPrompt,
         messages,
       },
       { signal }
@@ -271,6 +311,15 @@ const streamResponse = async (
         type: 'error',
         code: 'AUTH_ERROR',
         message: 'Invalid or expired API key. Please re-authorize Anthropic in Settings → Models.',
+        recoverable: false,
+      });
+    } else if (err.status === 400 && message.includes('Claude Code')) {
+      // OAuth token without required system prompt
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'AUTH_ERROR',
+        message: 'OAuth token requires Claude Code system prompt. Please report this bug.',
         recoverable: false,
       });
     } else if (err.status === 429) {
