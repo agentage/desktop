@@ -11,7 +11,7 @@ import type {
   Conversation,
   SessionConfig,
 } from '../../shared/types/chat.types.js';
-import { loadConfig } from './config.service.js';
+import { loadProviders, resolveProviderToken } from './model.providers.service.js';
 
 /**
  * Active session configuration
@@ -40,14 +40,11 @@ const generateId = (prefix: string): string =>
  * (sk-ant-oat*) are restricted to Claude Code and cannot be used.
  */
 const getAnthropicClient = async (): Promise<Anthropic> => {
-  const config = await loadConfig();
-  const anthropicProvider = config.modelProviders?.find((p) => p.provider === 'anthropic');
+  const token = await resolveProviderToken('anthropic');
 
-  if (!anthropicProvider?.token) {
+  if (!token) {
     throw new Error('Anthropic API key not configured');
   }
-
-  const token = anthropicProvider.token;
 
   // Reject OAuth access tokens - they're restricted to Claude Code only
   if (token.startsWith('sk-ant-oat')) {
@@ -339,10 +336,10 @@ export const clearHistory = (): void => {
  * Get available models from configured providers
  */
 export const getModels = async (): Promise<ChatModelInfo[]> => {
-  const config = await loadConfig();
+  const result = await loadProviders();
   const models: ChatModelInfo[] = [];
 
-  for (const provider of config.modelProviders ?? []) {
+  for (const provider of result.providers) {
     if (!provider.enabled) continue;
 
     for (const model of provider.models) {

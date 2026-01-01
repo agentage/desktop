@@ -65,6 +65,7 @@ interface Settings {
 
 // Model providers types
 type ModelProviderType = 'anthropic' | 'openai';
+type TokenSource = 'manual' | 'oauth:codex' | 'oauth:claude';
 
 interface ValidateTokenRequest {
   provider: ModelProviderType;
@@ -87,7 +88,8 @@ interface ValidateTokenResponse {
 
 interface ModelProviderConfig {
   provider: ModelProviderType;
-  token: string;
+  source: TokenSource;
+  token?: string; // Only when source === 'manual'
   enabled: boolean;
   lastFetchedAt?: string;
   models: ModelInfo[];
@@ -95,7 +97,8 @@ interface ModelProviderConfig {
 
 interface SaveProviderRequest {
   provider: ModelProviderType;
-  token: string;
+  source: TokenSource;
+  token?: string; // Only when source === 'manual'
   enabled: boolean;
   lastFetchedAt?: string;
   models: ModelInfo[];
