@@ -7,6 +7,7 @@ import {
   AccountsPage,
   AgentPage,
   AgentsPage,
+  ConnectionsPage,
   ContextPage,
   ErrorPage,
   HelpPage,
@@ -14,7 +15,6 @@ import {
   LoginPage,
   ModelsPage,
   NewAgentPage,
-  SecretsPage,
   SettingsPage,
   TasksPage,
   ToolsPage,
@@ -73,8 +73,8 @@ export const router = createHashRouter([
                 element: <ToolsPage />,
               },
               {
-                path: '/secrets',
-                element: <SecretsPage />,
+                path: '/connections',
+                element: <ConnectionsPage />,
               },
               {
                 path: '/context',

@@ -32,12 +32,22 @@ export const registerOAuthHandlers = (ipcMain: IpcMain): void => {
     try {
       const tokens = await authorizeWithAnthropic();
 
-      // Try to create API key using OAuth token
+      // Create API key using OAuth token - REQUIRED because access tokens
+      // are restricted to Claude Code only and cannot be used by third-party apps
       let apiKey: string | undefined;
       try {
         apiKey = await createApiKeyWithOAuth(tokens.accessToken);
-      } catch {
-        // API key creation is optional - token works without it
+      } catch (apiKeyError) {
+        // API key creation failed - this is a critical error
+        // Access tokens alone cannot be used (restricted to Claude Code)
+        console.error('[OAuth] API key creation failed:', apiKeyError);
+        return {
+          success: false,
+          tokens,
+          error:
+            'Failed to create API key. Your Claude account may not have API access. ' +
+            'Please ensure you have an active API subscription at console.anthropic.com',
+        };
       }
 
       return { success: true, tokens, apiKey };

@@ -2,8 +2,10 @@ import type { BrowserWindow, IpcMain } from 'electron';
 import { registerAgentsHandlers } from './agents.handler.js';
 import { registerAppHandlers, setupRendererReadyMonitor } from './app.handler.js';
 import { registerAuthHandlers } from './auth.handler.js';
+import { registerChatHandlers } from './chat.handler.js';
 import { registerConfigHandlers } from './config.handler.js';
 import { registerModelProvidersHandlers } from './model.providers.handler.js';
+import { registerOAuthConnectHandlers } from './oauth-connect.handler.js';
 import { registerOAuthHandlers } from './oauth.handler.js';
 import { registerWindowHandlers } from './window.handler.js';
 import { registerWorkspaceHandlers } from './workspace.handler.js';
@@ -16,9 +18,11 @@ export const registerIpcHandlers = (
 ): void => {
   registerAgentsHandlers(ipcMain);
   registerAuthHandlers(ipcMain);
+  registerChatHandlers(ipcMain, getMainWindow);
   registerConfigHandlers(ipcMain);
   registerModelProvidersHandlers(ipcMain);
   registerOAuthHandlers(ipcMain);
+  registerOAuthConnectHandlers(ipcMain);
   registerAppHandlers(ipcMain, getMainWindow);
   registerWindowHandlers(ipcMain, getMainWindow);
   registerWorkspaceHandlers(ipcMain, getMainWindow);

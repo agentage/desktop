@@ -39,7 +39,7 @@ export interface ContextBreakdownData {
   currentContext: number;
   maxContext: number;
   items: ContextItem[];
-  claudeFiles?: { path: string; tokens: number }[];
+  agentageFiles?: { path: string; tokens: number }[];
   timestamp: string;
 }
 

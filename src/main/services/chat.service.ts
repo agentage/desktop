@@ -1,0 +1,389 @@
+import Anthropic from '@anthropic-ai/sdk';
+import { chatSendRequestSchema, sessionConfigSchema } from '../../shared/schemas/chat.schema.js';
+import type {
+  ChatAgentInfo,
+  ChatEvent,
+  ChatMessage,
+  ChatModelInfo,
+  ChatSendRequest,
+  ChatSendResponse,
+  ChatToolInfo,
+  Conversation,
+  SessionConfig,
+} from '../../shared/types/chat.types.js';
+import { loadConfig } from './config.service.js';
+
+/**
+ * Active session configuration
+ */
+let currentConfig: SessionConfig | null = null;
+
+/**
+ * In-memory conversation storage
+ */
+const conversations = new Map<string, Conversation>();
+
+/**
+ * Active requests for cancellation
+ */
+const activeRequests = new Map<string, AbortController>();
+
+/**
+ * Generate unique ID
+ */
+const generateId = (prefix: string): string =>
+  `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+
+/**
+ * Get Anthropic client with current token
+ * Note: Only API keys (sk-ant-api*) are supported. OAuth access tokens
+ * (sk-ant-oat*) are restricted to Claude Code and cannot be used.
+ */
+const getAnthropicClient = async (): Promise<Anthropic> => {
+  const config = await loadConfig();
+  const anthropicProvider = config.modelProviders?.find((p) => p.provider === 'anthropic');
+
+  if (!anthropicProvider?.token) {
+    throw new Error('Anthropic API key not configured');
+  }
+
+  const token = anthropicProvider.token;
+
+  // Reject OAuth access tokens - they're restricted to Claude Code only
+  if (token.startsWith('sk-ant-oat')) {
+    throw new Error(
+      'OAuth access tokens cannot be used directly. ' +
+        'Please re-authorize to generate an API key, or enter an API key from console.anthropic.com'
+    );
+  }
+
+  return new Anthropic({ apiKey: token });
+};
+
+/**
+ * Configure the active session
+ */
+export const configureSession = (config: SessionConfig): void => {
+  const validated = sessionConfigSchema.parse(config);
+  currentConfig = validated;
+};
+
+/**
+ * Get or create conversation
+ */
+const getOrCreateConversation = (
+  sessionConfig: SessionConfig,
+  conversationId?: string
+): Conversation => {
+  if (conversationId && conversations.has(conversationId)) {
+    const existing = conversations.get(conversationId);
+    if (existing) return existing;
+  }
+
+  const id = conversationId ?? generateId('conv');
+  const now = new Date().toISOString();
+
+  const conversation: Conversation = {
+    id,
+    config: sessionConfig,
+    messages: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  conversations.set(id, conversation);
+  return conversation;
+};
+
+/**
+ * Build messages array for Anthropic API
+ */
+const buildMessages = (
+  conversation: Conversation,
+  newMessage: ChatSendRequest
+): Anthropic.MessageParam[] => {
+  const messages: Anthropic.MessageParam[] = [];
+
+  // Add history
+  for (const msg of conversation.messages) {
+    messages.push({
+      role: msg.role,
+      content: msg.content,
+    });
+  }
+
+  // Add new user message with references
+  let content = newMessage.prompt;
+
+  if (newMessage.references?.length) {
+    const refTexts = newMessage.references
+      .filter((ref) => ref.content)
+      .map((ref) => `[${ref.type}: ${ref.uri}]\n${String(ref.content)}`)
+      .join('\n\n');
+
+    if (refTexts) {
+      content = `${refTexts}\n\n${newMessage.prompt}`;
+    }
+  }
+
+  messages.push({ role: 'user', content });
+
+  return messages;
+};
+
+/**
+ * Send a chat message and stream response
+ */
+export const sendMessage = (
+  request: ChatSendRequest,
+  emitEvent: (event: ChatEvent) => void
+): ChatSendResponse => {
+  const validated = chatSendRequestSchema.parse(request);
+
+  if (!currentConfig) {
+    throw new Error('Session not configured. Call configure() first.');
+  }
+
+  const requestId = generateId('req');
+  const conversation = getOrCreateConversation(currentConfig, currentConfig.conversationId);
+  const abortController = new AbortController();
+
+  activeRequests.set(requestId, abortController);
+
+  // Add user message to history
+  const userMessage: ChatMessage = {
+    role: 'user',
+    content: validated.prompt,
+    references: validated.references,
+    timestamp: new Date().toISOString(),
+  };
+  conversation.messages.push(userMessage);
+  conversation.updatedAt = userMessage.timestamp;
+
+  // Start streaming in background
+  void streamResponse(
+    requestId,
+    conversation,
+    validated,
+    emitEvent,
+    abortController.signal,
+    currentConfig
+  );
+
+  return { requestId, conversationId: conversation.id };
+};
+
+/**
+ * Stream response from Anthropic
+ */
+const streamResponse = async (
+  requestId: string,
+  conversation: Conversation,
+  request: ChatSendRequest,
+  emitEvent: (event: ChatEvent) => void,
+  signal: AbortSignal,
+  config: SessionConfig
+): Promise<void> => {
+  let fullResponse = '';
+
+  try {
+    const client = await getAnthropicClient();
+    const messages = buildMessages(conversation, request);
+
+    const stream = client.messages.stream(
+      {
+        model: config.model,
+        max_tokens: config.options?.maxTokens ?? 4096,
+        temperature: config.options?.temperature,
+        top_p: config.options?.topP,
+        system: config.system,
+        messages,
+      },
+      { signal }
+    );
+
+    for await (const event of stream) {
+      if (signal.aborted) {
+        emitEvent({
+          requestId,
+          type: 'error',
+          code: 'CANCELLED',
+          message: 'Request cancelled',
+          recoverable: false,
+        });
+        return;
+      }
+
+      if (event.type === 'content_block_delta') {
+        const delta = event.delta;
+        if ('text' in delta) {
+          fullResponse += delta.text;
+          emitEvent({ requestId, type: 'text', text: delta.text });
+        } else if ('thinking' in delta) {
+          emitEvent({ requestId, type: 'thinking', text: delta.thinking });
+        }
+      }
+    }
+
+    // Get final message for usage stats
+    const finalMessage = await stream.finalMessage();
+
+    // Emit usage
+    emitEvent({
+      requestId,
+      type: 'usage',
+      inputTokens: finalMessage.usage.input_tokens,
+      outputTokens: finalMessage.usage.output_tokens,
+    });
+
+    // Add assistant message to history
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: fullResponse,
+      timestamp: new Date().toISOString(),
+    };
+    conversation.messages.push(assistantMessage);
+    conversation.updatedAt = assistantMessage.timestamp;
+
+    // Emit done
+    emitEvent({
+      requestId,
+      type: 'done',
+      stopReason: finalMessage.stop_reason ?? 'end_turn',
+    });
+  } catch (error) {
+    const err = error as Error & { status?: number; error?: { type?: string } };
+
+    if (signal.aborted || err.name === 'AbortError') {
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'CANCELLED',
+        message: 'Request cancelled',
+        recoverable: false,
+      });
+      return;
+    }
+
+    // Map Anthropic errors to our error codes
+    const message = err.message || 'Unknown error';
+
+    if (err.status === 401) {
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'AUTH_ERROR',
+        message: 'Invalid or expired API key. Please re-authorize Anthropic in Settings → Models.',
+        recoverable: false,
+      });
+    } else if (err.status === 429) {
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'RATE_LIMIT',
+        message: 'Rate limit exceeded',
+        recoverable: true,
+      });
+    } else if (err.error?.type === 'invalid_request_error' && message.includes('context')) {
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'CONTEXT_LENGTH',
+        message,
+        recoverable: false,
+      });
+    } else if (err.name === 'TypeError' || message.includes('fetch')) {
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'NETWORK_ERROR',
+        message: 'Network error',
+        recoverable: true,
+      });
+    } else {
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'INTERNAL_ERROR',
+        message,
+        recoverable: false,
+      });
+    }
+  } finally {
+    activeRequests.delete(requestId);
+  }
+};
+
+/**
+ * Cancel an in-flight request
+ */
+export const cancelRequest = (requestId: string): void => {
+  const controller = activeRequests.get(requestId);
+  if (controller) {
+    controller.abort();
+    activeRequests.delete(requestId);
+  }
+};
+
+/**
+ * Clear conversation history
+ */
+export const clearHistory = (): void => {
+  if (currentConfig?.conversationId) {
+    conversations.delete(currentConfig.conversationId);
+  }
+  currentConfig = null;
+};
+
+/**
+ * Get available models from configured providers
+ */
+export const getModels = async (): Promise<ChatModelInfo[]> => {
+  const config = await loadConfig();
+  const models: ChatModelInfo[] = [];
+
+  for (const provider of config.modelProviders ?? []) {
+    if (!provider.enabled) continue;
+
+    for (const model of provider.models) {
+      if (!model.enabled) continue;
+
+      models.push({
+        id: model.id,
+        name: model.displayName,
+        provider: provider.provider,
+        contextWindow: getContextWindow(model.id),
+      });
+    }
+  }
+
+  return models;
+};
+
+/**
+ * Get context window for a model
+ */
+const getContextWindow = (modelId: string): number => {
+  // Claude models context windows
+  if (modelId.includes('claude-3-opus')) return 200000;
+  if (modelId.includes('claude-3-5') || modelId.includes('claude-3-7')) return 200000;
+  if (modelId.includes('claude-sonnet-4') || modelId.includes('claude-opus-4')) return 200000;
+  if (modelId.includes('claude-3-haiku')) return 200000;
+  // OpenAI models
+  if (modelId.includes('gpt-4o')) return 128000;
+  if (modelId.includes('gpt-4-turbo')) return 128000;
+  if (modelId.includes('gpt-4')) return 8192;
+  if (modelId.includes('gpt-3.5')) return 16385;
+  // Default
+  return 100000;
+};
+
+/**
+ * Get available tools (Phase 2 - returns empty for now)
+ */
+export const getTools = (): Promise<ChatToolInfo[]> => Promise.resolve([]);
+
+/**
+ * Get available agents (Phase 2 - returns empty for now)
+ */
+export const getAgents = (): Promise<ChatAgentInfo[]> => Promise.resolve([]);
