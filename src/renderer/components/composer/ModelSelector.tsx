@@ -12,12 +12,8 @@ const DEFAULT_MODELS: ModelOption[] = [
   { id: 'claude-3-haiku', name: 'claude-3-haiku', provider: 'Anthropic' },
 ];
 
-const AVAILABLE_AGENTS: AgentOption[] = [
-  { id: 'none', name: 'none' },
-  { id: 'coder', name: 'coder' },
-  { id: 'researcher', name: 'researcher' },
-  { id: 'writer', name: 'writer' },
-];
+// Default "none" agent - always available
+const NONE_AGENT: AgentOption = { id: 'none', name: 'none' };
 
 interface ModelSelectorProps {
   selectedModel: ModelOption;
@@ -25,6 +21,7 @@ interface ModelSelectorProps {
   selectedAgent?: AgentOption;
   onAgentChange?: (agent: AgentOption) => void;
   models?: ModelOption[];
+  agents?: AgentOption[];
   className?: string;
 }
 
@@ -36,15 +33,18 @@ interface ModelSelectorProps {
 export const ModelSelector = ({
   selectedModel,
   onModelChange,
-  selectedAgent = AVAILABLE_AGENTS[0],
+  selectedAgent = NONE_AGENT,
   onAgentChange,
   models = DEFAULT_MODELS,
+  agents = [],
   className,
 }: ModelSelectorProps): React.JSX.Element => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const availableModels = models.length > 0 ? models : DEFAULT_MODELS;
+  // Always include "none" as first option, then any agents from IPC
+  const availableAgents = [NONE_AGENT, ...agents.filter((a) => a.id !== 'none')];
 
   const handleSelectModel = (model: ModelOption): void => {
     onModelChange(model);
@@ -112,7 +112,7 @@ export const ModelSelector = ({
 
               {/* Agent section */}
               <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Agent</div>
-              {AVAILABLE_AGENTS.map((agent) => (
+              {availableAgents.map((agent) => (
                 <button
                   key={agent.id}
                   onClick={() => {

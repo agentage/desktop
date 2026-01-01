@@ -54,11 +54,14 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
     isLoading,
     error,
     models,
+    agents,
     selectedModel,
+    selectedAgent,
     sendMessage,
     cancel,
     clear,
     selectModel,
+    selectAgent,
   } = useChat();
 
   const handleMouseDown = useCallback(
@@ -101,6 +104,13 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
       selectModel(model.id);
     },
     [selectModel]
+  );
+
+  const handleAgentChange = useCallback(
+    (agent: { id: string }) => {
+      selectAgent(agent.id);
+    },
+    [selectAgent]
   );
 
   if (!isOpen) return null;
@@ -189,6 +199,11 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
               : undefined
           }
           onModelChange={handleModelChange}
+          agents={agents.map((a) => ({ id: a.id, name: a.name }))}
+          selectedAgent={
+            selectedAgent ? { id: selectedAgent.id, name: selectedAgent.name } : undefined
+          }
+          onAgentChange={handleAgentChange}
         />
       </div>
     </aside>

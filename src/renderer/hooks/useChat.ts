@@ -93,6 +93,8 @@ interface UseChatReturn {
   agents: ChatAgentInfo[];
   /** Currently selected model */
   selectedModel: ChatModelInfo | null;
+  /** Currently selected agent */
+  selectedAgent: ChatAgentInfo | null;
   /** Configure the chat session */
   configure: (config: Partial<SessionConfig>) => void;
   /** Send a message */
@@ -103,6 +105,8 @@ interface UseChatReturn {
   clear: () => void;
   /** Select a model */
   selectModel: (modelId: string) => void;
+  /** Select an agent */
+  selectAgent: (agentId: string) => void;
 }
 
 const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929';
@@ -123,6 +127,7 @@ export const useChat = (): UseChatReturn => {
   const [tools, setTools] = useState<ChatToolInfo[]>([]);
   const [agents, setAgents] = useState<ChatAgentInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState<ChatModelInfo | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<ChatAgentInfo | null>(null);
   const [sessionConfig, setSessionConfig] = useState<SessionConfig>({
     model: DEFAULT_MODEL,
   });
@@ -398,6 +403,20 @@ export const useChat = (): UseChatReturn => {
     [models]
   );
 
+  const selectAgent = useCallback(
+    (agentId: string) => {
+      if (agentId === 'none') {
+        setSelectedAgent(null);
+        return;
+      }
+      const agent = agents.find((a) => a.id === agentId);
+      if (agent) {
+        setSelectedAgent(agent);
+      }
+    },
+    [agents]
+  );
+
   return {
     messages: state.messages,
     isLoading: state.isLoading,
@@ -407,10 +426,12 @@ export const useChat = (): UseChatReturn => {
     tools,
     agents,
     selectedModel,
+    selectedAgent,
     configure,
     sendMessage,
     cancel,
     clear,
     selectModel,
+    selectAgent,
   };
 };

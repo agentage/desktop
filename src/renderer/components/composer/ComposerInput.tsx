@@ -5,7 +5,7 @@ import { ContextBreakdown } from './ContextBreakdown.js';
 import { ChevronUpIcon, ToolsIcon } from './icons.js';
 import { ModelSelector } from './ModelSelector.js';
 import { ToolsPopover } from './ToolsPopover.js';
-import type { ContextBreakdownData, ModelOption } from './types.js';
+import type { AgentOption, ContextBreakdownData, ModelOption } from './types.js';
 
 // Mock data for demonstration - would come from actual context in production
 const DEFAULT_MODEL: ModelOption = {
@@ -38,6 +38,9 @@ interface StatusLineProps {
   tokenCount: number;
   isFocused: boolean;
   contextData: ContextBreakdownData;
+  agents?: AgentOption[];
+  selectedAgent?: AgentOption;
+  onAgentChange?: (agent: AgentOption) => void;
 }
 
 /**
@@ -52,6 +55,9 @@ const StatusLine = ({
   tokenCount,
   isFocused,
   contextData,
+  agents,
+  selectedAgent,
+  onAgentChange,
 }: StatusLineProps): React.JSX.Element => {
   const [showContextBreakdown, setShowContextBreakdown] = useState(false);
   const [showToolsPopover, setShowToolsPopover] = useState(false);
@@ -77,6 +83,9 @@ const StatusLine = ({
           selectedModel={selectedModel}
           onModelChange={onModelChange}
           models={models}
+          agents={agents}
+          selectedAgent={selectedAgent}
+          onAgentChange={onAgentChange}
         />
 
         {/* Tools indicator */}
@@ -157,6 +166,12 @@ interface ComposerInputProps {
   selectedModel?: ModelOption;
   /** Callback when model changes */
   onModelChange?: (model: ModelOption) => void;
+  /** Available agents from IPC */
+  agents?: AgentOption[];
+  /** Currently selected agent */
+  selectedAgent?: AgentOption;
+  /** Callback when agent changes */
+  onAgentChange?: (agent: AgentOption) => void;
 }
 
 /**
@@ -176,6 +191,9 @@ export const ComposerInput = ({
   models,
   selectedModel: propSelectedModel,
   onModelChange,
+  agents,
+  selectedAgent,
+  onAgentChange,
 }: ComposerInputProps): React.JSX.Element => {
   const [value, setValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -245,6 +263,9 @@ export const ComposerInput = ({
         tokenCount={MOCK_CONTEXT_DATA.currentContext}
         isFocused={isFocused}
         contextData={MOCK_CONTEXT_DATA}
+        agents={agents}
+        selectedAgent={selectedAgent}
+        onAgentChange={onAgentChange}
       />
     </div>
   );
