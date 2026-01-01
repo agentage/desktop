@@ -344,29 +344,26 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
   let configChanged = false;
 
   // Auto-detect OAuth connections that aren't in models.json yet
-  const oauthProviders: { oauthId: 'codex' | 'claude'; modelProvider: ModelProviderType }[] = [
-    { oauthId: 'codex', modelProvider: 'openai' },
-    { oauthId: 'claude', modelProvider: 'anthropic' },
-  ];
+  const providerIds: ModelProviderType[] = ['openai', 'anthropic'];
 
-  for (const { oauthId, modelProvider } of oauthProviders) {
-    const existingProvider = providers.find((p) => p.provider === modelProvider);
-    const existingIndex = providers.findIndex((p) => p.provider === modelProvider);
+  for (const provider of providerIds) {
+    const existingProvider = providers.find((p) => p.provider === provider);
+    const existingIndex = providers.findIndex((p) => p.provider === provider);
 
     // Check if OAuth is connected by directly reading OAuth storage
     const { OAuthStorage } = await import('./oauth/oauth-storage.service.js');
     const oauthStorage = new OAuthStorage();
-    const oauthData = await oauthStorage.getProvider(oauthId);
+    const oauthData = await oauthStorage.getProvider(provider);
 
     if (!oauthData?.tokens.accessToken) continue;
 
     // OAuth is connected - check if we need to add or update the provider
-    const source: TokenSource = oauthId === 'codex' ? 'oauth:codex' : 'oauth:claude';
+    const source: TokenSource = `oauth:${provider}` as TokenSource;
 
     // If provider exists but is set to manual source, update it to use OAuth
-    if (existingProvider && existingProvider.source === 'manual') {
+    if (existingProvider?.source === 'manual') {
       const token = oauthData.tokens.accessToken;
-      const result = await validateToken(modelProvider, token);
+      const result = await validateToken(provider, token);
 
       const updatedProvider: ModelProviderConfig = {
         ...existingProvider,
@@ -388,9 +385,9 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
     const token = oauthData.tokens.accessToken;
 
     // Validate token and fetch models
-    const result = await validateToken(modelProvider, token);
+    const result = await validateToken(provider, token);
     const newProvider: ModelProviderConfig = {
-      provider: modelProvider,
+      provider,
       source,
       enabled: true,
       models: result.valid && result.models ? result.models : [],

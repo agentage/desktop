@@ -14,7 +14,7 @@ export const modelInfoSchema = z.object({
 /**
  * Token source schema
  */
-export const tokenSourceSchema = z.enum(['manual', 'oauth:codex', 'oauth:claude']);
+export const tokenSourceSchema = z.enum(['manual', 'oauth:openai', 'oauth:anthropic']);
 
 /**
  * Model provider schema - provider with source and models

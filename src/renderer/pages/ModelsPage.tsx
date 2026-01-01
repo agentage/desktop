@@ -307,19 +307,12 @@ export const ModelsPage = (): React.JSX.Element => {
   );
 
   /**
-   * Map model provider to OAuth provider ID
-   */
-  const getOAuthProviderId = (provider: ModelProviderType): 'codex' | 'claude' =>
-    provider === 'openai' ? 'codex' : 'claude';
-
-  /**
    * Handle clearing OAuth source (disconnect)
    */
   const handleClearOAuthSource = useCallback(async (provider: ModelProviderType): Promise<void> => {
     try {
-      // First disconnect from OAuth provider
-      const oauthProviderId = getOAuthProviderId(provider);
-      const disconnectResult = await window.agentage.oauth.disconnect(oauthProviderId);
+      // First disconnect from OAuth provider (provider ID is same as model provider)
+      const disconnectResult = await window.agentage.oauth.disconnect(provider);
 
       if (!disconnectResult.success) {
         console.error('Failed to disconnect OAuth:', disconnectResult.error);
