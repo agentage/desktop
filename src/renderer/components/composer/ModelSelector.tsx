@@ -4,7 +4,7 @@ import { cn } from '../../lib/utils.js';
 import { BotIcon, ChevronDownIcon, FolderIcon } from './icons.js';
 import type { AgentOption, ModelOption } from './types.js';
 
-const AVAILABLE_MODELS: ModelOption[] = [
+const DEFAULT_MODELS: ModelOption[] = [
   { id: 'opus-4-5', name: 'opus-4-5', provider: 'Anthropic' },
   { id: 'sonnet-4', name: 'sonnet-4', provider: 'Anthropic' },
   { id: 'gpt-4o', name: 'gpt-4o', provider: 'OpenAI' },
@@ -24,6 +24,7 @@ interface ModelSelectorProps {
   onModelChange: (model: ModelOption) => void;
   selectedAgent?: AgentOption;
   onAgentChange?: (agent: AgentOption) => void;
+  models?: ModelOption[];
   className?: string;
 }
 
@@ -37,10 +38,13 @@ export const ModelSelector = ({
   onModelChange,
   selectedAgent = AVAILABLE_AGENTS[0],
   onAgentChange,
+  models = DEFAULT_MODELS,
   className,
 }: ModelSelectorProps): React.JSX.Element => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const availableModels = models.length > 0 ? models : DEFAULT_MODELS;
 
   const handleSelectModel = (model: ModelOption): void => {
     onModelChange(model);
@@ -86,7 +90,7 @@ export const ModelSelector = ({
             <div className="p-1">
               {/* Model section */}
               <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Model</div>
-              {AVAILABLE_MODELS.map((model) => (
+              {availableModels.map((model) => (
                 <button
                   key={model.id}
                   onClick={() => {

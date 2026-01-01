@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 
 import { cn } from '../../lib/utils.js';
 import { ContextBreakdown } from './ContextBreakdown.js';
-import { ChevronDownIcon, ChevronUpIcon, ImageIcon, MicIcon, ToolsIcon } from './icons.js';
+import { ChevronUpIcon, ToolsIcon } from './icons.js';
 import { ModelSelector } from './ModelSelector.js';
 import { ToolsPopover } from './ToolsPopover.js';
 import type { ContextBreakdownData, ModelOption } from './types.js';
@@ -34,9 +34,8 @@ const MOCK_CONTEXT_DATA: ContextBreakdownData = {
 interface StatusLineProps {
   selectedModel: ModelOption;
   onModelChange: (model: ModelOption) => void;
+  models?: ModelOption[];
   tokenCount: number;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
   isFocused: boolean;
   contextData: ContextBreakdownData;
 }
@@ -49,9 +48,8 @@ interface StatusLineProps {
 const StatusLine = ({
   selectedModel,
   onModelChange,
+  models,
   tokenCount,
-  isExpanded,
-  onToggleExpand,
   isFocused,
   contextData,
 }: StatusLineProps): React.JSX.Element => {
@@ -75,7 +73,11 @@ const StatusLine = ({
     >
       {/* Left side: Model selector + Tools */}
       <div className="flex items-center gap-3">
-        <ModelSelector selectedModel={selectedModel} onModelChange={onModelChange} />
+        <ModelSelector
+          selectedModel={selectedModel}
+          onModelChange={onModelChange}
+          models={models}
+        />
 
         {/* Tools indicator */}
         <button
@@ -86,7 +88,6 @@ const StatusLine = ({
           title="MCP Tools"
         >
           <ToolsIcon />
-          <span className="text-xs">24 tools</span>
         </button>
       </div>
 
@@ -105,6 +106,7 @@ const StatusLine = ({
         </button>
 
         {/* Action buttons (only shown when expanded/focused) */}
+        {/* TODO: Re-enable when image upload and voice input are implemented
         {isExpanded && (
           <div className="flex items-center gap-1 border-l border-border pl-3">
             <button
@@ -121,15 +123,7 @@ const StatusLine = ({
             </button>
           </div>
         )}
-
-        {/* Expand/Collapse toggle */}
-        <button
-          onClick={onToggleExpand}
-          className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-          title={isExpanded ? 'Collapse' : 'Expand'}
-        >
-          {isExpanded ? <ChevronDownIcon /> : <ChevronUpIcon />}
-        </button>
+        */}
       </div>
 
       {/* Context breakdown popover */}
@@ -157,6 +151,12 @@ interface ComposerInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /** Available models from API */
+  models?: ModelOption[];
+  /** Currently selected model */
+  selectedModel?: ModelOption;
+  /** Callback when model changes */
+  onModelChange?: (model: ModelOption) => void;
 }
 
 /**
@@ -173,11 +173,17 @@ export const ComposerInput = ({
   placeholder = 'How could I help you today?',
   disabled = false,
   className,
+  models,
+  selectedModel: propSelectedModel,
+  onModelChange,
 }: ComposerInputProps): React.JSX.Element => {
   const [value, setValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<ModelOption>(DEFAULT_MODEL);
+  const [internalSelectedModel, setInternalSelectedModel] = useState<ModelOption>(DEFAULT_MODEL);
+
+  // Use prop if provided, otherwise use internal state
+  const selectedModel = propSelectedModel ?? internalSelectedModel;
+  const handleModelChange = onModelChange ?? setInternalSelectedModel;
 
   const handleSubmit = useCallback(() => {
     if (value.trim() && onSubmit) {
@@ -221,7 +227,7 @@ export const ComposerInput = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          rows={isExpanded ? 3 : 1}
+          rows={1}
           className={cn(
             'w-full resize-none bg-transparent px-3 py-3 text-sm',
             'placeholder:text-muted-foreground/60 focus:outline-none',
@@ -234,12 +240,9 @@ export const ComposerInput = ({
       {/* Status line */}
       <StatusLine
         selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
+        onModelChange={handleModelChange}
+        models={models}
         tokenCount={MOCK_CONTEXT_DATA.currentContext}
-        isExpanded={isExpanded}
-        onToggleExpand={() => {
-          setIsExpanded(!isExpanded);
-        }}
         isFocused={isFocused}
         contextData={MOCK_CONTEXT_DATA}
       />

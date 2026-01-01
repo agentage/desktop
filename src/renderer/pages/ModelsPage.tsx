@@ -297,7 +297,7 @@ export const ModelsPage = (): React.JSX.Element => {
       // OAuth flow - open browser for user authentication
       const authResult = await window.agentage.models.anthropic.authorize();
 
-      if (!authResult.success || !authResult.tokens) {
+      if (!authResult.success) {
         console.error('OAuth authorization failed:', authResult.error);
         setProviders((prev) => ({
           ...prev,
@@ -309,8 +309,20 @@ export const ModelsPage = (): React.JSX.Element => {
         return;
       }
 
-      // Use API key if created, otherwise fallback to access token
-      const tokenToUse = authResult.apiKey ?? authResult.tokens.accessToken;
+      // API key is required - access tokens are restricted to Claude Code only
+      if (!authResult.apiKey) {
+        console.error('No API key created from OAuth');
+        setProviders((prev) => ({
+          ...prev,
+          anthropic: {
+            ...prev.anthropic,
+            error: 'Failed to create API key. Please try again or enter an API key manually.',
+          },
+        }));
+        return;
+      }
+
+      const tokenToUse = authResult.apiKey;
 
       // Set the token
       setProviders((prev) => ({

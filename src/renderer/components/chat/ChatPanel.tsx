@@ -1,7 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 
+import { useChat } from '../../hooks/useChat.js';
 import { cn } from '../../lib/utils.js';
 import { ComposerInput } from '../composer/index.js';
+import { ChatMessages } from './ChatMessages.js';
 
 // Close icon
 const CloseIcon = (): React.JSX.Element => (
@@ -11,16 +13,19 @@ const CloseIcon = (): React.JSX.Element => (
   </svg>
 );
 
-// Chat icon for messages
-const ChatIcon = (): React.JSX.Element => (
-  <svg
-    className="size-8 text-muted-foreground"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+// Clear/trash icon
+const TrashIcon = (): React.JSX.Element => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 6h18" />
+    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+  </svg>
+);
+
+// Stop icon
+const StopIcon = (): React.JSX.Element => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="currentColor">
+    <rect x="6" y="6" width="12" height="12" rx="2" />
   </svg>
 );
 
@@ -43,6 +48,18 @@ interface ChatPanelProps {
 export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Element | null => {
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const isResizing = useRef(false);
+
+  const {
+    messages,
+    isLoading,
+    error,
+    models,
+    selectedModel,
+    sendMessage,
+    cancel,
+    clear,
+    selectModel,
+  } = useChat();
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -72,10 +89,19 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
     [width]
   );
 
-  const handleSubmit = (message: string): void => {
-    // TODO: Implement actual message handling
-    console.log('Message submitted:', message);
-  };
+  const handleSubmit = useCallback(
+    (message: string): void => {
+      void sendMessage(message);
+    },
+    [sendMessage]
+  );
+
+  const handleModelChange = useCallback(
+    (model: { id: string }) => {
+      selectModel(model.id);
+    },
+    [selectModel]
+  );
 
   if (!isOpen) return null;
 
@@ -96,31 +122,74 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
       {/* Header - matches SiteHeader height */}
       <div className="flex h-10 shrink-0 items-center justify-between border-b border-sidebar-border px-3">
         <h2 className="text-xs font-medium text-foreground">Chat</h2>
-        <button
-          onClick={onClose}
-          className={cn(
-            'flex size-7 items-center justify-center rounded-md',
-            'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors',
-            'focus:outline-none focus:text-foreground'
+        <div className="flex items-center gap-1">
+          {/* Stop button (when loading) */}
+          {isLoading && (
+            <button
+              onClick={cancel}
+              className={cn(
+                'flex size-7 items-center justify-center rounded-md',
+                'text-destructive hover:bg-destructive/10 transition-colors',
+                'focus:outline-none'
+              )}
+              title="Stop generating"
+            >
+              <StopIcon />
+            </button>
           )}
-          title="Close chat"
-        >
-          <CloseIcon />
-        </button>
+          {/* Clear button */}
+          {messages.length > 0 && (
+            <button
+              onClick={clear}
+              className={cn(
+                'flex size-7 items-center justify-center rounded-md',
+                'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors',
+                'focus:outline-none'
+              )}
+              title="Clear chat"
+            >
+              <TrashIcon />
+            </button>
+          )}
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className={cn(
+              'flex size-7 items-center justify-center rounded-md',
+              'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors',
+              'focus:outline-none focus:text-foreground'
+            )}
+            title="Close chat"
+          >
+            <CloseIcon />
+          </button>
+        </div>
       </div>
 
-      {/* Chat content - messages area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
-        <div className="mb-4 rounded-full bg-muted p-4">
-          <ChatIcon />
+      {/* Error banner */}
+      {error && (
+        <div className="px-3 py-2 bg-destructive/10 border-b border-destructive/20">
+          <p className="text-xs text-destructive">{error}</p>
         </div>
-        <h3 className="text-sm font-medium text-foreground mb-2">Start a conversation</h3>
-        <p className="text-xs text-muted-foreground">Type a message below to begin</p>
-      </div>
+      )}
+
+      {/* Chat messages */}
+      <ChatMessages messages={messages} isLoading={isLoading} />
 
       {/* Composer input area */}
       <div className="p-3">
-        <ComposerInput onSubmit={handleSubmit} placeholder="How could I help you today?" />
+        <ComposerInput
+          onSubmit={handleSubmit}
+          placeholder="How could I help you today?"
+          disabled={isLoading}
+          models={models.map((m) => ({ id: m.id, name: m.name, provider: m.provider }))}
+          selectedModel={
+            selectedModel
+              ? { id: selectedModel.id, name: selectedModel.name, provider: selectedModel.provider }
+              : undefined
+          }
+          onModelChange={handleModelChange}
+        />
       </div>
     </aside>
   );
