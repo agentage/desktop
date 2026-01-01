@@ -1,11 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { cn } from '../../lib/utils.js';
 import { ContextBreakdown } from './ContextBreakdown.js';
-import { ChevronDownIcon, ChevronUpIcon, ImageIcon, MicIcon, ToolsIcon } from './icons.js';
+import { ChevronUpIcon, ToolsIcon } from './icons.js';
 import { ModelSelector } from './ModelSelector.js';
 import { ToolsPopover } from './ToolsPopover.js';
-import type { ContextBreakdownData, ModelOption } from './types.js';
+import type { AgentOption, ContextBreakdownData, ModelOption } from './types.js';
 
 // Mock data for demonstration - would come from actual context in production
 const DEFAULT_MODEL: ModelOption = {
@@ -14,31 +14,32 @@ const DEFAULT_MODEL: ModelOption = {
   provider: 'Anthropic',
 };
 
-const MOCK_CONTEXT_DATA: ContextBreakdownData = {
-  currentContext: 56000,
+// Default empty context data (shown while loading)
+const DEFAULT_CONTEXT_DATA: ContextBreakdownData = {
+  currentContext: 0,
   maxContext: 200000,
   items: [
-    { name: 'System Prompt', tokens: 6000, percentage: 10, color: '#3B82F6' },
-    { name: 'System Tools', tokens: 10000, percentage: 18, color: '#EAB308' },
-    { name: 'CLAUDE.md', tokens: 2000, percentage: 4, color: '#22C55E' },
-    { name: 'MCP Tools', tokens: 28000, percentage: 51, color: '#F97316' },
-    { name: 'Conversation', tokens: 10000, percentage: 17, color: '#06B6D4' },
+    { name: 'System Prompt', tokens: 0, percentage: 0, color: '#3B82F6' },
+    { name: 'System Tools', tokens: 0, percentage: 0, color: '#EAB308' },
+    { name: 'AGENTAGE.md', tokens: 0, percentage: 0, color: '#22C55E' },
+    { name: 'MCP Tools', tokens: 0, percentage: 0, color: '#F97316' },
+    { name: 'Conversation', tokens: 0, percentage: 0, color: '#06B6D4' },
   ],
-  claudeFiles: [
-    { path: '~/.claude/CLAUDE.md', tokens: 0 },
-    { path: '~/andy/CLAUDE.md', tokens: 3000 },
-  ],
-  timestamp: '4:01:49 PM',
+  agentageFiles: [],
+  timestamp: new Date().toLocaleTimeString(),
 };
 
 interface StatusLineProps {
   selectedModel: ModelOption;
   onModelChange: (model: ModelOption) => void;
+  models?: ModelOption[];
   tokenCount: number;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
   isFocused: boolean;
   contextData: ContextBreakdownData;
+  agents?: AgentOption[];
+  selectedAgent?: AgentOption;
+  onAgentChange?: (agent: AgentOption) => void;
+  onRefresh?: () => Promise<void>;
 }
 
 /**
@@ -49,11 +50,14 @@ interface StatusLineProps {
 const StatusLine = ({
   selectedModel,
   onModelChange,
+  models,
   tokenCount,
-  isExpanded,
-  onToggleExpand,
   isFocused,
   contextData,
+  agents,
+  selectedAgent,
+  onAgentChange,
+  onRefresh,
 }: StatusLineProps): React.JSX.Element => {
   const [showContextBreakdown, setShowContextBreakdown] = useState(false);
   const [showToolsPopover, setShowToolsPopover] = useState(false);
@@ -75,7 +79,14 @@ const StatusLine = ({
     >
       {/* Left side: Model selector + Tools */}
       <div className="flex items-center gap-3">
-        <ModelSelector selectedModel={selectedModel} onModelChange={onModelChange} />
+        <ModelSelector
+          selectedModel={selectedModel}
+          onModelChange={onModelChange}
+          models={models}
+          agents={agents}
+          selectedAgent={selectedAgent}
+          onAgentChange={onAgentChange}
+        />
 
         {/* Tools indicator */}
         <button
@@ -86,7 +97,6 @@ const StatusLine = ({
           title="MCP Tools"
         >
           <ToolsIcon />
-          <span className="text-xs">24 tools</span>
         </button>
       </div>
 
@@ -105,6 +115,7 @@ const StatusLine = ({
         </button>
 
         {/* Action buttons (only shown when expanded/focused) */}
+        {/* TODO: Re-enable when image upload and voice input are implemented
         {isExpanded && (
           <div className="flex items-center gap-1 border-l border-border pl-3">
             <button
@@ -121,15 +132,7 @@ const StatusLine = ({
             </button>
           </div>
         )}
-
-        {/* Expand/Collapse toggle */}
-        <button
-          onClick={onToggleExpand}
-          className="p-1 rounded hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-          title={isExpanded ? 'Collapse' : 'Expand'}
-        >
-          {isExpanded ? <ChevronDownIcon /> : <ChevronUpIcon />}
-        </button>
+        */}
       </div>
 
       {/* Context breakdown popover */}
@@ -139,6 +142,7 @@ const StatusLine = ({
         onClose={() => {
           setShowContextBreakdown(false);
         }}
+        onRefresh={onRefresh}
       />
 
       {/* Tools popover */}
@@ -157,6 +161,18 @@ interface ComposerInputProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
+  /** Available models from API */
+  models?: ModelOption[];
+  /** Currently selected model */
+  selectedModel?: ModelOption;
+  /** Callback when model changes */
+  onModelChange?: (model: ModelOption) => void;
+  /** Available agents from IPC */
+  agents?: AgentOption[];
+  /** Currently selected agent */
+  selectedAgent?: AgentOption;
+  /** Callback when agent changes */
+  onAgentChange?: (agent: AgentOption) => void;
 }
 
 /**
@@ -173,11 +189,85 @@ export const ComposerInput = ({
   placeholder = 'How could I help you today?',
   disabled = false,
   className,
+  models,
+  selectedModel: propSelectedModel,
+  onModelChange,
+  agents,
+  selectedAgent,
+  onAgentChange,
 }: ComposerInputProps): React.JSX.Element => {
   const [value, setValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [selectedModel, setSelectedModel] = useState<ModelOption>(DEFAULT_MODEL);
+  const [internalSelectedModel, setInternalSelectedModel] = useState<ModelOption>(DEFAULT_MODEL);
+  const [contextData, setContextData] = useState<ContextBreakdownData>(DEFAULT_CONTEXT_DATA);
+
+  // Use prop if provided, otherwise use internal state
+  const selectedModel = propSelectedModel ?? internalSelectedModel;
+  const handleModelChange = onModelChange ?? setInternalSelectedModel;
+
+  // Fetch context data function - extracted for reuse
+  const fetchContext = useCallback(async (): Promise<void> => {
+    try {
+      const response = await window.agentage.chat.context.get();
+      if ('breakdown' in response) {
+        setContextData(response.breakdown);
+      } else if ('files' in response) {
+        // Files-only response - build minimal breakdown
+        const globalTokens = response.files.global.tokens;
+        const projectTokens = response.files.project?.tokens ?? 0;
+        const totalTokens = globalTokens + projectTokens;
+
+        const agentageFiles: { path: string; tokens: number }[] = [];
+        if (response.files.global.exists) {
+          agentageFiles.push({
+            path: response.files.global.path.replace(/^\/home\/[^/]+/, '~'),
+            tokens: globalTokens,
+          });
+        }
+        if (response.files.project?.exists) {
+          agentageFiles.push({
+            path: response.files.project.path.replace(/^\/home\/[^/]+/, '~'),
+            tokens: projectTokens,
+          });
+        }
+
+        setContextData({
+          currentContext: totalTokens,
+          maxContext: 200000,
+          items: [
+            { name: 'System Prompt', tokens: 0, percentage: 0, color: '#3B82F6' },
+            { name: 'System Tools', tokens: 0, percentage: 0, color: '#EAB308' },
+            {
+              name: 'AGENTAGE.md',
+              tokens: totalTokens,
+              percentage: totalTokens > 0 ? 100 : 0,
+              color: '#22C55E',
+            },
+            { name: 'MCP Tools', tokens: 0, percentage: 0, color: '#F97316' },
+            { name: 'Conversation', tokens: 0, percentage: 0, color: '#06B6D4' },
+          ],
+          agentageFiles,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch context:', error);
+    }
+  }, []);
+
+  // Fetch context data on mount and periodically
+  useEffect(() => {
+    void fetchContext();
+
+    // Refresh every 10 seconds
+    const interval = setInterval(() => {
+      void fetchContext();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [fetchContext]);
 
   const handleSubmit = useCallback(() => {
     if (value.trim() && onSubmit) {
@@ -221,7 +311,7 @@ export const ComposerInput = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          rows={isExpanded ? 3 : 1}
+          rows={1}
           className={cn(
             'w-full resize-none bg-transparent px-3 py-3 text-sm',
             'placeholder:text-muted-foreground/60 focus:outline-none',
@@ -234,14 +324,15 @@ export const ComposerInput = ({
       {/* Status line */}
       <StatusLine
         selectedModel={selectedModel}
-        onModelChange={setSelectedModel}
-        tokenCount={MOCK_CONTEXT_DATA.currentContext}
-        isExpanded={isExpanded}
-        onToggleExpand={() => {
-          setIsExpanded(!isExpanded);
-        }}
+        onModelChange={handleModelChange}
+        models={models}
+        tokenCount={contextData.currentContext}
         isFocused={isFocused}
-        contextData={MOCK_CONTEXT_DATA}
+        contextData={contextData}
+        agents={agents}
+        selectedAgent={selectedAgent}
+        onAgentChange={onAgentChange}
+        onRefresh={fetchContext}
       />
     </div>
   );

@@ -160,6 +160,182 @@ interface OpenAIOAuthResult {
   error?: string;
 }
 
+// OAuth Connect types
+type OAuthProviderId = 'claude' | 'codex';
+
+interface OAuthProfile {
+  id: string;
+  email?: string;
+  name?: string;
+  avatar?: string;
+}
+
+interface OAuthProviderStatus {
+  id: OAuthProviderId;
+  name: string;
+  icon: string;
+  description: string;
+  connected: boolean;
+  profile?: OAuthProfile;
+  expiresAt?: number;
+  isExpired?: boolean;
+}
+
+interface OAuthListResult {
+  providers: OAuthProviderStatus[];
+}
+
+interface OAuthConnectResult {
+  success: boolean;
+  profile?: OAuthProfile;
+  error?: string;
+}
+
+interface OAuthDisconnectResult {
+  success: boolean;
+  error?: string;
+}
+
+// Chat types
+interface ChatModelOptions {
+  maxTokens?: number;
+  temperature?: number;
+  topP?: number;
+}
+
+interface SessionConfig {
+  conversationId?: string;
+  model: string;
+  system?: string;
+  agent?: string;
+  tools?: string[];
+  options?: ChatModelOptions;
+}
+
+interface ChatReference {
+  type: 'file' | 'selection' | 'image';
+  uri: string;
+  content?: string;
+  range?: { start: number; end: number };
+}
+
+interface ChatSendRequest {
+  prompt: string;
+  references?: ChatReference[];
+}
+
+interface ChatSendResponse {
+  requestId: string;
+  conversationId: string;
+}
+
+interface ChatModelInfo {
+  id: string;
+  name: string;
+  provider: ModelProviderType;
+  contextWindow: number;
+  capabilities?: string[];
+}
+
+interface ChatToolInfo {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface ChatAgentInfo {
+  id: string;
+  name: string;
+  description: string;
+  defaultModel?: string;
+  defaultTools?: string[];
+}
+
+type ChatStopReason = 'end_turn' | 'tool_use' | 'max_tokens' | 'stop_sequence';
+
+type ChatErrorCode =
+  | 'AUTH_ERROR'
+  | 'RATE_LIMIT'
+  | 'MODEL_UNAVAILABLE'
+  | 'CONTEXT_LENGTH'
+  | 'CANCELLED'
+  | 'NETWORK_ERROR'
+  | 'TOOL_ERROR'
+  | 'INTERNAL_ERROR';
+
+type ChatStreamEvent =
+  | { type: 'text'; text: string }
+  | { type: 'thinking'; text: string }
+  | { type: 'tool_call'; toolCallId: string; name: string; input: unknown }
+  | { type: 'tool_result'; toolCallId: string; name: string; result: unknown; isError?: boolean }
+  | { type: 'usage'; inputTokens: number; outputTokens: number }
+  | { type: 'done'; stopReason: ChatStopReason }
+  | {
+      type: 'error';
+      code: ChatErrorCode;
+      message: string;
+      recoverable: boolean;
+      retryAfter?: number;
+    };
+
+type ChatEvent = { requestId: string } & ChatStreamEvent;
+
+interface ChatAPI {
+  configure: (config: SessionConfig) => void;
+  send: (request: ChatSendRequest) => Promise<ChatSendResponse>;
+  cancel: (requestId: string) => void;
+  onEvent: (callback: (event: ChatEvent) => void) => () => void;
+  getModels: () => Promise<ChatModelInfo[]>;
+  getTools: () => Promise<ChatToolInfo[]>;
+  getAgents: () => Promise<ChatAgentInfo[]>;
+  clear: () => void;
+  context: {
+    get: (threadId?: string) => Promise<ContextResponse>;
+  };
+}
+
+// Context types
+interface ContextItem {
+  name: string;
+  tokens: number;
+  percentage: number;
+  color: string;
+}
+
+interface ContextBreakdownData {
+  currentContext: number;
+  maxContext: number;
+  items: ContextItem[];
+  agentageFiles?: { path: string; tokens: number }[];
+  timestamp: string;
+}
+
+interface ContextFileInfo {
+  path: string;
+  exists: boolean;
+  tokens: number;
+  lastModified: string | null;
+  content?: string;
+}
+
+interface FullContextResponse {
+  threadId: string;
+  breakdown: ContextBreakdownData;
+  files: {
+    global: ContextFileInfo;
+    project: ContextFileInfo | null;
+  };
+}
+
+interface FilesOnlyResponse {
+  files: {
+    global: ContextFileInfo;
+    project: ContextFileInfo | null;
+  };
+}
+
+type ContextResponse = FullContextResponse | FilesOnlyResponse;
+
 export interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
@@ -218,6 +394,12 @@ export interface AgentageAPI {
     maximize: () => Promise<void>;
     close: () => Promise<void>;
     isMaximized: () => Promise<boolean>;
+  };
+  chat: ChatAPI;
+  oauth: {
+    list: () => Promise<OAuthListResult>;
+    connect: (providerId: OAuthProviderId) => Promise<OAuthConnectResult>;
+    disconnect: (providerId: OAuthProviderId) => Promise<OAuthDisconnectResult>;
   };
 }
 
@@ -291,6 +473,39 @@ const api: AgentageAPI = {
     maximize: () => ipcRenderer.invoke('window:maximize'),
     close: () => ipcRenderer.invoke('window:close'),
     isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
+  },
+  chat: {
+    configure: (config: SessionConfig) => {
+      void ipcRenderer.invoke('chat:configure', config);
+    },
+    send: (request: ChatSendRequest) => ipcRenderer.invoke('chat:send', request),
+    cancel: (requestId: string) => {
+      void ipcRenderer.invoke('chat:cancel', requestId);
+    },
+    onEvent: (callback: (event: ChatEvent) => void) => {
+      const handler = (_event: unknown, chatEvent: ChatEvent): void => {
+        callback(chatEvent);
+      };
+      ipcRenderer.on('chat:event', handler);
+      return () => {
+        ipcRenderer.removeListener('chat:event', handler);
+      };
+    },
+    getModels: () => ipcRenderer.invoke('chat:getModels'),
+    getTools: () => ipcRenderer.invoke('chat:getTools'),
+    getAgents: () => ipcRenderer.invoke('chat:getAgents'),
+    clear: () => {
+      void ipcRenderer.invoke('chat:clear');
+    },
+    context: {
+      get: (threadId?: string) => ipcRenderer.invoke('chat:context:get', threadId),
+    },
+  },
+  oauth: {
+    list: () => ipcRenderer.invoke('oauth:list'),
+    connect: (providerId: OAuthProviderId) => ipcRenderer.invoke('oauth:connect', { providerId }),
+    disconnect: (providerId: OAuthProviderId) =>
+      ipcRenderer.invoke('oauth:disconnect', { providerId }),
   },
 };
 

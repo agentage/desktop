@@ -10,10 +10,13 @@
       "windows": {
         "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
       },
-      "args": [".", "--remote-debugging-port=9223"],
+      "args": [".", "--remote-debugging-port=9223", "--no-sandbox"],
       "outputCapture": "std",
       "sourceMaps": true,
-      "preLaunchTask": "build"
+      "preLaunchTask": "build",
+      "env": {
+        "NODE_ENV": "development"
+      }
     },
     {
       "name": "Debug Renderer Process",
@@ -21,7 +24,26 @@
       "request": "attach",
       "port": 9223,
       "webRoot": "${workspaceFolder}",
-      "timeout": 30000
+      "timeout": 30000,
+      "sourceMaps": true
+    },
+    {
+      "name": "Run Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "args": ["test"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Debug Current Test File",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "args": ["test", "--", "--testPathPattern=${fileBasename}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
     }
   ],
   "compounds": [

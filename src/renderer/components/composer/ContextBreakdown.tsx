@@ -47,7 +47,7 @@ interface ContextBreakdownProps {
   data: ContextBreakdownData;
   isOpen: boolean;
   onClose: () => void;
-  onRefresh?: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
 /**
@@ -65,13 +65,14 @@ export const ContextBreakdown = ({
 
   if (!isOpen) return null;
 
-  const handleRefresh = (): void => {
+  const handleRefresh = async (): Promise<void> => {
+    if (isRefreshing) return;
     setIsRefreshing(true);
-    onRefresh?.();
-    // Simulate refresh delay
-    setTimeout(() => {
+    try {
+      await onRefresh?.();
+    } finally {
       setIsRefreshing(false);
-    }, 500);
+    }
   };
 
   return (
@@ -93,7 +94,9 @@ export const ContextBreakdown = ({
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{data.timestamp}</span>
               <button
-                onClick={handleRefresh}
+                onClick={() => {
+                  void handleRefresh();
+                }}
                 className={cn(
                   'p-1 rounded hover:bg-accent transition-colors text-muted-foreground hover:text-foreground',
                   isRefreshing && 'animate-spin'
@@ -120,11 +123,11 @@ export const ContextBreakdown = ({
             ))}
           </div>
 
-          {/* CLAUDE.md Files section */}
-          {data.claudeFiles && data.claudeFiles.length > 0 && (
+          {/* AGENTAGE.md Files section */}
+          {data.agentageFiles && data.agentageFiles.length > 0 && (
             <div className="mt-4 pt-3 border-t border-border">
-              <div className="text-xs text-muted-foreground mb-2">CLAUDE.md Files</div>
-              {data.claudeFiles.map((file) => (
+              <div className="text-xs text-muted-foreground mb-2">AGENTAGE.md Files</div>
+              {data.agentageFiles.map((file) => (
                 <div key={file.path} className="flex items-center justify-between py-0.5">
                   <span className="text-xs text-muted-foreground truncate">{file.path}</span>
                   <span className="text-xs text-muted-foreground">{formatTokens(file.tokens)}</span>
