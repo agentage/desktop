@@ -11,14 +11,14 @@ const OPENAI_OAUTH_CONFIG = {
 };
 
 /**
- * Codex (OpenAI) OAuth provider
+ * OpenAI OAuth provider
  */
-export class CodexProvider implements OAuthProvider {
+export class OpenAIProvider implements OAuthProvider {
   readonly config: OAuthProviderConfig = {
-    id: 'codex',
-    name: 'Codex',
+    id: 'openai',
+    name: 'OpenAI',
     icon: 'openai',
-    description: 'OpenAI Codex',
+    description: 'OpenAI ChatGPT',
   };
 
   /**

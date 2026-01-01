@@ -161,7 +161,7 @@ interface OpenAIOAuthResult {
 }
 
 // OAuth Connect types
-type OAuthProviderId = 'claude' | 'codex';
+type OAuthProviderId = 'openai' | 'anthropic';
 
 interface OAuthProfile {
   id: string;

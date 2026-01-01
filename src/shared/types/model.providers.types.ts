@@ -10,7 +10,7 @@ export type ModelProviderType = 'anthropic' | 'openai';
 /**
  * Token source - manual entry or OAuth connection
  */
-export type TokenSource = 'manual' | 'oauth:codex' | 'oauth:claude';
+export type TokenSource = 'manual' | 'oauth:openai' | 'oauth:anthropic';
 
 /**
  * Model information from API

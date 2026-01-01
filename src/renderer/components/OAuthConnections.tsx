@@ -141,7 +141,7 @@ export const OAuthConnections = (): React.JSX.Element => {
       setActionLoading(providerId);
       setError(null);
       try {
-        const result = await window.agentage.oauth.connect(providerId as 'claude' | 'codex');
+        const result = await window.agentage.oauth.connect(providerId as 'openai' | 'anthropic');
         if (result.success) {
           await loadProviders();
         } else {
@@ -165,7 +165,7 @@ export const OAuthConnections = (): React.JSX.Element => {
       setActionLoading(providerId);
       setError(null);
       try {
-        const result = await window.agentage.oauth.disconnect(providerId as 'claude' | 'codex');
+        const result = await window.agentage.oauth.disconnect(providerId as 'openai' | 'anthropic');
         if (result.success) {
           await loadProviders();
         } else {

@@ -7,14 +7,14 @@ import {
 import type { OAuthProvider, OAuthProviderConfig } from '../base-provider.js';
 
 /**
- * Claude (Anthropic) OAuth provider
+ * Anthropic OAuth provider
  */
-export class ClaudeProvider implements OAuthProvider {
+export class AnthropicProvider implements OAuthProvider {
   readonly config: OAuthProviderConfig = {
-    id: 'claude',
+    id: 'anthropic',
     name: 'Claude',
     icon: 'anthropic',
-    description: 'Anthropic AI Assistant',
+    description: 'Anthropic Claude',
   };
 
   /**

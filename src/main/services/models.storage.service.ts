@@ -27,7 +27,7 @@ const modelInfoSchema = z.object({
 /**
  * Token source schema
  */
-const tokenSourceSchema = z.enum(['manual', 'oauth:codex', 'oauth:claude']);
+const tokenSourceSchema = z.enum(['manual', 'oauth:openai', 'oauth:anthropic']);
 
 /**
  * Model provider config schema for models.json
@@ -101,61 +101,15 @@ export const saveProviderConfig = async (providerConfig: ModelProviderConfig): P
 };
 
 /**
- * Map OAuth provider ID to TokenSource
+ * Get TokenSource for a provider
  */
-const oauthProviderToSource = (oauthProviderId: string): TokenSource | null => {
-  switch (oauthProviderId) {
-    case 'codex':
-      return 'oauth:codex';
-    case 'claude':
-      return 'oauth:claude';
-    default:
-      return null;
-  }
-};
-
-/**
- * Map TokenSource to OAuth provider ID
- */
-const sourceToOAuthProvider = (source: TokenSource): string | null => {
-  if (source === 'manual') return null;
-  return source.replace('oauth:', '');
-};
-
-/**
- * Map OAuth provider ID to model provider type
- */
-export const oauthProviderToModelProvider = (
-  oauthProviderId: string
-): ModelProviderType | null => {
-  switch (oauthProviderId) {
-    case 'codex':
-      return 'openai';
-    case 'claude':
-      return 'anthropic';
-    default:
-      return null;
-  }
-};
-
-/**
- * Map model provider type to OAuth provider ID
- */
-export const modelProviderToOAuthProvider = (provider: ModelProviderType): string => {
-  switch (provider) {
-    case 'openai':
-      return 'codex';
-    case 'anthropic':
-      return 'claude';
-  }
-};
+const getTokenSource = (provider: ModelProviderType): TokenSource =>
+  `oauth:${provider}` as TokenSource;
 
 /**
  * Resolve token for a provider - handles OAuth token resolution
  */
-export const resolveProviderToken = async (
-  provider: ModelProviderType
-): Promise<string | null> => {
+export const resolveProviderToken = async (provider: ModelProviderType): Promise<string | null> => {
   const config = await getProviderConfig(provider);
   if (!config) return null;
 
@@ -163,12 +117,9 @@ export const resolveProviderToken = async (
     return config.token ?? null;
   }
 
-  // OAuth source - read from oauth.json
-  const oauthProviderId = sourceToOAuthProvider(config.source);
-  if (!oauthProviderId) return null;
-
+  // OAuth source - read from oauth.json (provider ID is same as model provider)
   const oauthStorage = new OAuthStorage();
-  const oauthData = await oauthStorage.getProvider(oauthProviderId as 'claude' | 'codex');
+  const oauthData = await oauthStorage.getProvider(provider);
 
   return oauthData?.tokens.accessToken ?? null;
 };
@@ -177,9 +128,8 @@ export const resolveProviderToken = async (
  * Check if a provider is connected via OAuth
  */
 export const isOAuthConnected = async (provider: ModelProviderType): Promise<boolean> => {
-  const oauthProviderId = modelProviderToOAuthProvider(provider);
   const oauthStorage = new OAuthStorage();
-  const oauthData = await oauthStorage.getProvider(oauthProviderId as 'claude' | 'codex');
+  const oauthData = await oauthStorage.getProvider(provider);
   return oauthData !== undefined;
 };
 
@@ -187,20 +137,16 @@ export const isOAuthConnected = async (provider: ModelProviderType): Promise<boo
  * Update models.json source when OAuth connects
  */
 export const setOAuthSource = async (
-  oauthProviderId: string,
+  provider: ModelProviderType,
   models: { id: string; displayName: string; enabled: boolean }[]
 ): Promise<void> => {
-  const modelProvider = oauthProviderToModelProvider(oauthProviderId);
-  if (!modelProvider) return;
-
-  const source = oauthProviderToSource(oauthProviderId);
-  if (!source) return;
+  const source = getTokenSource(provider);
 
   const config = await loadModelsConfig();
-  const existingIndex = config.providers.findIndex((p) => p.provider === modelProvider);
+  const existingIndex = config.providers.findIndex((p) => p.provider === provider);
 
   const providerConfig: ModelProviderConfig = {
-    provider: modelProvider,
+    provider,
     source,
     enabled: true,
     models,
@@ -229,12 +175,9 @@ export const setOAuthSource = async (
 /**
  * Clear OAuth source when disconnecting
  */
-export const clearOAuthSource = async (oauthProviderId: string): Promise<void> => {
-  const modelProvider = oauthProviderToModelProvider(oauthProviderId);
-  if (!modelProvider) return;
-
+export const clearOAuthSource = async (provider: ModelProviderType): Promise<void> => {
   const config = await loadModelsConfig();
-  const existingIndex = config.providers.findIndex((p) => p.provider === modelProvider);
+  const existingIndex = config.providers.findIndex((p) => p.provider === provider);
 
   if (existingIndex >= 0) {
     // Remove the provider entry entirely
