@@ -53,10 +53,10 @@ export const navigationConfig: NavigationConfig = {
           path: '/models',
         },
         {
-          id: 'secrets',
-          title: 'Secrets',
-          icon: 'key',
-          path: '/secrets',
+          id: 'connections',
+          title: 'Connections',
+          icon: 'link',
+          path: '/connections',
         },
         {
           id: 'context',

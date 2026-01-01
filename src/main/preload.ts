@@ -160,6 +160,42 @@ interface OpenAIOAuthResult {
   error?: string;
 }
 
+// OAuth Connect types
+type OAuthProviderId = 'claude' | 'codex';
+
+interface OAuthProfile {
+  id: string;
+  email?: string;
+  name?: string;
+  avatar?: string;
+}
+
+interface OAuthProviderStatus {
+  id: OAuthProviderId;
+  name: string;
+  icon: string;
+  description: string;
+  connected: boolean;
+  profile?: OAuthProfile;
+  expiresAt?: number;
+  isExpired?: boolean;
+}
+
+interface OAuthListResult {
+  providers: OAuthProviderStatus[];
+}
+
+interface OAuthConnectResult {
+  success: boolean;
+  profile?: OAuthProfile;
+  error?: string;
+}
+
+interface OAuthDisconnectResult {
+  success: boolean;
+  error?: string;
+}
+
 // Chat types
 interface ChatModelOptions {
   maxTokens?: number;
@@ -360,6 +396,11 @@ export interface AgentageAPI {
     isMaximized: () => Promise<boolean>;
   };
   chat: ChatAPI;
+  oauth: {
+    list: () => Promise<OAuthListResult>;
+    connect: (providerId: OAuthProviderId) => Promise<OAuthConnectResult>;
+    disconnect: (providerId: OAuthProviderId) => Promise<OAuthDisconnectResult>;
+  };
 }
 
 const api: AgentageAPI = {
@@ -459,6 +500,12 @@ const api: AgentageAPI = {
     context: {
       get: (threadId?: string) => ipcRenderer.invoke('chat:context:get', threadId),
     },
+  },
+  oauth: {
+    list: () => ipcRenderer.invoke('oauth:list'),
+    connect: (providerId: OAuthProviderId) => ipcRenderer.invoke('oauth:connect', { providerId }),
+    disconnect: (providerId: OAuthProviderId) =>
+      ipcRenderer.invoke('oauth:disconnect', { providerId }),
   },
 };
 

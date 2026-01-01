@@ -5,5 +5,6 @@ export * from './context.types.js';
 export * from './ipc.types.js';
 export * from './model.providers.types.js';
 export * from './navigation.types.js';
+export * from './oauth.types.js';
 export * from './settings.types.js';
 export * from './workspace.types.js';
