@@ -104,7 +104,7 @@ export const SettingsPage = (): React.JSX.Element => {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4">
         <div className="text-sm text-muted-foreground">Loading...</div>
       </div>
     );
@@ -112,21 +112,21 @@ export const SettingsPage = (): React.JSX.Element => {
 
   if (!settings) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4">
         <div className="text-sm text-destructive">Failed to load settings</div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-6 h-full">
-      <div className="max-w-2xl mx-auto space-y-6 pb-48">
+    <div className="flex-1 p-4 h-full">
+      <div className="max-w-3xl mx-auto space-y-4 pb-48">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-violet-500/10">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-md bg-violet-500/10">
             <SettingsIcon />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">Settings</h1>
+          <h1 className="text-base font-semibold text-foreground">Settings</h1>
         </div>
 
         <div className="space-y-3">
