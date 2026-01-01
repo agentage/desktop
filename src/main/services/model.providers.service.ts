@@ -343,6 +343,23 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
   let providers = [...config.providers];
   let configChanged = false;
 
+  // Import OAuth storage once
+  const { OAuthStorage } = await import('./oauth/oauth-storage.service.js');
+  const oauthStorage = new OAuthStorage();
+
+  // Check for OAuth disconnections - if provider has oauth source but OAuth is disconnected
+  for (let i = providers.length - 1; i >= 0; i--) {
+    const providerConfig = providers[i];
+    if (providerConfig.source.startsWith('oauth:')) {
+      const oauthData = await oauthStorage.getProvider(providerConfig.provider);
+      if (!oauthData?.tokens.accessToken) {
+        // OAuth is disconnected but models.json still has oauth source - remove provider
+        providers.splice(i, 1);
+        configChanged = true;
+      }
+    }
+  }
+
   // Auto-detect OAuth connections that aren't in models.json yet
   const providerIds: ModelProviderType[] = ['openai', 'anthropic'];
 
@@ -350,9 +367,7 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
     const existingProvider = providers.find((p) => p.provider === provider);
     const existingIndex = providers.findIndex((p) => p.provider === provider);
 
-    // Check if OAuth is connected by directly reading OAuth storage
-    const { OAuthStorage } = await import('./oauth/oauth-storage.service.js');
-    const oauthStorage = new OAuthStorage();
+    // Check if OAuth is connected
     const oauthData = await oauthStorage.getProvider(provider);
 
     if (!oauthData?.tokens.accessToken) continue;
