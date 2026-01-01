@@ -2,6 +2,7 @@ import { memo } from 'react';
 import type { ChatUIMessage } from '../../hooks/useChat.js';
 import { cn } from '../../lib/utils.js';
 import { LoadingIndicator } from './LoadingIndicator.js';
+import { MarkdownContent } from './MarkdownContent.js';
 import { ToolCallBlock } from './ToolCallBlock.js';
 
 interface ChatMessageProps {
@@ -19,14 +20,14 @@ export const ChatMessage = memo(({ message }: ChatMessageProps): React.JSX.Eleme
 
   return (
     <div
-      className={cn('flex px-4 py-2', isUser ? 'justify-end' : 'justify-start')}
+      className={cn('flex px-2 py-1', isUser ? 'justify-end' : 'justify-start')}
       aria-label={isUser ? 'User message' : 'Assistant message'}
     >
       <div
         className={cn(
-          'px-4 py-2 text-sm whitespace-pre-wrap break-words',
+          'px-3 py-1.5 text-xs break-words',
           isUser
-            ? 'max-w-[80%] rounded-2xl rounded-br-md bg-primary text-primary-foreground'
+            ? 'max-w-[80%] rounded-2xl rounded-br-md bg-primary text-primary-foreground whitespace-pre-wrap'
             : 'max-w-[90%] rounded-2xl rounded-bl-md bg-muted text-foreground'
         )}
       >
@@ -37,13 +38,15 @@ export const ChatMessage = memo(({ message }: ChatMessageProps): React.JSX.Eleme
           </span>
         ) : message.error ? (
           <span className="text-destructive">{message.error}</span>
-        ) : (
+        ) : isUser ? (
           message.content
+        ) : (
+          <MarkdownContent content={message.content} />
         )}
 
         {/* Tool calls (assistant only) */}
         {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
-          <div className="mt-2 space-y-2">
+          <div className="mt-1.5 space-y-1.5">
             {message.toolCalls.map((toolCall) => (
               <ToolCallBlock key={toolCall.id} toolCall={toolCall} />
             ))}

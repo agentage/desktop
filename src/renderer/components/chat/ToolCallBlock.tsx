@@ -112,11 +112,11 @@ export const ToolCallBlock = memo(({ toolCall }: ToolCallBlockProps): React.JSX.
   const hasResult = toolCall.result !== undefined;
 
   return (
-    <div className="mt-2 rounded-lg border border-border bg-card overflow-hidden text-sm">
+    <div className="rounded border border-border bg-card overflow-hidden text-xs">
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border-b border-border">
+      <div className="flex items-center gap-1.5 px-2 py-1 bg-muted/50 border-b border-border">
         <ToolIcon />
-        <span className="font-mono font-medium text-xs">{toolCall.name}</span>
+        <span className="font-mono font-medium">{toolCall.name}</span>
         <div className="ml-auto">
           <StatusIndicator status={toolCall.status} />
         </div>
@@ -130,13 +130,13 @@ export const ToolCallBlock = memo(({ toolCall }: ToolCallBlockProps): React.JSX.
             onClick={() => {
               setIsInputOpen(!isInputOpen);
             }}
-            className="flex items-center gap-1.5 w-full px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/30 transition-colors"
+            className="flex items-center gap-1 w-full px-2 py-1 text-muted-foreground hover:bg-muted/30 transition-colors"
           >
             <ChevronIcon isOpen={isInputOpen} />
             <span>Input</span>
           </button>
           {isInputOpen && (
-            <pre className="px-3 py-2 text-xs font-mono overflow-x-auto bg-muted/20 max-h-40 overflow-y-auto">
+            <pre className="px-2 py-1 font-mono overflow-x-auto bg-muted/20 max-h-32 overflow-y-auto">
               {JSON.stringify(toolCall.input, null, 2)}
             </pre>
           )}
@@ -152,7 +152,7 @@ export const ToolCallBlock = memo(({ toolCall }: ToolCallBlockProps): React.JSX.
               setIsResultOpen(!isResultOpen);
             }}
             className={cn(
-              'flex items-center gap-1.5 w-full px-3 py-1.5 text-xs hover:bg-muted/30 transition-colors',
+              'flex items-center gap-1 w-full px-2 py-1 hover:bg-muted/30 transition-colors',
               toolCall.result?.isError ? 'text-destructive' : 'text-muted-foreground'
             )}
           >
@@ -165,7 +165,7 @@ export const ToolCallBlock = memo(({ toolCall }: ToolCallBlockProps): React.JSX.
           {isResultOpen && (
             <pre
               className={cn(
-                'px-3 py-2 text-xs font-mono overflow-x-auto max-h-60 overflow-y-auto whitespace-pre-wrap break-words',
+                'px-2 py-1 font-mono overflow-x-auto max-h-48 overflow-y-auto whitespace-pre-wrap break-words',
                 toolCall.result?.isError ? 'bg-destructive/10 text-destructive' : 'bg-muted/20'
               )}
             >
