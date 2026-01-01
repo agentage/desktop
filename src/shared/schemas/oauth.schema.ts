@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * OAuth provider identifiers
  */
-export const oAuthProviderIdSchema = z.enum(['claude', 'codex']);
+export const oAuthProviderIdSchema = z.enum(['openai', 'anthropic']);
 
 /**
  * OAuth tokens schema

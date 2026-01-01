@@ -7,8 +7,8 @@ import type {
 } from '../../../shared/types/oauth.types.js';
 import type { OAuthProvider } from './base-provider.js';
 import { OAuthStorage } from './oauth-storage.service.js';
-import { ClaudeProvider } from './providers/claude.provider.js';
-import { CodexProvider } from './providers/codex.provider.js';
+import { AnthropicProvider } from './providers/claude.provider.js';
+import { OpenAIProvider } from './providers/codex.provider.js';
 
 /**
  * OAuth manager - orchestrates OAuth operations
@@ -19,8 +19,8 @@ export class OAuthManager {
 
   constructor() {
     // Register available providers
-    this.register(new ClaudeProvider());
-    this.register(new CodexProvider());
+    this.register(new AnthropicProvider());
+    this.register(new OpenAIProvider());
   }
 
   /**

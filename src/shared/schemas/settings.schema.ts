@@ -12,11 +12,17 @@ export const modelInfoSchema = z.object({
 });
 
 /**
- * Model provider schema - provider with token and models
+ * Token source schema
+ */
+export const tokenSourceSchema = z.enum(['manual', 'oauth:openai', 'oauth:anthropic']);
+
+/**
+ * Model provider schema - provider with source and models
  */
 export const modelProviderConfigSchema = z.object({
   provider: z.enum(['openai', 'anthropic']),
-  token: z.string(),
+  source: tokenSourceSchema.default('manual'),
+  token: z.string().optional(), // Only when source === 'manual'
   enabled: z.boolean().default(true),
   lastFetchedAt: z.string().optional(),
   models: z.array(modelInfoSchema).default([]),
@@ -34,9 +40,9 @@ export const syncedSettingsSchema = z.object({
 
 /**
  * Settings schema (complete)
+ * Note: modelProviders moved to ~/.agentage/models.json
  */
 export const settingsSchema = z.object({
-  modelProviders: z.array(modelProviderConfigSchema).default([]),
   backendUrl: z.string().url().default('https://agentage.io'),
   theme: z.enum(['light', 'dark', 'system']).default('system'),
   defaultModelProvider: z.string().optional(),

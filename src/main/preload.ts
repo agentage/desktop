@@ -130,38 +130,8 @@ interface SaveProviderResult {
   error?: string;
 }
 
-// OAuth types for Anthropic
-interface AnthropicOAuthTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-  scopes: string[];
-}
-
-interface AnthropicOAuthResult {
-  success: boolean;
-  tokens?: AnthropicOAuthTokens;
-  apiKey?: string;
-  error?: string;
-}
-
-// OAuth types for OpenAI
-interface OpenAIOAuthTokens {
-  idToken: string;
-  accessToken: string;
-  refreshToken: string;
-  accountId?: string;
-}
-
-interface OpenAIOAuthResult {
-  success: boolean;
-  tokens?: OpenAIOAuthTokens;
-  apiKey?: string;
-  error?: string;
-}
-
 // OAuth Connect types
-type OAuthProviderId = 'claude' | 'codex';
+type OAuthProviderId = 'openai' | 'anthropic';
 
 interface OAuthProfile {
   id: string;
@@ -350,12 +320,6 @@ export interface AgentageAPI {
     getProviders: () => Promise<LinkedProvider[]>;
   };
   models: {
-    anthropic: {
-      authorize: () => Promise<AnthropicOAuthResult>;
-    };
-    openai: {
-      authorize: () => Promise<OpenAIOAuthResult>;
-    };
     providers: {
       load: (autoRefresh?: boolean) => Promise<LoadProvidersResult>;
       save: (request: SaveProviderRequest) => Promise<SaveProviderResult>;
@@ -418,12 +382,6 @@ const api: AgentageAPI = {
     getProviders: () => ipcRenderer.invoke('auth:getProviders'),
   },
   models: {
-    anthropic: {
-      authorize: () => ipcRenderer.invoke('models:anthropic:authorize'),
-    },
-    openai: {
-      authorize: () => ipcRenderer.invoke('models:openai:authorize'),
-    },
     providers: {
       load: (autoRefresh?: boolean) => ipcRenderer.invoke('models:providers:load', autoRefresh),
       save: (request: SaveProviderRequest) => ipcRenderer.invoke('models:providers:save', request),

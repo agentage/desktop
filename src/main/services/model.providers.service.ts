@@ -5,9 +5,15 @@ import type {
   ModelProviderType,
   SaveProviderRequest,
   SaveProviderResult,
+  TokenSource,
   ValidateTokenResponse,
 } from '../../shared/types/index.js';
-import { loadConfig, saveConfig } from './config.service.js';
+import {
+  loadModelsConfig,
+  resolveProviderToken,
+  saveModelsConfig,
+} from './models.storage.service.js';
+import { OAuthStorage } from './oauth/oauth-storage.service.js';
 
 /**
  * Fallback Anthropic models (used if API fails to list models)
@@ -329,27 +335,103 @@ const isStale = (lastFetchedAt?: string): boolean => {
 };
 
 /**
- * Load saved model providers configuration from config file
+ * Load saved model providers configuration from models.json
  * If autoRefresh is true, re-fetch models from API for providers where lastFetchedAt > 1 day
+ * Also auto-detects OAuth connections that aren't yet in models.json
  */
 export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersResult> => {
-  const config = await loadConfig();
-  let providers = config.modelProviders ?? [];
+  const config = await loadModelsConfig();
+  let providers = [...config.providers];
+  let configChanged = false;
+
+  // OAuth storage for checking connections
+  const oauthStorage = new OAuthStorage();
+
+  // Check for OAuth disconnections - if provider has oauth source but OAuth is disconnected
+  for (let i = providers.length - 1; i >= 0; i--) {
+    const providerConfig = providers[i];
+    if (providerConfig.source.startsWith('oauth:')) {
+      const oauthData = await oauthStorage.getProvider(providerConfig.provider);
+      if (!oauthData?.tokens.accessToken) {
+        // OAuth is disconnected but models.json still has oauth source - remove provider
+        providers.splice(i, 1);
+        configChanged = true;
+      }
+    }
+  }
+
+  // Auto-detect OAuth connections that aren't in models.json yet
+  const providerIds: ModelProviderType[] = ['openai', 'anthropic'];
+
+  for (const provider of providerIds) {
+    const existingProvider = providers.find((p) => p.provider === provider);
+    const existingIndex = providers.findIndex((p) => p.provider === provider);
+
+    // Check if OAuth is connected
+    const oauthData = await oauthStorage.getProvider(provider);
+
+    if (!oauthData?.tokens.accessToken) continue;
+
+    // OAuth is connected - check if we need to add or update the provider
+    const source: TokenSource = `oauth:${provider}` as TokenSource;
+
+    // If provider exists but is set to manual source, update it to use OAuth
+    if (existingProvider?.source === 'manual') {
+      const token = oauthData.tokens.accessToken;
+      const result = await validateToken(provider, token);
+
+      const updatedProvider: ModelProviderConfig = {
+        ...existingProvider,
+        source,
+        token: undefined, // Clear manual token
+        enabled: true,
+        models: result.valid && result.models ? result.models : existingProvider.models,
+        lastFetchedAt: new Date().toISOString(),
+      };
+      providers[existingIndex] = updatedProvider;
+      configChanged = true;
+      continue;
+    }
+
+    // Skip if provider already exists with OAuth source
+    if (existingProvider) continue;
+
+    // OAuth is connected but not in models.json - add it
+    const token = oauthData.tokens.accessToken;
+
+    // Validate token and fetch models
+    const result = await validateToken(provider, token);
+    const newProvider: ModelProviderConfig = {
+      provider,
+      source,
+      enabled: true,
+      models: result.valid && result.models ? result.models : [],
+      lastFetchedAt: new Date().toISOString(),
+    };
+    providers.push(newProvider);
+    configChanged = true;
+  }
+
+  // Save newly detected OAuth providers
+  if (configChanged) {
+    await saveModelsConfig({ providers });
+  }
 
   if (autoRefresh && providers.length > 0) {
     const updatedProviders: ModelProviderConfig[] = [];
-    let configChanged = false;
+    let refreshConfigChanged = false;
 
     for (const providerConfig of providers) {
-      // Skip providers without tokens
-      if (!providerConfig.token) {
+      // Resolve token (handles OAuth)
+      const token = await resolveProviderToken(providerConfig.provider);
+      if (!token) {
         updatedProviders.push(providerConfig);
         continue;
       }
 
       // Check if models need refresh
       if (isStale(providerConfig.lastFetchedAt)) {
-        const result = await validateToken(providerConfig.provider, providerConfig.token);
+        const result = await validateToken(providerConfig.provider, token);
 
         if (result.valid && result.models) {
           // Preserve enabled state from existing models
@@ -367,7 +449,7 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
             models: updatedModels,
             lastFetchedAt: new Date().toISOString(),
           });
-          configChanged = true;
+          refreshConfigChanged = true;
         } else {
           // Keep existing config if refresh failed
           updatedProviders.push(providerConfig);
@@ -378,8 +460,8 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
     }
 
     // Save updated config if any providers were refreshed
-    if (configChanged) {
-      await saveConfig({ ...config, modelProviders: updatedProviders });
+    if (refreshConfigChanged) {
+      await saveModelsConfig({ providers: updatedProviders });
     }
 
     providers = updatedProviders;
@@ -393,15 +475,16 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
  */
 export const saveProvider = async (request: SaveProviderRequest): Promise<SaveProviderResult> => {
   try {
-    const config = await loadConfig();
-    const providers = config.modelProviders ?? [];
+    const config = await loadModelsConfig();
+    const providers = config.providers;
 
     // Find existing provider
     const existingIndex = providers.findIndex((p) => p.provider === request.provider);
 
     const providerConfig: ModelProviderConfig = {
       provider: request.provider,
-      token: request.token,
+      source: request.source,
+      token: request.source === 'manual' ? request.token : undefined,
       enabled: request.enabled,
       lastFetchedAt: request.lastFetchedAt,
       models: request.models,
@@ -413,10 +496,16 @@ export const saveProvider = async (request: SaveProviderRequest): Promise<SavePr
       providers.push(providerConfig);
     }
 
-    await saveConfig({ ...config, modelProviders: providers });
+    await saveModelsConfig({ providers });
     return { success: true };
   } catch (error) {
     console.error('Failed to save provider:', error);
     return { success: false, error: 'Failed to save configuration' };
   }
 };
+
+/**
+ * Get resolved token for a provider (handles OAuth)
+ * Re-exported for use by other services
+ */
+export { resolveProviderToken } from './models.storage.service.js';

@@ -5,7 +5,7 @@
 /**
  * OAuth provider identifiers
  */
-export type OAuthProviderId = 'claude' | 'codex';
+export type OAuthProviderId = 'openai' | 'anthropic';
 
 /**
  * OAuth tokens structure

@@ -8,6 +8,11 @@
 export type ModelProviderType = 'anthropic' | 'openai';
 
 /**
+ * Token source - manual entry or OAuth connection
+ */
+export type TokenSource = 'manual' | 'oauth:openai' | 'oauth:anthropic';
+
+/**
  * Model information from API
  */
 export interface ModelInfo {
@@ -19,14 +24,22 @@ export interface ModelInfo {
 }
 
 /**
- * Model provider configuration stored in config
+ * Model provider configuration stored in models.json
  */
 export interface ModelProviderConfig {
   provider: ModelProviderType;
-  token: string;
+  source: TokenSource;
+  token?: string; // Only when source === 'manual'
   enabled: boolean;
   lastFetchedAt?: string;
   models: ModelInfo[];
+}
+
+/**
+ * Models config file structure (~/.agentage/models.json)
+ */
+export interface ModelsConfig {
+  providers: ModelProviderConfig[];
 }
 
 /**
@@ -56,7 +69,8 @@ export interface ValidateTokenResponse {
  */
 export interface SaveProviderRequest {
   provider: ModelProviderType;
-  token: string;
+  source: TokenSource;
+  token?: string; // Only when source === 'manual'
   enabled: boolean;
   lastFetchedAt?: string;
   models: ModelInfo[];
