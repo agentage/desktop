@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
   ModelInfo,
+  ModelProviderConfig,
   ModelProviderType,
   SaveProviderRequest,
+  TokenSource,
   ValidateTokenResponse,
 } from '../../shared/types/index.js';
 import {
@@ -13,6 +15,7 @@ import {
   CheckCircleIcon,
   CheckIcon,
   IconButton,
+  LinkIcon,
   OpenAIIcon,
   RefreshIcon,
   Section,
@@ -22,6 +25,7 @@ import { cn } from '../lib/utils.js';
 interface ProviderState {
   token: string;
   maskedToken: string;
+  source: TokenSource;
   status: 'empty' | 'validating' | 'valid' | 'invalid';
   models: ModelInfo[];
   error?: string;
@@ -37,6 +41,11 @@ const PROVIDER_TOKEN_PREFIXES: Record<ModelProviderType, string> = {
   anthropic: 'sk-ant-',
   openai: 'sk-',
 };
+
+/**
+ * Check if source is OAuth
+ */
+const isOAuthSource = (source: TokenSource): boolean => source.startsWith('oauth:');
 
 /**
  * Mask token for display (show last 4 chars only)
@@ -55,6 +64,7 @@ export const ModelsPage = (): React.JSX.Element => {
     anthropic: {
       token: '',
       maskedToken: '',
+      source: 'manual',
       status: 'empty',
       models: [],
       isDirty: false,
@@ -62,6 +72,7 @@ export const ModelsPage = (): React.JSX.Element => {
     openai: {
       token: '',
       maskedToken: '',
+      source: 'manual',
       status: 'empty',
       models: [],
       isDirty: false,
@@ -70,8 +81,6 @@ export const ModelsPage = (): React.JSX.Element => {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<ModelProviderType | null>(null);
-  const [authorizing, setAuthorizing] = useState(false);
-  const [authorizingOpenAI, setAuthorizingOpenAI] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   /**
@@ -175,16 +184,22 @@ export const ModelsPage = (): React.JSX.Element => {
         console.log('[ModelsPage] Loaded saved providers:', result);
         const updates: Partial<Record<ModelProviderType, ProviderState>> = {};
 
-        for (const config of result.providers) {
+        for (const config of result.providers as ModelProviderConfig[]) {
           console.log(`[ModelsPage] Loading config for ${config.provider}:`, {
+            source: config.source,
             hasToken: !!config.token,
             modelsCount: config.models.length,
             enabled: config.enabled,
           });
+
+          // For OAuth sources, token is resolved by the backend
+          const displayToken = config.source === 'manual' ? (config.token ?? '') : '';
+
           updates[config.provider] = {
-            token: config.token,
-            maskedToken: maskToken(config.token),
-            status: 'valid', // Assume saved tokens are valid
+            token: displayToken,
+            maskedToken: displayToken ? maskToken(displayToken) : '',
+            source: config.source,
+            status: config.models.length > 0 ? 'valid' : 'empty',
             models: config.models,
             isDirty: false,
           };
@@ -263,12 +278,16 @@ export const ModelsPage = (): React.JSX.Element => {
         const state = providers[provider];
         const request: SaveProviderRequest = {
           provider,
-          token: state.token,
+          source: state.source,
+          token: state.source === 'manual' ? state.token : undefined,
           enabled: true,
           lastFetchedAt: new Date().toISOString(),
           models: state.models,
         };
-        const result = await window.agentage.models.providers.save(request);
+        // Cast to satisfy window.agentage types
+        const result = await window.agentage.models.providers.save(
+          request as unknown as Parameters<typeof window.agentage.models.providers.save>[0]
+        );
 
         if (result.success) {
           setProviders((prev) => ({
@@ -288,131 +307,51 @@ export const ModelsPage = (): React.JSX.Element => {
   );
 
   /**
-   * Handle "Authorize with Claude" button click
-   * Opens browser for OAuth flow, then uses the token for API access
+   * Map model provider to OAuth provider ID
    */
-  const handleAuthorizeWithClaude = useCallback(async (): Promise<void> => {
-    setAuthorizing(true);
-    try {
-      // OAuth flow - open browser for user authentication
-      const authResult = await window.agentage.models.anthropic.authorize();
-
-      if (!authResult.success) {
-        console.error('OAuth authorization failed:', authResult.error);
-        setProviders((prev) => ({
-          ...prev,
-          anthropic: {
-            ...prev.anthropic,
-            error: authResult.error ?? 'Authorization failed',
-          },
-        }));
-        return;
-      }
-
-      // API key is required - access tokens are restricted to Claude Code only
-      if (!authResult.apiKey) {
-        console.error('No API key created from OAuth');
-        setProviders((prev) => ({
-          ...prev,
-          anthropic: {
-            ...prev.anthropic,
-            error: 'Failed to create API key. Please try again or enter an API key manually.',
-          },
-        }));
-        return;
-      }
-
-      const tokenToUse = authResult.apiKey;
-
-      // Set the token
-      setProviders((prev) => ({
-        ...prev,
-        anthropic: {
-          ...prev.anthropic,
-          token: tokenToUse,
-          maskedToken: maskToken(tokenToUse),
-          isDirty: true,
-          error: undefined,
-        },
-      }));
-
-      // Validate the token
-      void validateProviderToken('anthropic', tokenToUse);
-    } catch {
-      setProviders((prev) => ({
-        ...prev,
-        anthropic: {
-          ...prev.anthropic,
-          error: 'Authorization failed',
-        },
-      }));
-    } finally {
-      setAuthorizing(false);
-    }
-  }, [validateProviderToken]);
+  const getOAuthProviderId = (provider: ModelProviderType): 'codex' | 'claude' =>
+    provider === 'openai' ? 'codex' : 'claude';
 
   /**
-   * Handle "Sign in with OpenAI" button click
-   * Opens browser for ChatGPT OAuth flow, gets access token for ChatGPT backend API
+   * Handle clearing OAuth source (disconnect)
    */
-  const handleAuthorizeWithOpenAI = useCallback(async (): Promise<void> => {
-    setAuthorizingOpenAI(true);
+  const handleClearOAuthSource = useCallback(async (provider: ModelProviderType): Promise<void> => {
     try {
-      // OAuth flow - open browser for ChatGPT authentication
-      const authResult = await window.agentage.models.openai.authorize();
+      // First disconnect from OAuth provider
+      const oauthProviderId = getOAuthProviderId(provider);
+      const disconnectResult = await window.agentage.oauth.disconnect(oauthProviderId);
 
-      if (!authResult.success) {
-        console.error('OpenAI OAuth authorization failed:', authResult.error);
-        setProviders((prev) => ({
-          ...prev,
-          openai: {
-            ...prev.openai,
-            error: authResult.error ?? 'Authorization failed',
-          },
-        }));
-        return;
+      if (!disconnectResult.success) {
+        console.error('Failed to disconnect OAuth:', disconnectResult.error);
       }
 
-      // Use the access token (JWT) for ChatGPT backend API
-      const tokenToUse = authResult.tokens?.accessToken;
+      // Clear the provider config from models.json
+      const request: SaveProviderRequest = {
+        provider,
+        source: 'manual',
+        token: undefined,
+        enabled: false,
+        models: [],
+      };
+      await window.agentage.models.providers.save(
+        request as unknown as Parameters<typeof window.agentage.models.providers.save>[0]
+      );
 
-      if (!tokenToUse) {
-        setProviders((prev) => ({
-          ...prev,
-          openai: {
-            ...prev.openai,
-            error: 'No access token received',
-          },
-        }));
-        return;
-      }
-
-      // Set the token
       setProviders((prev) => ({
         ...prev,
-        openai: {
-          ...prev.openai,
-          token: tokenToUse,
-          maskedToken: maskToken(tokenToUse),
-          isDirty: true,
-          error: undefined,
+        [provider]: {
+          token: '',
+          maskedToken: '',
+          source: 'manual',
+          status: 'empty',
+          models: [],
+          isDirty: false,
         },
       }));
-
-      // Validate the token (will use ChatGPT backend API)
-      void validateProviderToken('openai', tokenToUse);
-    } catch {
-      setProviders((prev) => ({
-        ...prev,
-        openai: {
-          ...prev.openai,
-          error: 'Authorization failed',
-        },
-      }));
-    } finally {
-      setAuthorizingOpenAI(false);
+    } catch (error) {
+      console.error('Failed to clear OAuth source:', error);
     }
-  }, [validateProviderToken]);
+  }, []);
 
   /**
    * Handle refresh button - force re-fetch models from all providers
@@ -420,18 +359,31 @@ export const ModelsPage = (): React.JSX.Element => {
   const handleRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
     try {
-      // Force refresh all providers in parallel
-      const refreshPromises = (Object.entries(providers) as [ModelProviderType, ProviderState][])
-        .filter(([, state]) => state.token)
-        .map(([provider, state]) => validateProviderToken(provider, state.token));
+      // Force refresh all providers - reload from models.json
+      const result = await window.agentage.models.providers.load(true);
+      const updates: Partial<Record<ModelProviderType, ProviderState>> = {};
 
-      await Promise.all(refreshPromises);
+      for (const config of result.providers as ModelProviderConfig[]) {
+        const displayToken = config.source === 'manual' ? (config.token ?? '') : '';
+        updates[config.provider] = {
+          token: displayToken,
+          maskedToken: displayToken ? maskToken(displayToken) : '',
+          source: config.source,
+          status: config.models.length > 0 ? 'valid' : 'empty',
+          models: config.models,
+          isDirty: false,
+        };
+      }
+
+      if (Object.keys(updates).length > 0) {
+        setProviders((prev) => ({ ...prev, ...updates }));
+      }
     } catch (error) {
       console.error('Failed to refresh providers:', error);
     } finally {
       setRefreshing(false);
     }
-  }, [providers, validateProviderToken]);
+  }, []);
 
   /**
    * Render provider section
@@ -442,6 +394,7 @@ export const ModelsPage = (): React.JSX.Element => {
     const prefix = PROVIDER_TOKEN_PREFIXES[provider];
     const icon = provider === 'anthropic' ? <AnthropicIcon /> : <OpenAIIcon />;
     const iconColor = provider === 'anthropic' ? 'amber' : 'green';
+    const isOAuth = isOAuthSource(state.source);
 
     return (
       <Section
@@ -450,42 +403,57 @@ export const ModelsPage = (): React.JSX.Element => {
         iconColor={iconColor}
         title={label}
         description={`Configure your ${label} token`}
+        action={
+          isOAuth ? (
+            <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded">
+              <LinkIcon />
+              via OAuth
+            </span>
+          ) : undefined
+        }
       >
         <div className="space-y-4">
-          {/* Token input */}
-          <div className="flex items-center gap-2">
-            <input
-              type="password"
-              value={state.token}
-              onChange={(e) => {
-                handleTokenChange(provider, e.target.value);
-              }}
-              placeholder={`${prefix}...`}
-              className="flex-1 px-2 py-1 text-sm font-mono border border-border rounded bg-background text-foreground focus:outline-none focus:border-primary"
-            />
-            {state.status === 'validating' ? (
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                <RefreshIcon />
-              </span>
-            ) : state.status === 'valid' ? (
-              <span className="flex items-center text-green-500">
-                <CheckCircleIcon />
-              </span>
-            ) : state.status === 'invalid' ? (
-              <span className="flex items-center text-destructive" title={state.error}>
-                <AlertCircleIcon />
-              </span>
-            ) : state.token ? (
-              <IconButton
-                icon={<CheckIcon />}
-                onClick={() => {
-                  handleValidate(provider);
+          {/* Token input - disabled for OAuth sources */}
+          {isOAuth ? (
+            <div className="flex items-center gap-2 px-2 py-1 text-sm font-mono border border-border rounded bg-muted text-muted-foreground">
+              <span className="flex-1">Connected via Connections</span>
+              <LinkIcon />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={state.token}
+                onChange={(e) => {
+                  handleTokenChange(provider, e.target.value);
                 }}
-                className="text-primary hover:bg-primary/10"
-                title="Validate token"
+                placeholder={`${prefix}...`}
+                className="flex-1 px-2 py-1 text-sm font-mono border border-border rounded bg-background text-foreground focus:outline-none focus:border-primary"
               />
-            ) : null}
-          </div>
+              {state.status === 'validating' ? (
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <RefreshIcon />
+                </span>
+              ) : state.status === 'valid' ? (
+                <span className="flex items-center text-green-500">
+                  <CheckCircleIcon />
+                </span>
+              ) : state.status === 'invalid' ? (
+                <span className="flex items-center text-destructive" title={state.error}>
+                  <AlertCircleIcon />
+                </span>
+              ) : state.token ? (
+                <IconButton
+                  icon={<CheckIcon />}
+                  onClick={() => {
+                    handleValidate(provider);
+                  }}
+                  className="text-primary hover:bg-primary/10"
+                  title="Validate token"
+                />
+              ) : null}
+            </div>
+          )}
 
           {/* Model selection (only show when valid) */}
           {((): null => {
@@ -522,9 +490,31 @@ export const ModelsPage = (): React.JSX.Element => {
             </div>
           )}
 
-          {/* Save button */}
-          {state.isDirty && state.status === 'valid' && (
-            <div className="flex justify-end">
+          {/* Actions */}
+          <div className="flex items-center justify-between">
+            {/* Disconnect button for OAuth */}
+            {isOAuth ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => void handleClearOAuthSource(provider)}
+              >
+                Disconnect
+              </Button>
+            ) : !state.token ? (
+              /* Hint to use Connections page */
+              <p className="text-xs text-muted-foreground">
+                💡 Or connect via{' '}
+                <a href="#/connections" className="text-primary underline hover:no-underline">
+                  Connections
+                </a>
+              </p>
+            ) : (
+              <div />
+            )}
+
+            {/* Save button */}
+            {state.isDirty && state.status === 'valid' && (
               <Button
                 onClick={() => void handleSave(provider)}
                 disabled={saving === provider}
@@ -532,48 +522,8 @@ export const ModelsPage = (): React.JSX.Element => {
               >
                 {saving === provider ? 'Saving...' : 'Save'}
               </Button>
-            </div>
-          )}
-
-          {/* Authorize with Claude button (Anthropic only) */}
-          {provider === 'anthropic' && !state.token && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">Don't have a token?</div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void handleAuthorizeWithClaude()}
-                  disabled={authorizing}
-                >
-                  {authorizing ? 'Authorizing...' : 'Sign in with Claude'}
-                </Button>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Opens claude.ai to authenticate and automatically create an API key for you.
-              </p>
-            </div>
-          )}
-
-          {/* Sign in with OpenAI button (OpenAI only) */}
-          {provider === 'openai' && !state.token && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">Don't have a token?</div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void handleAuthorizeWithOpenAI()}
-                  disabled={authorizingOpenAI}
-                >
-                  {authorizingOpenAI ? 'Authorizing...' : 'Sign in with OpenAI'}
-                </Button>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Opens ChatGPT to authenticate and get access to models.
-              </p>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Error message */}
           {state.error && <div className="text-xs text-destructive">{state.error}</div>}

@@ -71,6 +71,7 @@ export interface ComposerSettings {
 
 /**
  * Complete app configuration structure
+ * Note: modelProviders moved to ~/.agentage/models.json
  */
 export interface AppConfig {
   auth?: AuthConfig;
@@ -78,6 +79,5 @@ export interface AppConfig {
   deviceId?: string;
   tokens?: ExternalToken[];
   models?: ModelProvider[];
-  modelProviders?: import('./model.providers.types.js').ModelProviderConfig[];
   settings?: SyncedSettings;
 }

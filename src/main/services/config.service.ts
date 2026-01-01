@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 import { z } from 'zod';
-import { modelProviderConfigSchema, syncedSettingsSchema } from '../../shared/schemas/index.js';
+import { syncedSettingsSchema } from '../../shared/schemas/index.js';
 import type {
   AppConfig,
   ExternalToken,
@@ -66,6 +66,7 @@ const modelProviderSchema = z.object({
 
 /**
  * Complete config schema - compatible with CLI ~/.agentage/config.json
+ * Note: modelProviders moved to ~/.agentage/models.json
  */
 export const configSchema = z.object({
   auth: authConfigSchema.optional(),
@@ -73,7 +74,6 @@ export const configSchema = z.object({
   deviceId: z.string().optional(),
   tokens: z.array(externalTokenSchema).default([]),
   models: z.array(modelProviderSchema).default([]),
-  modelProviders: z.array(modelProviderConfigSchema).default([]),
   settings: syncedSettingsSchema.optional(),
 });
 
@@ -81,7 +81,6 @@ export type { AppConfig, ExternalToken };
 
 const DEFAULT_CONFIG: AppConfig = {
   tokens: [],
-  modelProviders: [],
 };
 
 const DEFAULT_SETTINGS: SyncedSettings = {
