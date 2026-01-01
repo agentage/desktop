@@ -11,6 +11,7 @@ import type {
   Conversation,
   SessionConfig,
 } from '../../shared/types/chat.types.js';
+import { listTools } from '../tools/index.js';
 import { loadProviders, resolveProviderToken } from './model.providers.service.js';
 
 /**
@@ -425,9 +426,18 @@ const getContextWindow = (modelId: string): number => {
 };
 
 /**
- * Get available tools (Phase 2 - returns empty for now)
+ * Get available tools from tool registry
  */
-export const getTools = (): Promise<ChatToolInfo[]> => Promise.resolve([]);
+export const getTools = (): Promise<ChatToolInfo[]> => {
+  const tools = listTools();
+  return Promise.resolve(
+    tools.map((t) => ({
+      id: t.name,
+      name: t.name,
+      description: t.description,
+    }))
+  );
+};
 
 /**
  * Get available agents (Phase 2 - returns empty for now)
