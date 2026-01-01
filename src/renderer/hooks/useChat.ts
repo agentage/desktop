@@ -9,6 +9,31 @@ import type {
 } from '../../shared/types/chat.types.js';
 
 /**
+ * Tool call status
+ */
+export type ToolCallStatus = 'pending' | 'running' | 'completed' | 'error';
+
+/**
+ * Tool result data for UI
+ */
+export interface ToolResultUI {
+  content: string;
+  isError: boolean;
+  truncated?: boolean;
+}
+
+/**
+ * Tool call data for UI
+ */
+export interface ToolCallUI {
+  id: string;
+  name: string;
+  input: Record<string, unknown>;
+  status: ToolCallStatus;
+  result?: ToolResultUI;
+}
+
+/**
  * Message in the chat UI
  */
 export interface ChatUIMessage {
@@ -19,6 +44,8 @@ export interface ChatUIMessage {
   isStreaming?: boolean;
   error?: string;
   usage?: { inputTokens: number; outputTokens: number };
+  /** Tool calls made by assistant */
+  toolCalls?: ToolCallUI[];
 }
 
 /**
@@ -31,6 +58,20 @@ interface ChatState {
   conversationId: string | null;
   currentRequestId: string | null;
 }
+
+/**
+ * Format tool result for display
+ */
+const formatToolResult = (result: unknown): string => {
+  if (typeof result === 'string') {
+    return result;
+  }
+  try {
+    return JSON.stringify(result, null, 2);
+  } catch {
+    return String(result);
+  }
+};
 
 /**
  * useChat hook return type
@@ -146,15 +187,56 @@ export const useChat = (): UseChatReturn => {
           }
 
           case 'tool_call': {
-            // Could show tool call indicator
-            console.log('Tool call:', event.name, event.input);
-            return prev;
+            // Add tool call to the assistant message
+            const messages = [...prev.messages];
+            const lastIndex = messages.length - 1;
+            const lastMessage = messages[lastIndex] as ChatUIMessage | undefined;
+
+            if (lastMessage?.role === 'assistant') {
+              const toolCalls = lastMessage.toolCalls ? [...lastMessage.toolCalls] : [];
+              const inputObj =
+                typeof event.input === 'object' && event.input !== null
+                  ? (event.input as Record<string, unknown>)
+                  : {};
+              toolCalls.push({
+                id: event.toolCallId,
+                name: event.name,
+                input: inputObj,
+                status: 'running',
+              });
+              messages[lastIndex] = {
+                ...lastMessage,
+                toolCalls,
+              };
+            }
+            return { ...prev, messages };
           }
 
           case 'tool_result': {
-            // Could show tool result
-            console.log('Tool result:', event.name, event.result);
-            return prev;
+            // Update tool call with result
+            const messages = [...prev.messages];
+            const lastIndex = messages.length - 1;
+            const lastMessage = messages[lastIndex] as ChatUIMessage | undefined;
+
+            if (lastMessage?.role === 'assistant' && lastMessage.toolCalls) {
+              const toolCalls = lastMessage.toolCalls.map((tc) =>
+                tc.id === event.toolCallId
+                  ? {
+                      ...tc,
+                      status: (event.isError ? 'error' : 'completed') as ToolCallStatus,
+                      result: {
+                        content: formatToolResult(event.result),
+                        isError: event.isError ?? false,
+                      },
+                    }
+                  : tc
+              );
+              messages[lastIndex] = {
+                ...lastMessage,
+                toolCalls,
+              };
+            }
+            return { ...prev, messages };
           }
 
           case 'usage': {
