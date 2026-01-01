@@ -13,6 +13,7 @@ import {
   resolveProviderToken,
   saveModelsConfig,
 } from './models.storage.service.js';
+import { OAuthStorage } from './oauth/oauth-storage.service.js';
 
 /**
  * Fallback Anthropic models (used if API fails to list models)
@@ -343,8 +344,7 @@ export const loadProviders = async (autoRefresh = false): Promise<LoadProvidersR
   let providers = [...config.providers];
   let configChanged = false;
 
-  // Import OAuth storage once
-  const { OAuthStorage } = await import('./oauth/oauth-storage.service.js');
+  // OAuth storage for checking connections
   const oauthStorage = new OAuthStorage();
 
   // Check for OAuth disconnections - if provider has oauth source but OAuth is disconnected
