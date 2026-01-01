@@ -253,7 +253,52 @@ interface ChatAPI {
   getTools: () => Promise<ChatToolInfo[]>;
   getAgents: () => Promise<ChatAgentInfo[]>;
   clear: () => void;
+  context: {
+    get: (threadId?: string) => Promise<ContextResponse>;
+  };
 }
+
+// Context types
+interface ContextItem {
+  name: string;
+  tokens: number;
+  percentage: number;
+  color: string;
+}
+
+interface ContextBreakdownData {
+  currentContext: number;
+  maxContext: number;
+  items: ContextItem[];
+  agentageFiles?: { path: string; tokens: number }[];
+  timestamp: string;
+}
+
+interface ContextFileInfo {
+  path: string;
+  exists: boolean;
+  tokens: number;
+  lastModified: string | null;
+  content?: string;
+}
+
+interface FullContextResponse {
+  threadId: string;
+  breakdown: ContextBreakdownData;
+  files: {
+    global: ContextFileInfo;
+    project: ContextFileInfo | null;
+  };
+}
+
+interface FilesOnlyResponse {
+  files: {
+    global: ContextFileInfo;
+    project: ContextFileInfo | null;
+  };
+}
+
+type ContextResponse = FullContextResponse | FilesOnlyResponse;
 
 export interface AgentageAPI {
   agents: {
@@ -410,6 +455,9 @@ const api: AgentageAPI = {
     getAgents: () => ipcRenderer.invoke('chat:getAgents'),
     clear: () => {
       void ipcRenderer.invoke('chat:clear');
+    },
+    context: {
+      get: (threadId?: string) => ipcRenderer.invoke('chat:context:get', threadId),
     },
   },
 };

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { cn } from '../../lib/utils.js';
 import { ContextBreakdown } from './ContextBreakdown.js';
@@ -14,21 +14,19 @@ const DEFAULT_MODEL: ModelOption = {
   provider: 'Anthropic',
 };
 
-const MOCK_CONTEXT_DATA: ContextBreakdownData = {
-  currentContext: 56000,
+// Default empty context data (shown while loading)
+const DEFAULT_CONTEXT_DATA: ContextBreakdownData = {
+  currentContext: 0,
   maxContext: 200000,
   items: [
-    { name: 'System Prompt', tokens: 6000, percentage: 10, color: '#3B82F6' },
-    { name: 'System Tools', tokens: 10000, percentage: 18, color: '#EAB308' },
-    { name: 'CLAUDE.md', tokens: 2000, percentage: 4, color: '#22C55E' },
-    { name: 'MCP Tools', tokens: 28000, percentage: 51, color: '#F97316' },
-    { name: 'Conversation', tokens: 10000, percentage: 17, color: '#06B6D4' },
+    { name: 'System Prompt', tokens: 0, percentage: 0, color: '#3B82F6' },
+    { name: 'System Tools', tokens: 0, percentage: 0, color: '#EAB308' },
+    { name: 'AGENTAGE.md', tokens: 0, percentage: 0, color: '#22C55E' },
+    { name: 'MCP Tools', tokens: 0, percentage: 0, color: '#F97316' },
+    { name: 'Conversation', tokens: 0, percentage: 0, color: '#06B6D4' },
   ],
-  claudeFiles: [
-    { path: '~/.claude/CLAUDE.md', tokens: 0 },
-    { path: '~/andy/CLAUDE.md', tokens: 3000 },
-  ],
-  timestamp: '4:01:49 PM',
+  agentageFiles: [],
+  timestamp: new Date().toLocaleTimeString(),
 };
 
 interface StatusLineProps {
@@ -41,6 +39,7 @@ interface StatusLineProps {
   agents?: AgentOption[];
   selectedAgent?: AgentOption;
   onAgentChange?: (agent: AgentOption) => void;
+  onRefresh?: () => Promise<void>;
 }
 
 /**
@@ -58,6 +57,7 @@ const StatusLine = ({
   agents,
   selectedAgent,
   onAgentChange,
+  onRefresh,
 }: StatusLineProps): React.JSX.Element => {
   const [showContextBreakdown, setShowContextBreakdown] = useState(false);
   const [showToolsPopover, setShowToolsPopover] = useState(false);
@@ -142,6 +142,7 @@ const StatusLine = ({
         onClose={() => {
           setShowContextBreakdown(false);
         }}
+        onRefresh={onRefresh}
       />
 
       {/* Tools popover */}
@@ -198,10 +199,75 @@ export const ComposerInput = ({
   const [value, setValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [internalSelectedModel, setInternalSelectedModel] = useState<ModelOption>(DEFAULT_MODEL);
+  const [contextData, setContextData] = useState<ContextBreakdownData>(DEFAULT_CONTEXT_DATA);
 
   // Use prop if provided, otherwise use internal state
   const selectedModel = propSelectedModel ?? internalSelectedModel;
   const handleModelChange = onModelChange ?? setInternalSelectedModel;
+
+  // Fetch context data function - extracted for reuse
+  const fetchContext = useCallback(async (): Promise<void> => {
+    try {
+      const response = await window.agentage.chat.context.get();
+      if ('breakdown' in response) {
+        setContextData(response.breakdown);
+      } else if ('files' in response) {
+        // Files-only response - build minimal breakdown
+        const globalTokens = response.files.global.tokens;
+        const projectTokens = response.files.project?.tokens ?? 0;
+        const totalTokens = globalTokens + projectTokens;
+
+        const agentageFiles: { path: string; tokens: number }[] = [];
+        if (response.files.global.exists) {
+          agentageFiles.push({
+            path: response.files.global.path.replace(/^\/home\/[^/]+/, '~'),
+            tokens: globalTokens,
+          });
+        }
+        if (response.files.project?.exists) {
+          agentageFiles.push({
+            path: response.files.project.path.replace(/^\/home\/[^/]+/, '~'),
+            tokens: projectTokens,
+          });
+        }
+
+        setContextData({
+          currentContext: totalTokens,
+          maxContext: 200000,
+          items: [
+            { name: 'System Prompt', tokens: 0, percentage: 0, color: '#3B82F6' },
+            { name: 'System Tools', tokens: 0, percentage: 0, color: '#EAB308' },
+            {
+              name: 'AGENTAGE.md',
+              tokens: totalTokens,
+              percentage: totalTokens > 0 ? 100 : 0,
+              color: '#22C55E',
+            },
+            { name: 'MCP Tools', tokens: 0, percentage: 0, color: '#F97316' },
+            { name: 'Conversation', tokens: 0, percentage: 0, color: '#06B6D4' },
+          ],
+          agentageFiles,
+          timestamp: new Date().toLocaleTimeString(),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch context:', error);
+    }
+  }, []);
+
+  // Fetch context data on mount and periodically
+  useEffect(() => {
+    void fetchContext();
+
+    // Refresh every 10 seconds
+    const interval = setInterval(() => {
+      void fetchContext();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [fetchContext]);
 
   const handleSubmit = useCallback(() => {
     if (value.trim() && onSubmit) {
@@ -260,12 +326,13 @@ export const ComposerInput = ({
         selectedModel={selectedModel}
         onModelChange={handleModelChange}
         models={models}
-        tokenCount={MOCK_CONTEXT_DATA.currentContext}
+        tokenCount={contextData.currentContext}
         isFocused={isFocused}
-        contextData={MOCK_CONTEXT_DATA}
+        contextData={contextData}
         agents={agents}
         selectedAgent={selectedAgent}
         onAgentChange={onAgentChange}
+        onRefresh={fetchContext}
       />
     </div>
   );

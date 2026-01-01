@@ -9,6 +9,7 @@ import {
   getTools,
   sendMessage,
 } from '../services/chat.service.js';
+import { getContextInfo } from '../services/context.service.js';
 
 export const registerChatHandlers = (
   ipcMain: IpcMain,
@@ -63,4 +64,9 @@ export const registerChatHandlers = (
   ipcMain.handle('chat:clear', () => {
     clearHistory();
   });
+
+  /**
+   * Get context breakdown info
+   */
+  ipcMain.handle('chat:context:get', (_event, threadId?: string) => getContextInfo(threadId));
 };
