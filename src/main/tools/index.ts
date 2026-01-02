@@ -5,6 +5,11 @@ import { handler as searchGithub } from './handlers/search-github.js';
 import type { Tool, ToolContext, ToolHandler } from './types.js';
 
 /**
+ * Default timeout for tool execution (60 seconds)
+ */
+const DEFAULT_TOOL_TIMEOUT = 60000;
+
+/**
  * Registry of builtin tool handlers by name
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,6 +40,7 @@ export const getTool = (name: string): Tool | null => {
 
 /**
  * Execute a tool by name with given input
+ * Includes timeout protection to prevent hanging
  */
 export const executeTool = async (
   name: string,
@@ -47,7 +53,22 @@ export const executeTool = async (
     throw new Error(`Tool not found: ${name}`);
   }
 
-  return handler(input, context);
+  // Create timeout race to prevent hanging tools
+  const timeoutMs = DEFAULT_TOOL_TIMEOUT;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new Error(`Tool "${name}" timed out after ${String(timeoutMs)}ms`));
+    }, timeoutMs);
+
+    // Clean up timeout if aborted
+    context?.abortSignal?.addEventListener('abort', () => {
+      clearTimeout(timeoutId);
+      reject(new Error(`Tool "${name}" was cancelled`));
+    });
+  });
+
+  // Race between handler execution and timeout
+  return Promise.race([handler(input, context), timeoutPromise]);
 };
 
 // Re-export types for convenience

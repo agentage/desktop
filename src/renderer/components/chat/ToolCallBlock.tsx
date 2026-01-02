@@ -106,7 +106,7 @@ interface ToolCallBlockProps {
  */
 export const ToolCallBlock = memo(({ toolCall }: ToolCallBlockProps): React.JSX.Element => {
   const [isInputOpen, setIsInputOpen] = useState(false);
-  const [isResultOpen, setIsResultOpen] = useState(true);
+  const [isResultOpen, setIsResultOpen] = useState(false);
 
   const hasInput = Object.keys(toolCall.input).length > 0;
   const hasResult = toolCall.result !== undefined;

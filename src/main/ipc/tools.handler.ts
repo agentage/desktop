@@ -6,7 +6,17 @@ import type {
   ToolStatus,
 } from '../../shared/types/index.js';
 import { loadToolSettings, updateToolSettings } from '../services/tools.settings.service.js';
-import { listTools } from '../tools/index.js';
+import { getActiveWorkspace } from '../services/workspace.service.js';
+import { executeTool, listTools } from '../tools/index.js';
+
+/**
+ * Result from tool execution IPC
+ */
+interface ToolExecuteResult {
+  success: boolean;
+  result?: unknown;
+  error?: string;
+}
 
 /**
  * Map tool to UI-friendly format
@@ -42,6 +52,28 @@ export const registerToolsHandlers = (ipcMain: IpcMain): void => {
     'tools:updateSettings',
     async (_event, update: ToolSettingsUpdate): Promise<void> => {
       await updateToolSettings(update);
+    }
+  );
+
+  /**
+   * Execute a tool directly (for testing/debugging)
+   * Not used by chat - chat executes tools internally
+   */
+  ipcMain.handle(
+    'tools:execute',
+    async (_event, name: string, input: Record<string, unknown>): Promise<ToolExecuteResult> => {
+      try {
+        const workspace = await getActiveWorkspace();
+        const result = await executeTool(name, input, {
+          workspacePath: workspace?.path,
+        });
+        return { success: true, result };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
     }
   );
 };

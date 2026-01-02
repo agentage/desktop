@@ -34,6 +34,13 @@ export interface ToolCallUI {
 }
 
 /**
+ * Content block - either text or a tool call (for interleaved display)
+ */
+export type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'tool_call'; toolCall: ToolCallUI };
+
+/**
  * Message in the chat UI
  */
 export interface ChatUIMessage {
@@ -44,8 +51,10 @@ export interface ChatUIMessage {
   isStreaming?: boolean;
   error?: string;
   usage?: { inputTokens: number; outputTokens: number };
-  /** Tool calls made by assistant */
+  /** Tool calls made by assistant (deprecated, use contentBlocks) */
   toolCalls?: ToolCallUI[];
+  /** Interleaved content blocks - text and tool calls in order */
+  contentBlocks?: ContentBlock[];
 }
 
 /**
@@ -89,6 +98,8 @@ interface UseChatReturn {
   models: ChatModelInfo[];
   /** Available tools */
   tools: ChatToolInfo[];
+  /** Enabled tool IDs */
+  enabledTools: string[];
   /** Available agents */
   agents: ChatAgentInfo[];
   /** Currently selected model */
@@ -125,11 +136,13 @@ export const useChat = (): UseChatReturn => {
 
   const [models, setModels] = useState<ChatModelInfo[]>([]);
   const [tools, setTools] = useState<ChatToolInfo[]>([]);
+  const [enabledTools, setEnabledTools] = useState<string[]>([]);
   const [agents, setAgents] = useState<ChatAgentInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState<ChatModelInfo | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<ChatAgentInfo | null>(null);
   const [sessionConfig, setSessionConfig] = useState<SessionConfig>({
     model: DEFAULT_MODEL,
+    tools: [],
   });
 
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -138,15 +151,21 @@ export const useChat = (): UseChatReturn => {
   useEffect(() => {
     const loadResources = async (): Promise<void> => {
       try {
-        const [loadedModels, loadedTools, loadedAgents] = await Promise.all([
+        const [loadedModels, loadedTools, loadedAgents, toolsListResult] = await Promise.all([
           window.agentage.chat.getModels(),
           window.agentage.chat.getTools(),
           window.agentage.chat.getAgents(),
+          window.agentage.tools.list(),
         ]);
 
         setModels(loadedModels);
         setTools(loadedTools);
         setAgents(loadedAgents);
+
+        // Load enabled tools from tools settings
+        const enabled = toolsListResult.settings.enabledTools;
+        setEnabledTools(enabled);
+        setSessionConfig((prev) => ({ ...prev, tools: enabled }));
 
         // Set default selected model
         if (loadedModels.length > 0) {
@@ -173,13 +192,28 @@ export const useChat = (): UseChatReturn => {
 
         switch (event.type) {
           case 'text': {
-            // Append text to the last assistant message
+            // Append text to the last assistant message + update contentBlocks
             const messages = [...prev.messages];
             const lastMessage = messages[messages.length - 1];
             if (lastMessage.role === 'assistant') {
+              const blocks = lastMessage.contentBlocks ?? [];
+              const lastBlock = blocks[blocks.length - 1] as ContentBlock | undefined;
+
+              // If last block is text, append to it; otherwise create new text block
+              let newBlocks: ContentBlock[];
+              if (lastBlock?.type === 'text') {
+                newBlocks = [
+                  ...blocks.slice(0, -1),
+                  { type: 'text', text: lastBlock.text + event.text },
+                ];
+              } else {
+                newBlocks = [...blocks, { type: 'text', text: event.text }];
+              }
+
               messages[messages.length - 1] = {
                 ...lastMessage,
                 content: lastMessage.content + event.text,
+                contentBlocks: newBlocks,
               };
             }
             return { ...prev, messages };
@@ -192,7 +226,7 @@ export const useChat = (): UseChatReturn => {
           }
 
           case 'tool_call': {
-            // Add tool call to the assistant message
+            // Add tool call to the assistant message + contentBlocks
             const messages = [...prev.messages];
             const lastIndex = messages.length - 1;
             const lastMessage = messages[lastIndex] as ChatUIMessage | undefined;
@@ -203,42 +237,63 @@ export const useChat = (): UseChatReturn => {
                 typeof event.input === 'object' && event.input !== null
                   ? (event.input as Record<string, unknown>)
                   : {};
-              toolCalls.push({
+              const newToolCall: ToolCallUI = {
                 id: event.toolCallId,
                 name: event.name,
                 input: inputObj,
                 status: 'running',
-              });
+              };
+              toolCalls.push(newToolCall);
+
+              // Add tool call as a content block
+              const blocks = lastMessage.contentBlocks ?? [];
+              const newBlocks: ContentBlock[] = [
+                ...blocks,
+                { type: 'tool_call', toolCall: newToolCall },
+              ];
+
               messages[lastIndex] = {
                 ...lastMessage,
                 toolCalls,
+                contentBlocks: newBlocks,
               };
             }
             return { ...prev, messages };
           }
 
           case 'tool_result': {
-            // Update tool call with result
+            // Update tool call with result in both toolCalls and contentBlocks
             const messages = [...prev.messages];
             const lastIndex = messages.length - 1;
             const lastMessage = messages[lastIndex] as ChatUIMessage | undefined;
 
             if (lastMessage?.role === 'assistant' && lastMessage.toolCalls) {
+              const updatedResult = {
+                content: formatToolResult(event.result),
+                isError: event.isError ?? false,
+              };
+              const updatedStatus = (event.isError ? 'error' : 'completed') as ToolCallStatus;
+
               const toolCalls = lastMessage.toolCalls.map((tc) =>
                 tc.id === event.toolCallId
-                  ? {
-                      ...tc,
-                      status: (event.isError ? 'error' : 'completed') as ToolCallStatus,
-                      result: {
-                        content: formatToolResult(event.result),
-                        isError: event.isError ?? false,
-                      },
-                    }
+                  ? { ...tc, status: updatedStatus, result: updatedResult }
                   : tc
               );
+
+              // Also update in contentBlocks
+              const contentBlocks = lastMessage.contentBlocks?.map((block) =>
+                block.type === 'tool_call' && block.toolCall.id === event.toolCallId
+                  ? {
+                      ...block,
+                      toolCall: { ...block.toolCall, status: updatedStatus, result: updatedResult },
+                    }
+                  : block
+              );
+
               messages[lastIndex] = {
                 ...lastMessage,
                 toolCalls,
+                contentBlocks,
               };
             }
             return { ...prev, messages };
@@ -424,6 +479,7 @@ export const useChat = (): UseChatReturn => {
     conversationId: state.conversationId,
     models,
     tools,
+    enabledTools,
     agents,
     selectedModel,
     selectedAgent,
