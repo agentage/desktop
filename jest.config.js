@@ -20,8 +20,8 @@ export default {
       },
     ],
   },
-  testMatch: ['**/src/**/*.test.ts', '**/src/**/*.test.tsx'],
-  testPathIgnorePatterns: ['/node_modules/', '/example-reference/'],
+  testMatch: ['<rootDir>/src/**/*.test.ts', '<rootDir>/src/**/*.test.tsx'],
+  testPathIgnorePatterns: ['/node_modules/', '/example/'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.test.{ts,tsx}',
