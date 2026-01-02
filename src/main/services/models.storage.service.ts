@@ -8,8 +8,8 @@ import type {
   ModelsConfig,
   TokenSource,
 } from '../../shared/types/index.js';
-import { OAuthStorage } from './oauth/oauth-storage.service.js';
 import { getOAuthManager } from './oauth/oauth-manager.service.js';
+import { OAuthStorage } from './oauth/oauth-storage.service.js';
 
 const CONFIG_DIR = join(homedir(), '.agentage');
 const MODELS_FILE = join(CONFIG_DIR, 'models.json');
