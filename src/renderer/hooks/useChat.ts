@@ -142,6 +142,7 @@ export const useChat = (): UseChatReturn => {
 
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const unsubscribeToolsRef = useRef<(() => void) | null>(null);
+  const unsubscribeModelsRef = useRef<(() => void) | null>(null);
 
   // Load available models, tools, agents on mount
   useEffect(() => {
@@ -376,6 +377,25 @@ export const useChat = (): UseChatReturn => {
       }
     };
   }, []);
+
+  // Subscribe to models:change events for real-time sync
+  useEffect(() => {
+    unsubscribeModelsRef.current = window.agentage.models.onChange((newModels) => {
+      setModels(newModels);
+      // If selected model is no longer available, select first available or null
+      if (selectedModel && !newModels.some((m) => m.id === selectedModel.id)) {
+        const defaultModel = newModels.find((m) => m.id.includes('sonnet')) ?? newModels[0] ?? null;
+        setSelectedModel(defaultModel);
+      }
+    });
+
+    return (): void => {
+      if (unsubscribeModelsRef.current) {
+        unsubscribeModelsRef.current();
+        unsubscribeModelsRef.current = null;
+      }
+    };
+  }, [selectedModel]);
 
   const sendMessage = useCallback(
     async (prompt: string): Promise<void> => {

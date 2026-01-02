@@ -136,6 +136,7 @@ export const ToolsPopover = ({ isOpen, onClose }: ToolsPopoverProps): React.JSX.
   const [isLoading, setIsLoading] = useState(true);
 
   // Load tools from IPC when popover opens
+  // Only show tools that are enabled in the settings (disabled tools are hidden)
   useEffect(() => {
     if (!isOpen) return;
 
@@ -143,9 +144,12 @@ export const ToolsPopover = ({ isOpen, onClose }: ToolsPopoverProps): React.JSX.
       setIsLoading(true);
       try {
         const result = await window.agentage.tools.list();
-        setTools(result.tools);
+        const enabledSet = new Set(result.settings.enabledTools);
+        // Filter to only show enabled tools
+        const enabledToolsList = result.tools.filter((t) => enabledSet.has(t.name));
+        setTools(enabledToolsList);
         setEnabledTools(result.settings.enabledTools);
-        setToolGroups(groupToolsBySource(result.tools));
+        setToolGroups(groupToolsBySource(enabledToolsList));
       } catch (error) {
         console.error('Failed to load tools:', error);
       } finally {

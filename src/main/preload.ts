@@ -349,6 +349,7 @@ export interface AgentageAPI {
       save: (request: SaveProviderRequest) => Promise<SaveProviderResult>;
     };
     validate: (request: ValidateTokenRequest) => Promise<ValidateTokenResponse>;
+    onChange: (callback: (models: ChatModelInfo[]) => void) => () => void;
   };
   config: {
     get: () => Promise<Record<string, unknown>>;
@@ -416,6 +417,15 @@ const api: AgentageAPI = {
       save: (request: SaveProviderRequest) => ipcRenderer.invoke('models:providers:save', request),
     },
     validate: (request: ValidateTokenRequest) => ipcRenderer.invoke('models:validate', request),
+    onChange: (callback: (models: ChatModelInfo[]) => void) => {
+      const handler = (_event: unknown, models: ChatModelInfo[]): void => {
+        callback(models);
+      };
+      ipcRenderer.on('models:change', handler);
+      return () => {
+        ipcRenderer.removeListener('models:change', handler);
+      };
+    },
   },
   config: {
     get: () => ipcRenderer.invoke('config:get'),

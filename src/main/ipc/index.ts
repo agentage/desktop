@@ -20,7 +20,7 @@ export const registerIpcHandlers = (
   registerAuthHandlers(ipcMain);
   registerChatHandlers(ipcMain, getMainWindow);
   registerConfigHandlers(ipcMain);
-  registerModelProvidersHandlers(ipcMain);
+  registerModelProvidersHandlers(ipcMain, getMainWindow);
   registerOAuthConnectHandlers(ipcMain);
   registerToolsHandlers(ipcMain, getMainWindow);
   registerAppHandlers(ipcMain, getMainWindow);

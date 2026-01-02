@@ -1,8 +1,12 @@
-import type { IpcMain } from 'electron';
+import type { BrowserWindow, IpcMain } from 'electron';
 import type { ModelProviderType, SaveProviderRequest } from '../../shared/types/index.js';
+import { getModels } from '../services/chat.service.js';
 import { loadProviders, saveProvider, validateToken } from '../services/model.providers.service.js';
 
-export const registerModelProvidersHandlers = (ipcMain: IpcMain): void => {
+export const registerModelProvidersHandlers = (
+  ipcMain: IpcMain,
+  getMainWindow: () => BrowserWindow | null
+): void => {
   /**
    * Load all model providers with their models from configuration
    * If autoRefresh is true, re-fetch models from API for stale providers (> 1 day)
@@ -13,10 +17,18 @@ export const registerModelProvidersHandlers = (ipcMain: IpcMain): void => {
 
   /**
    * Save a model provider configuration (token and models selection)
+   * Emits models:change event to notify renderer of updated models list
    */
-  ipcMain.handle('models:providers:save', async (_event, request: SaveProviderRequest) =>
-    saveProvider(request)
-  );
+  ipcMain.handle('models:providers:save', async (_event, request: SaveProviderRequest) => {
+    const result = await saveProvider(request);
+    // Emit models:change event with updated enabled models list
+    const mainWindow = getMainWindow();
+    if (mainWindow) {
+      const models = await getModels();
+      mainWindow.webContents.send('models:change', models);
+    }
+    return result;
+  });
 
   /**
    * Validate provider token & fetch models
