@@ -1,6 +1,6 @@
 import type { IpcMain } from 'electron';
-import type { Settings } from '../../shared/types/index.js';
-import { getSettings, loadConfig, saveConfig, updateSettings } from '../services/config.service.js';
+import type { Settings } from '../../../shared/types/index.js';
+import { getSettings, loadConfig, saveConfig, updateSettings } from '../../services/config.service.js';
 
 export const registerConfigHandlers = (ipcMain: IpcMain): void => {
   ipcMain.handle('config:get', async () => loadConfig());

@@ -1,5 +1,5 @@
 import type { BrowserWindow, IpcMain } from 'electron';
-import type { WorkspaceUpdate } from '../../shared/types/workspace.types.js';
+import type { WorkspaceUpdate } from '../../../shared/types/workspace.types.js';
 import {
   addWorkspace,
   browseWorkspaceFolder,
@@ -10,7 +10,7 @@ import {
   setMainWindow,
   switchWorkspace,
   updateWorkspace,
-} from '../services/workspace.service.js';
+} from '../../services/workspace.service.js';
 
 export const registerWorkspaceHandlers = (
   ipcMain: IpcMain,

@@ -1,6 +1,6 @@
 import type { BrowserWindow, IpcMain } from 'electron';
 import { app, shell } from 'electron';
-import { getConfigDir } from '../services/config.service.js';
+import { getConfigDir } from '../../services/config.service.js';
 
 // Track renderer ready state per window
 const rendererReadyWindows = new WeakSet<BrowserWindow>();

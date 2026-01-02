@@ -4,10 +4,10 @@ import type {
   ToolListResult,
   ToolSettingsUpdate,
   ToolStatus,
-} from '../../shared/types/index.js';
-import { loadToolSettings, updateToolSettings } from '../services/tools.settings.service.js';
-import { getActiveWorkspace } from '../services/workspace.service.js';
-import { executeTool, listTools } from '../tools/index.js';
+} from '../../../shared/types/index.js';
+import { loadToolSettings, updateToolSettings } from '../../services/tools.settings.service.js';
+import { getActiveWorkspace } from '../../services/workspace.service.js';
+import { executeTool, listTools } from '../../tools/index.js';
 
 /**
  * Result from tool execution IPC
@@ -50,7 +50,7 @@ export const registerToolsHandlers = (
 
   /**
    * Update tool settings (enabled/disabled state)
-   * Emits tools:change event to all windows for real-time sync
+   * Emits tools:changed event to all windows for real-time sync
    */
   ipcMain.handle(
     'tools:updateSettings',
@@ -58,7 +58,7 @@ export const registerToolsHandlers = (
       await updateToolSettings(update);
       // Emit change event to all windows for real-time sync
       const mainWindow = getMainWindow();
-      mainWindow?.webContents.send('tools:change', update.enabledTools);
+      mainWindow?.webContents.send('tools:changed', update.enabledTools);
     }
   );
 

@@ -5,7 +5,7 @@ import type {
   LinkProviderResult,
   OAuthProvider,
   UnlinkProviderResult,
-} from '../../shared/types/auth.types.js';
+} from '../../../shared/types/auth.types.js';
 import {
   getLinkedProviders,
   getUser,
@@ -14,7 +14,7 @@ import {
   refreshTokenIfNeeded,
   startOAuthFlow,
   unlinkProvider,
-} from '../services/auth.service.js';
+} from '../../services/auth.service.js';
 
 export const registerAuthHandlers = (ipcMain: IpcMain): void => {
   ipcMain.handle('auth:login', async (): Promise<AuthResult> => {

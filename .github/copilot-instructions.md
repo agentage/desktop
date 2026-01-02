@@ -113,6 +113,46 @@ contextBridge.exposeInMainWorld('agentage', {
 const agents = await window.agentage.agents.list();
 ```
 
+## **IPC Naming Conventions**
+
+### Channel Pattern: `{domain}[.subdomain]:{action}`
+
+- Use **dots** (`.`) for subdomain separation
+- Use **colons** (`:`) before action
+- Actions: `list`, `get`, `add`, `update`, `remove`, `load`, `save`, `validate`
+
+Examples:
+
+```typescript
+'agents:list'; // Simple domain:action
+'agents:run'; // Simple domain:action
+'chat.models:get'; // Subdomain: chat domain, models subdomain, get action
+'chat.tools:get'; // Subdomain: chat domain, tools subdomain, get action
+'chat.context:get'; // Subdomain: chat domain, context subdomain, get action
+'models.providers:load'; // Subdomain: models domain, providers subdomain, load action
+'models.providers:save'; // Subdomain: models domain, providers subdomain, save action
+```
+
+### Event Pattern: `{domain}[.subdomain]:changed`
+
+- Always use **`:changed`** suffix for state change events
+- Consistent naming for real-time updates
+
+Examples:
+
+```typescript
+'models:changed'; // Models list updated
+'tools:changed'; // Tools settings updated
+'workspace:changed'; // Workspace list updated
+```
+
+### Action Naming Rules
+
+- **Collections**: `list`, `getAll`
+- **Single item**: `get`, `add`, `update`, `remove`
+- **State**: `load`, `save`, `validate`
+- **Operations**: `send`, `cancel`, `clear`, `browse`, `switch`
+
 ## **Workspace Structure**
 
 ```

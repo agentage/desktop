@@ -384,7 +384,7 @@ export const useChat = (): UseChatReturn => {
       setModels(newModels);
       // If selected model is no longer available, select first available or null
       if (selectedModel && !newModels.some((m) => m.id === selectedModel.id)) {
-        const defaultModel = newModels.find((m) => m.id.includes('sonnet')) ?? newModels[0] ?? null;
+        const defaultModel = newModels.find((m) => m.id.includes('sonnet')) ?? (newModels[0] || null);
         setSelectedModel(defaultModel);
       }
     });
@@ -449,15 +449,17 @@ export const useChat = (): UseChatReturn => {
         // instead of leaving an empty streaming message
         setState((prev) => {
           const messages = [...prev.messages];
-          const lastMessage = messages[messages.length - 1];
 
           // If the last message is the empty assistant placeholder, attach error to it
-          if (lastMessage?.role === 'assistant' && lastMessage.isStreaming) {
-            messages[messages.length - 1] = {
-              ...lastMessage,
-              isStreaming: false,
-              error: err instanceof Error ? err.message : 'Failed to send message',
-            };
+          if (messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage.role === 'assistant' && lastMessage.isStreaming) {
+              messages[messages.length - 1] = {
+                ...lastMessage,
+                isStreaming: false,
+                error: err instanceof Error ? err.message : 'Failed to send message',
+              };
+            }
           }
 
           return {

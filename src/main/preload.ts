@@ -413,17 +413,17 @@ const api: AgentageAPI = {
   },
   models: {
     providers: {
-      load: (autoRefresh?: boolean) => ipcRenderer.invoke('models:providers:load', autoRefresh),
-      save: (request: SaveProviderRequest) => ipcRenderer.invoke('models:providers:save', request),
+      load: (autoRefresh?: boolean) => ipcRenderer.invoke('models.providers:load', autoRefresh),
+      save: (request: SaveProviderRequest) => ipcRenderer.invoke('models.providers:save', request),
     },
     validate: (request: ValidateTokenRequest) => ipcRenderer.invoke('models:validate', request),
     onChange: (callback: (models: ChatModelInfo[]) => void) => {
       const handler = (_event: unknown, models: ChatModelInfo[]): void => {
         callback(models);
       };
-      ipcRenderer.on('models:change', handler);
+      ipcRenderer.on('models:changed', handler);
       return () => {
-        ipcRenderer.removeListener('models:change', handler);
+        ipcRenderer.removeListener('models:changed', handler);
       };
     },
   },
@@ -459,9 +459,9 @@ const api: AgentageAPI = {
       const handler = (): void => {
         callback();
       };
-      ipcRenderer.on('workspace:listChanged', handler);
+      ipcRenderer.on('workspace:changed', handler);
       return () => {
-        ipcRenderer.removeListener('workspace:listChanged', handler);
+        ipcRenderer.removeListener('workspace:changed', handler);
       };
     },
   },
@@ -485,14 +485,14 @@ const api: AgentageAPI = {
         ipcRenderer.removeListener('chat:event', handler);
       };
     },
-    getModels: () => ipcRenderer.invoke('chat:getModels'),
-    getTools: () => ipcRenderer.invoke('chat:getTools'),
-    getAgents: () => ipcRenderer.invoke('chat:getAgents'),
+    getModels: () => ipcRenderer.invoke('chat.models:get'),
+    getTools: () => ipcRenderer.invoke('chat.tools:get'),
+    getAgents: () => ipcRenderer.invoke('chat.agents:get'),
     clear: () => {
       void ipcRenderer.invoke('chat:clear');
     },
     context: {
-      get: (threadId?: string) => ipcRenderer.invoke('chat:context:get', threadId),
+      get: (threadId?: string) => ipcRenderer.invoke('chat.context:get', threadId),
     },
   },
   oauth: {
@@ -509,9 +509,9 @@ const api: AgentageAPI = {
       const handler = (_event: unknown, tools: string[]): void => {
         callback(tools);
       };
-      ipcRenderer.on('tools:change', handler);
+      ipcRenderer.on('tools:changed', handler);
       return () => {
-        ipcRenderer.removeListener('tools:change', handler);
+        ipcRenderer.removeListener('tools:changed', handler);
       };
     },
   },
