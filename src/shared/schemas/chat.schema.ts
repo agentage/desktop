@@ -42,6 +42,7 @@ export const chatReferenceSchema = z.object({
 export const chatSendRequestSchema = z.object({
   prompt: z.string().min(1),
   references: z.array(chatReferenceSchema).optional(),
+  config: sessionConfigSchema,
 });
 
 /**

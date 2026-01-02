@@ -5,7 +5,6 @@ import type {
   ChatModelInfo,
   ChatSendResponse,
   ChatToolInfo,
-  SessionConfig,
 } from '../../shared/types/chat.types.js';
 
 /**
@@ -106,8 +105,6 @@ interface UseChatReturn {
   selectedModel: ChatModelInfo | null;
   /** Currently selected agent */
   selectedAgent: ChatAgentInfo | null;
-  /** Configure the chat session */
-  configure: (config: Partial<SessionConfig>) => void;
   /** Send a message */
   sendMessage: (prompt: string) => Promise<void>;
   /** Cancel current request */
@@ -118,6 +115,8 @@ interface UseChatReturn {
   selectModel: (modelId: string) => void;
   /** Select an agent */
   selectAgent: (agentId: string) => void;
+  /** Update enabled tools */
+  setEnabledTools: (tools: string[]) => void;
 }
 
 const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929';
@@ -140,12 +139,9 @@ export const useChat = (): UseChatReturn => {
   const [agents, setAgents] = useState<ChatAgentInfo[]>([]);
   const [selectedModel, setSelectedModel] = useState<ChatModelInfo | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<ChatAgentInfo | null>(null);
-  const [sessionConfig, setSessionConfig] = useState<SessionConfig>({
-    model: DEFAULT_MODEL,
-    tools: [],
-  });
 
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const unsubscribeToolsRef = useRef<(() => void) | null>(null);
 
   // Load available models, tools, agents on mount
   useEffect(() => {
@@ -165,13 +161,11 @@ export const useChat = (): UseChatReturn => {
         // Load enabled tools from tools settings
         const enabled = toolsListResult.settings.enabledTools;
         setEnabledTools(enabled);
-        setSessionConfig((prev) => ({ ...prev, tools: enabled }));
 
         // Set default selected model
         if (loadedModels.length > 0) {
           const defaultModel = loadedModels.find((m) => m.id.includes('sonnet')) ?? loadedModels[0];
           setSelectedModel(defaultModel);
-          setSessionConfig((prev) => ({ ...prev, model: defaultModel.id }));
         }
       } catch (err) {
         console.error('Failed to load chat resources:', err);
@@ -369,13 +363,18 @@ export const useChat = (): UseChatReturn => {
     };
   }, []);
 
-  // Configure session when config changes
+  // Subscribe to tools:change events for real-time sync
   useEffect(() => {
-    window.agentage.chat.configure(sessionConfig);
-  }, [sessionConfig]);
+    unsubscribeToolsRef.current = window.agentage.tools.onChange((tools) => {
+      setEnabledTools(tools);
+    });
 
-  const configure = useCallback((config: Partial<SessionConfig>) => {
-    setSessionConfig((prev) => ({ ...prev, ...config }));
+    return (): void => {
+      if (unsubscribeToolsRef.current) {
+        unsubscribeToolsRef.current();
+        unsubscribeToolsRef.current = null;
+      }
+    };
   }, []);
 
   const sendMessage = useCallback(
@@ -407,7 +406,18 @@ export const useChat = (): UseChatReturn => {
       }));
 
       try {
-        const response: ChatSendResponse = await window.agentage.chat.send({ prompt });
+        // Build config at send time - always fresh!
+        const currentConfig = {
+          model: selectedModel?.id ?? DEFAULT_MODEL,
+          tools: enabledTools,
+          agent: selectedAgent?.id,
+          conversationId: state.conversationId ?? undefined,
+        };
+
+        const response: ChatSendResponse = await window.agentage.chat.send({
+          prompt,
+          config: currentConfig,
+        });
 
         setState((prev) => ({
           ...prev,
@@ -422,7 +432,7 @@ export const useChat = (): UseChatReturn => {
         }));
       }
     },
-    [state.isLoading]
+    [state.isLoading, state.conversationId, selectedModel, enabledTools, selectedAgent]
   );
 
   const cancel = useCallback(() => {
@@ -452,7 +462,6 @@ export const useChat = (): UseChatReturn => {
       const model = models.find((m) => m.id === modelId);
       if (model) {
         setSelectedModel(model);
-        setSessionConfig((prev) => ({ ...prev, model: modelId }));
       }
     },
     [models]
@@ -483,11 +492,11 @@ export const useChat = (): UseChatReturn => {
     agents,
     selectedModel,
     selectedAgent,
-    configure,
     sendMessage,
     cancel,
     clear,
     selectModel,
     selectAgent,
+    setEnabledTools,
   };
 };

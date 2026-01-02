@@ -1,9 +1,8 @@
 import type { BrowserWindow, IpcMain } from 'electron';
-import type { ChatSendRequest, SessionConfig } from '../../shared/types/chat.types.js';
+import type { ChatSendRequest } from '../../shared/types/chat.types.js';
 import {
   cancelRequest,
   clearHistory,
-  configureSession,
   getAgents,
   getModels,
   getTools,
@@ -15,13 +14,6 @@ export const registerChatHandlers = (
   ipcMain: IpcMain,
   getMainWindow: () => BrowserWindow | null
 ): void => {
-  /**
-   * Configure active chat session
-   */
-  ipcMain.handle('chat:configure', (_event, config: SessionConfig) => {
-    configureSession(config);
-  });
-
   /**
    * Send chat message and stream response
    */

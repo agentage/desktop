@@ -87,6 +87,9 @@ export interface ChatSendRequest {
 
   /** Attached context (files, selections, images) */
   references?: ChatReference[];
+
+  /** Session config - sent with every request for sync */
+  config: SessionConfig;
 }
 
 /**
@@ -174,9 +177,6 @@ export interface Conversation {
  * Chat API exposed via preload
  */
 export interface ChatAPI {
-  /** Configure active session */
-  configure: (config: SessionConfig) => void;
-
   /** Send message, returns request and conversation IDs */
   send: (request: ChatSendRequest) => Promise<ChatSendResponse>;
 

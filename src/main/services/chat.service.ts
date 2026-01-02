@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { chatSendRequestSchema, sessionConfigSchema } from '../../shared/schemas/chat.schema.js';
+import { chatSendRequestSchema } from '../../shared/schemas/chat.schema.js';
 import type {
   ChatAgentInfo,
   ChatEvent,
@@ -34,16 +34,6 @@ const ANTHROPIC_BETA = 'oauth-2025-04-20,claude-code-20250219,interleaved-thinki
 const MAX_TOOL_ITERATIONS = 10;
 
 /**
- * Active session configuration
- */
-let currentConfig: SessionConfig | null = null;
-
-/**
- * Track if current token is OAuth (for system prompt requirements)
- */
-let isOAuthToken = false;
-
-/**
  * In-memory conversation storage
  */
 const conversations = new Map<string, Conversation>();
@@ -63,8 +53,9 @@ const generateId = (prefix: string): string =>
  * Get Anthropic client with current token
  * Supports both API keys (sk-ant-api*) and OAuth tokens (sk-ant-oat*)
  * OAuth tokens require special headers and system prompt
+ * Returns client and isOAuth flag
  */
-const getAnthropicClient = async (): Promise<Anthropic> => {
+const getAnthropicClient = async (): Promise<{ client: Anthropic; isOAuth: boolean }> => {
   const token = await resolveProviderToken('anthropic');
 
   if (!token) {
@@ -72,28 +63,23 @@ const getAnthropicClient = async (): Promise<Anthropic> => {
   }
 
   // Detect OAuth token (sk-ant-oat*)
-  isOAuthToken = token.startsWith('sk-ant-oat');
+  const isOAuth = token.startsWith('sk-ant-oat');
 
-  if (isOAuthToken) {
+  if (isOAuth) {
     // OAuth tokens use authToken and require beta headers
-    return new Anthropic({
-      authToken: token,
-      defaultHeaders: {
-        'anthropic-beta': ANTHROPIC_BETA,
-      },
-    });
+    return {
+      client: new Anthropic({
+        authToken: token,
+        defaultHeaders: {
+          'anthropic-beta': ANTHROPIC_BETA,
+        },
+      }),
+      isOAuth: true,
+    };
   }
 
   // API keys use apiKey
-  return new Anthropic({ apiKey: token });
-};
-
-/**
- * Configure the active session
- */
-export const configureSession = (config: SessionConfig): void => {
-  const validated = sessionConfigSchema.parse(config);
-  currentConfig = validated;
+  return { client: new Anthropic({ apiKey: token }), isOAuth: false };
 };
 
 /**
@@ -163,9 +149,10 @@ const buildMessages = (
  * Build system prompt - OAuth tokens require Claude Code prompt FIRST
  */
 const buildSystemPrompt = (
-  config: SessionConfig
+  config: SessionConfig,
+  isOAuth: boolean
 ): string | Anthropic.TextBlockParam[] | undefined => {
-  if (isOAuthToken) {
+  if (isOAuth) {
     // OAuth: Required system prompt must be first
     if (config.system) {
       return [
@@ -282,13 +269,10 @@ export const sendMessage = (
   emitEvent: (event: ChatEvent) => void
 ): ChatSendResponse => {
   const validated = chatSendRequestSchema.parse(request);
-
-  if (!currentConfig) {
-    throw new Error('Session not configured. Call configure() first.');
-  }
+  const config = validated.config;
 
   const requestId = generateId('req');
-  const conversation = getOrCreateConversation(currentConfig, currentConfig.conversationId);
+  const conversation = getOrCreateConversation(config, config.conversationId);
   const abortController = new AbortController();
 
   activeRequests.set(requestId, abortController);
@@ -310,7 +294,7 @@ export const sendMessage = (
     validated,
     emitEvent,
     abortController.signal,
-    currentConfig
+    config
   );
 
   return { requestId, conversationId: conversation.id };
@@ -333,10 +317,10 @@ const streamResponse = async (
   let totalOutputTokens = 0;
 
   try {
-    const client = await getAnthropicClient();
+    const { client, isOAuth } = await getAnthropicClient();
     let messages = buildMessages(conversation, request);
     const tools = buildToolsForRequest(config.tools);
-    const systemPrompt = buildSystemPrompt(config);
+    const systemPrompt = buildSystemPrompt(config, isOAuth);
 
     // Tool context for execution
     const workspace = await getActiveWorkspace();
@@ -531,10 +515,7 @@ export const cancelRequest = (requestId: string): void => {
  * Clear conversation history
  */
 export const clearHistory = (): void => {
-  if (currentConfig?.conversationId) {
-    conversations.delete(currentConfig.conversationId);
-  }
-  currentConfig = null;
+  conversations.clear();
 };
 
 /**

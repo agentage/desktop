@@ -216,6 +216,7 @@ interface ChatReference {
 interface ChatSendRequest {
   prompt: string;
   references?: ChatReference[];
+  config: SessionConfig;
 }
 
 interface ChatSendResponse {
@@ -275,7 +276,6 @@ type ChatStreamEvent =
 type ChatEvent = { requestId: string } & ChatStreamEvent;
 
 interface ChatAPI {
-  configure: (config: SessionConfig) => void;
   send: (request: ChatSendRequest) => Promise<ChatSendResponse>;
   cancel: (requestId: string) => void;
   onEvent: (callback: (event: ChatEvent) => void) => () => void;
@@ -392,6 +392,7 @@ export interface AgentageAPI {
   tools: {
     list: () => Promise<ToolListResult>;
     updateSettings: (update: ToolSettingsUpdate) => Promise<void>;
+    onChange: (callback: (enabledTools: string[]) => void) => () => void;
   };
 }
 
@@ -461,9 +462,6 @@ const api: AgentageAPI = {
     isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
   },
   chat: {
-    configure: (config: SessionConfig) => {
-      void ipcRenderer.invoke('chat:configure', config);
-    },
     send: (request: ChatSendRequest) => ipcRenderer.invoke('chat:send', request),
     cancel: (requestId: string) => {
       void ipcRenderer.invoke('chat:cancel', requestId);
@@ -497,6 +495,15 @@ const api: AgentageAPI = {
     list: () => ipcRenderer.invoke('tools:list'),
     updateSettings: (update: ToolSettingsUpdate) =>
       ipcRenderer.invoke('tools:updateSettings', update),
+    onChange: (callback: (enabledTools: string[]) => void) => {
+      const handler = (_event: unknown, tools: string[]): void => {
+        callback(tools);
+      };
+      ipcRenderer.on('tools:change', handler);
+      return () => {
+        ipcRenderer.removeListener('tools:change', handler);
+      };
+    },
   },
 };
 

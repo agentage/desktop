@@ -1,4 +1,4 @@
-import type { IpcMain } from 'electron';
+import type { BrowserWindow, IpcMain } from 'electron';
 import type {
   ToolInfo,
   ToolListResult,
@@ -30,7 +30,10 @@ const mapToolToInfo = (tool: ReturnType<typeof listTools>[number]): ToolInfo => 
   status: 'ready' as ToolStatus,
 });
 
-export const registerToolsHandlers = (ipcMain: IpcMain): void => {
+export const registerToolsHandlers = (
+  ipcMain: IpcMain,
+  getMainWindow: () => BrowserWindow | null
+): void => {
   /**
    * List all available tools with their settings
    * Returns merged list: builtin + global + workspace (workspace overrides by name)
@@ -47,11 +50,15 @@ export const registerToolsHandlers = (ipcMain: IpcMain): void => {
 
   /**
    * Update tool settings (enabled/disabled state)
+   * Emits tools:change event to all windows for real-time sync
    */
   ipcMain.handle(
     'tools:updateSettings',
     async (_event, update: ToolSettingsUpdate): Promise<void> => {
       await updateToolSettings(update);
+      // Emit change event to all windows for real-time sync
+      const mainWindow = getMainWindow();
+      mainWindow?.webContents.send('tools:change', update.enabledTools);
     }
   );
 
