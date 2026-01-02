@@ -384,7 +384,8 @@ export const useChat = (): UseChatReturn => {
       setModels(newModels);
       // If selected model is no longer available, select first available or null
       if (selectedModel && !newModels.some((m) => m.id === selectedModel.id)) {
-        const defaultModel = newModels.find((m) => m.id.includes('sonnet')) ?? (newModels[0] || null);
+        const defaultModel =
+          newModels.find((m) => m.id.includes('sonnet')) ?? (newModels[0] || null);
         setSelectedModel(defaultModel);
       }
     });

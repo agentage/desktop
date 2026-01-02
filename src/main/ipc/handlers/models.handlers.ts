@@ -1,7 +1,11 @@
 import type { BrowserWindow, IpcMain } from 'electron';
 import type { ModelProviderType, SaveProviderRequest } from '../../../shared/types/index.js';
 import { getModels } from '../../services/chat.service.js';
-import { loadProviders, saveProvider, validateToken } from '../../services/model.providers.service.js';
+import {
+  loadProviders,
+  saveProvider,
+  validateToken,
+} from '../../services/model.providers.service.js';
 
 export const registerModelProvidersHandlers = (
   ipcMain: IpcMain,

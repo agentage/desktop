@@ -1,12 +1,4 @@
 import type {
-  ChatAgentInfo,
-  ChatEvent,
-  ChatModelInfo,
-  ChatSendRequest,
-  ChatSendResponse,
-  ChatToolInfo,
-} from './chat.types.js';
-import type {
   AuthResult,
   LinkProviderResult,
   LinkedProvider,
@@ -15,21 +7,29 @@ import type {
   User,
 } from './auth.types.js';
 import type {
+  ChatAgentInfo,
+  ChatEvent,
+  ChatModelInfo,
+  ChatSendRequest,
+  ChatSendResponse,
+  ChatToolInfo,
+} from './chat.types.js';
+import type { FilesOnlyResponse, FullContextResponse } from './context.types.js';
+import type {
   LoadProvidersResult,
   SaveProviderRequest,
   SaveProviderResult,
   ValidateTokenRequest,
   ValidateTokenResponse,
 } from './model.providers.types.js';
-import type { ToolListResult, ToolSettingsUpdate } from './tools.types.js';
-import type { Workspace, WorkspaceUpdate } from './workspace.types.js';
 import type {
   OAuthConnectResult,
   OAuthDisconnectResult,
   OAuthListResult,
   OAuthProviderId,
 } from './oauth.types.js';
-import type { FullContextResponse, FilesOnlyResponse } from './context.types.js';
+import type { ToolListResult, ToolSettingsUpdate } from './tools.types.js';
+import type { Workspace, WorkspaceUpdate } from './workspace.types.js';
 
 /**
  * Complete IPC channel map for type safety
@@ -131,4 +131,3 @@ export interface AppState {
 
 // Re-export for convenience
 export type { IpcChannelMap as IpcChannels };
-
