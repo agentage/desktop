@@ -9,6 +9,7 @@ import type {
   TokenSource,
 } from '../../shared/types/index.js';
 import { OAuthStorage } from './oauth/oauth-storage.service.js';
+import { getOAuthManager } from './oauth/oauth-manager.service.js';
 
 const CONFIG_DIR = join(homedir(), '.agentage');
 const MODELS_FILE = join(CONFIG_DIR, 'models.json');
@@ -107,7 +108,7 @@ const getTokenSource = (provider: ModelProviderType): TokenSource =>
   `oauth:${provider}` as TokenSource;
 
 /**
- * Resolve token for a provider - handles OAuth token resolution
+ * Resolve token for a provider - handles OAuth token resolution with auto-refresh
  */
 export const resolveProviderToken = async (provider: ModelProviderType): Promise<string | null> => {
   const config = await getProviderConfig(provider);
@@ -117,11 +118,9 @@ export const resolveProviderToken = async (provider: ModelProviderType): Promise
     return config.token ?? null;
   }
 
-  // OAuth source - read from oauth.json (provider ID is same as model provider)
-  const oauthStorage = new OAuthStorage();
-  const oauthData = await oauthStorage.getProvider(provider);
-
-  return oauthData?.tokens.accessToken ?? null;
+  // OAuth source - use OAuthManager for auto-refresh support
+  const oauthManager = getOAuthManager();
+  return oauthManager.getAccessToken(provider);
 };
 
 /**

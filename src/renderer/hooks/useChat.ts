@@ -445,11 +445,28 @@ export const useChat = (): UseChatReturn => {
           currentRequestId: response.requestId,
         }));
       } catch (err) {
-        setState((prev) => ({
-          ...prev,
-          isLoading: false,
-          error: err instanceof Error ? err.message : 'Failed to send message',
-        }));
+        // On send failure, update the last assistant message with the error
+        // instead of leaving an empty streaming message
+        setState((prev) => {
+          const messages = [...prev.messages];
+          const lastMessage = messages[messages.length - 1];
+
+          // If the last message is the empty assistant placeholder, attach error to it
+          if (lastMessage?.role === 'assistant' && lastMessage.isStreaming) {
+            messages[messages.length - 1] = {
+              ...lastMessage,
+              isStreaming: false,
+              error: err instanceof Error ? err.message : 'Failed to send message',
+            };
+          }
+
+          return {
+            ...prev,
+            messages,
+            isLoading: false,
+            error: err instanceof Error ? err.message : 'Failed to send message',
+          };
+        });
       }
     },
     [state.isLoading, state.conversationId, selectedModel, enabledTools, selectedAgent]
