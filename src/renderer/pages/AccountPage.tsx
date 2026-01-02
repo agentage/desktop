@@ -35,7 +35,7 @@ export const AccountPage = (): React.JSX.Element => {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4">
         <div className="text-sm text-muted-foreground">Loading...</div>
       </div>
     );
@@ -43,7 +43,7 @@ export const AccountPage = (): React.JSX.Element => {
 
   if (!user) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4">
         <div className="text-sm text-destructive">Failed to load account</div>
       </div>
     );
@@ -59,14 +59,14 @@ export const AccountPage = (): React.JSX.Element => {
     : user.email[0].toUpperCase();
 
   return (
-    <div className="flex-1 p-6 h-full">
-      <div className="max-w-2xl mx-auto space-y-6 pb-48">
+    <div className="flex-1 p-4 h-full">
+      <div className="max-w-3xl mx-auto space-y-4 pb-48">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-500/10">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-md bg-blue-500/10">
             <UserIcon />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">Account</h1>
+          <h1 className="text-base font-semibold text-foreground">Account</h1>
         </div>
 
         <div className="space-y-3">

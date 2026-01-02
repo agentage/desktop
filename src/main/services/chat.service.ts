@@ -11,7 +11,11 @@ import type {
   Conversation,
   SessionConfig,
 } from '../../shared/types/chat.types.js';
+import { toAnthropicTools } from '../tools/converter.js';
+import { executeTool, listTools } from '../tools/index.js';
+import type { ToolContext } from '../tools/types.js';
 import { loadProviders, resolveProviderToken } from './model.providers.service.js';
+import { getActiveWorkspace } from './workspace.service.js';
 
 /**
  * Required system prompt for OAuth tokens (Claude Pro/Max)
@@ -23,6 +27,11 @@ const CLAUDE_CODE_SYSTEM_PROMPT = "You are Claude Code, Anthropic's official CLI
  * Required beta header for OAuth tokens
  */
 const ANTHROPIC_BETA = 'oauth-2025-04-20,claude-code-20250219,interleaved-thinking-2025-05-14';
+
+/**
+ * Maximum tool execution iterations to prevent infinite loops
+ */
+const MAX_TOOL_ITERATIONS = 10;
 
 /**
  * Active session configuration
@@ -151,6 +160,121 @@ const buildMessages = (
 };
 
 /**
+ * Build system prompt - OAuth tokens require Claude Code prompt FIRST
+ */
+const buildSystemPrompt = (
+  config: SessionConfig
+): string | Anthropic.TextBlockParam[] | undefined => {
+  if (isOAuthToken) {
+    // OAuth: Required system prompt must be first
+    if (config.system) {
+      return [
+        { type: 'text', text: CLAUDE_CODE_SYSTEM_PROMPT },
+        { type: 'text', text: config.system },
+      ];
+    }
+    return CLAUDE_CODE_SYSTEM_PROMPT;
+  }
+  // API key: Use custom system prompt as-is
+  return config.system;
+};
+
+/**
+ * Build Anthropic tools array from enabled tool IDs
+ */
+const buildToolsForRequest = (enabledToolIds?: string[]): Anthropic.Tool[] => {
+  const allTools = listTools();
+
+  // If no tools specified, don't include any
+  if (!enabledToolIds || enabledToolIds.length === 0) {
+    return [];
+  }
+
+  const enabledTools = allTools.filter((t) => enabledToolIds.includes(t.name));
+  return toAnthropicTools(enabledTools);
+};
+
+/**
+ * Extract tool use blocks from Claude response
+ */
+const extractToolUseBlocks = (content: Anthropic.ContentBlock[]): Anthropic.ToolUseBlock[] =>
+  content.filter((block): block is Anthropic.ToolUseBlock => block.type === 'tool_use');
+
+/**
+ * Tool result block for API
+ */
+interface ToolResultBlock {
+  type: 'tool_result';
+  tool_use_id: string;
+  content: string;
+  is_error?: boolean;
+}
+
+/**
+ * Execute a single tool and return result block
+ */
+const executeToolCall = async (
+  toolUse: Anthropic.ToolUseBlock,
+  context: ToolContext,
+  emitEvent: (event: ChatEvent) => void,
+  requestId: string
+): Promise<ToolResultBlock> => {
+  // Emit tool_call event for UI
+  emitEvent({
+    requestId,
+    type: 'tool_call',
+    toolCallId: toolUse.id,
+    name: toolUse.name,
+    input: toolUse.input,
+  });
+
+  try {
+    const result = await executeTool(
+      toolUse.name,
+      toolUse.input as Record<string, unknown>,
+      context
+    );
+
+    const content = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+
+    // Emit tool_result event for UI
+    emitEvent({
+      requestId,
+      type: 'tool_result',
+      toolCallId: toolUse.id,
+      name: toolUse.name,
+      result,
+      isError: false,
+    });
+
+    return {
+      type: 'tool_result',
+      tool_use_id: toolUse.id,
+      content,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Emit error result for UI
+    emitEvent({
+      requestId,
+      type: 'tool_result',
+      toolCallId: toolUse.id,
+      name: toolUse.name,
+      result: errorMessage,
+      isError: true,
+    });
+
+    return {
+      type: 'tool_result',
+      tool_use_id: toolUse.id,
+      content: errorMessage,
+      is_error: true,
+    };
+  }
+};
+
+/**
  * Send a chat message and stream response
  */
 export const sendMessage = (
@@ -193,7 +317,8 @@ export const sendMessage = (
 };
 
 /**
- * Stream response from Anthropic
+ * Stream response from Anthropic with tool execution loop
+ * Continues until stop_reason is not 'tool_use' or max iterations reached
  */
 const streamResponse = async (
   requestId: string,
@@ -204,90 +329,121 @@ const streamResponse = async (
   config: SessionConfig
 ): Promise<void> => {
   let fullResponse = '';
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
 
   try {
     const client = await getAnthropicClient();
-    const messages = buildMessages(conversation, request);
+    let messages = buildMessages(conversation, request);
+    const tools = buildToolsForRequest(config.tools);
+    const systemPrompt = buildSystemPrompt(config);
 
-    // Build system prompt - OAuth tokens require Claude Code prompt FIRST
-    let systemPrompt: string | Anthropic.TextBlockParam[] | undefined;
+    // Tool context for execution
+    const workspace = await getActiveWorkspace();
+    const toolContext: ToolContext = {
+      workspacePath: workspace?.path,
+      abortSignal: signal,
+    };
 
-    if (isOAuthToken) {
-      // OAuth: Required system prompt must be first
-      if (config.system) {
-        systemPrompt = [
-          { type: 'text', text: CLAUDE_CODE_SYSTEM_PROMPT },
-          { type: 'text', text: config.system },
-        ];
-      } else {
-        systemPrompt = CLAUDE_CODE_SYSTEM_PROMPT;
-      }
-    } else {
-      // API key: Use custom system prompt as-is
-      systemPrompt = config.system;
-    }
+    let continueLoop = true;
+    let iterations = 0;
 
-    const stream = client.messages.stream(
-      {
-        model: config.model,
-        max_tokens: config.options?.maxTokens ?? 4096,
-        temperature: config.options?.temperature,
-        top_p: config.options?.topP,
-        system: systemPrompt,
-        messages,
-      },
-      { signal }
-    );
+    while (continueLoop && !signal.aborted && iterations < MAX_TOOL_ITERATIONS) {
+      iterations++;
 
-    for await (const event of stream) {
-      if (signal.aborted) {
-        emitEvent({
-          requestId,
-          type: 'error',
-          code: 'CANCELLED',
-          message: 'Request cancelled',
-          recoverable: false,
-        });
-        return;
-      }
+      const stream = client.messages.stream(
+        {
+          model: config.model,
+          max_tokens: config.options?.maxTokens ?? 4096,
+          temperature: config.options?.temperature,
+          top_p: config.options?.topP,
+          system: systemPrompt,
+          messages,
+          tools: tools.length > 0 ? tools : undefined,
+        },
+        { signal }
+      );
 
-      if (event.type === 'content_block_delta') {
-        const delta = event.delta;
-        if ('text' in delta) {
-          fullResponse += delta.text;
-          emitEvent({ requestId, type: 'text', text: delta.text });
-        } else if ('thinking' in delta) {
-          emitEvent({ requestId, type: 'thinking', text: delta.thinking });
+      // Stream text chunks
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta') {
+          const delta = event.delta;
+          if ('text' in delta) {
+            fullResponse += delta.text;
+            emitEvent({ requestId, type: 'text', text: delta.text });
+          } else if ('thinking' in delta) {
+            emitEvent({ requestId, type: 'thinking', text: delta.thinking });
+          }
         }
       }
+
+      const finalMessage = await stream.finalMessage();
+      const stopReason = finalMessage.stop_reason;
+
+      // Accumulate token usage
+      totalInputTokens += finalMessage.usage.input_tokens;
+      totalOutputTokens += finalMessage.usage.output_tokens;
+
+      // Check if we need to execute tools
+      if (stopReason === 'tool_use') {
+        const toolUseBlocks = extractToolUseBlocks(finalMessage.content);
+
+        // Execute all tool calls sequentially
+        const toolResults: ToolResultBlock[] = [];
+        for (const toolUse of toolUseBlocks) {
+          const result = await executeToolCall(toolUse, toolContext, emitEvent, requestId);
+          toolResults.push(result);
+        }
+
+        // Add assistant message + tool results to conversation for next iteration
+        messages = [
+          ...messages,
+          { role: 'assistant' as const, content: finalMessage.content },
+          { role: 'user' as const, content: toolResults },
+        ];
+
+        // Continue the loop for more response
+        continueLoop = true;
+      } else {
+        // No more tool calls, we're done
+        continueLoop = false;
+
+        // Emit total usage
+        emitEvent({
+          requestId,
+          type: 'usage',
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
+        });
+
+        // Add final assistant message to conversation history
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: fullResponse,
+          timestamp: new Date().toISOString(),
+        };
+        conversation.messages.push(assistantMessage);
+        conversation.updatedAt = assistantMessage.timestamp;
+
+        // Emit done
+        emitEvent({
+          requestId,
+          type: 'done',
+          stopReason: stopReason ?? 'end_turn',
+        });
+      }
     }
 
-    // Get final message for usage stats
-    const finalMessage = await stream.finalMessage();
-
-    // Emit usage
-    emitEvent({
-      requestId,
-      type: 'usage',
-      inputTokens: finalMessage.usage.input_tokens,
-      outputTokens: finalMessage.usage.output_tokens,
-    });
-
-    // Add assistant message to history
-    const assistantMessage: ChatMessage = {
-      role: 'assistant',
-      content: fullResponse,
-      timestamp: new Date().toISOString(),
-    };
-    conversation.messages.push(assistantMessage);
-    conversation.updatedAt = assistantMessage.timestamp;
-
-    // Emit done
-    emitEvent({
-      requestId,
-      type: 'done',
-      stopReason: finalMessage.stop_reason ?? 'end_turn',
-    });
+    // Check if we hit max iterations
+    if (iterations >= MAX_TOOL_ITERATIONS && continueLoop) {
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'TOOL_ERROR',
+        message: `Tool execution loop exceeded maximum iterations (${String(MAX_TOOL_ITERATIONS)})`,
+        recoverable: false,
+      });
+    }
   } catch (error) {
     const err = error as Error & { status?: number; error?: { type?: string } };
 

@@ -166,6 +166,30 @@ interface OAuthDisconnectResult {
   error?: string;
 }
 
+// Tools types
+type ToolSource = 'builtin' | 'global' | 'workspace';
+type ToolStatus = 'ready' | 'warning' | 'error';
+
+interface ToolInfo {
+  name: string;
+  description: string;
+  source: ToolSource;
+  status: ToolStatus;
+}
+
+interface ToolSettings {
+  enabledTools: string[];
+}
+
+interface ToolListResult {
+  tools: ToolInfo[];
+  settings: ToolSettings;
+}
+
+interface ToolSettingsUpdate {
+  enabledTools: string[];
+}
+
 // Chat types
 interface ChatModelOptions {
   maxTokens?: number;
@@ -365,6 +389,10 @@ export interface AgentageAPI {
     connect: (providerId: OAuthProviderId) => Promise<OAuthConnectResult>;
     disconnect: (providerId: OAuthProviderId) => Promise<OAuthDisconnectResult>;
   };
+  tools: {
+    list: () => Promise<ToolListResult>;
+    updateSettings: (update: ToolSettingsUpdate) => Promise<void>;
+  };
 }
 
 const api: AgentageAPI = {
@@ -464,6 +492,11 @@ const api: AgentageAPI = {
     connect: (providerId: OAuthProviderId) => ipcRenderer.invoke('oauth:connect', { providerId }),
     disconnect: (providerId: OAuthProviderId) =>
       ipcRenderer.invoke('oauth:disconnect', { providerId }),
+  },
+  tools: {
+    list: () => ipcRenderer.invoke('tools:list'),
+    updateSettings: (update: ToolSettingsUpdate) =>
+      ipcRenderer.invoke('tools:updateSettings', update),
   },
 };
 

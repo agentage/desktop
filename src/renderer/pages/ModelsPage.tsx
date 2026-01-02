@@ -527,21 +527,21 @@ export const ModelsPage = (): React.JSX.Element => {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-4">
         <div className="text-sm text-muted-foreground">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-6 h-full">
-      <div className="max-w-2xl mx-auto space-y-6 pb-48">
+    <div className="flex-1 p-4 h-full">
+      <div className="max-w-3xl mx-auto space-y-4 pb-48">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-md bg-primary/10">
             <BrainIcon />
           </div>
-          <h1 className="text-lg font-semibold text-foreground">Models</h1>
+          <h1 className="text-base font-semibold text-foreground">Models</h1>
           <IconButton
             icon={<RefreshIcon />}
             onClick={() => void handleRefresh()}

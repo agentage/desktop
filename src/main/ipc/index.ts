@@ -6,6 +6,7 @@ import { registerChatHandlers } from './chat.handler.js';
 import { registerConfigHandlers } from './config.handler.js';
 import { registerModelProvidersHandlers } from './model.providers.handler.js';
 import { registerOAuthConnectHandlers } from './oauth-connect.handler.js';
+import { registerToolsHandlers } from './tools.handler.js';
 import { registerWindowHandlers } from './window.handler.js';
 import { registerWorkspaceHandlers } from './workspace.handler.js';
 
@@ -21,6 +22,7 @@ export const registerIpcHandlers = (
   registerConfigHandlers(ipcMain);
   registerModelProvidersHandlers(ipcMain);
   registerOAuthConnectHandlers(ipcMain);
+  registerToolsHandlers(ipcMain);
   registerAppHandlers(ipcMain, getMainWindow);
   registerWindowHandlers(ipcMain, getMainWindow);
   registerWorkspaceHandlers(ipcMain, getMainWindow);
