@@ -8,4 +8,5 @@ export * from './navigation.types.js';
 export * from './oauth.types.js';
 export * from './settings.types.js';
 export * from './tools.types.js';
+export * from './widget.types.js';
 export * from './workspace.types.js';
