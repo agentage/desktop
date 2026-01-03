@@ -169,7 +169,6 @@ Local config file: `~/.agentage/config.json`
     "url": "https://dev.agentage.io"
   },
   "deviceId": "unique-device-id",
-  "tokens": [],
   "settings": {}
 }
 ```
@@ -179,7 +178,7 @@ Local config file: `~/.agentage/config.json`
 | Source       | Path                             | Description              |
 | ------------ | -------------------------------- | ------------------------ |
 | Local        | `~/.agentage/agents/`            | User-managed agent files |
-| Workspaces   | `~/.agentage/{userId}/`          | User-specific workspaces |
+| Workspaces   |                                  | User-specific workspaces |
 
 ---
 
@@ -237,10 +236,9 @@ npm run test:coverage
 | [agentage/cli](https://github.com/agentage/cli)                       | CLI tool (`@agentage/cli`)                       |
 | [agentage/web](https://github.com/agentage/web)                       | Website & API (agentage.io)                      |
 | [agentage/infrastructure](https://github.com/agentage/infrastructure) | Terraform + Docker configs                       |
-| [agentage/requirements](https://github.com/agentage/requirements)     | Top-level specs & planning                       |
 
 ---
 
 ## 📄 License
 
-MIT © 2025 Agentage
+MIT © 2026 Agentage
