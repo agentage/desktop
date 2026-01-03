@@ -11,7 +11,7 @@ import {
   OpenAIIcon,
   RefreshIcon,
   Section,
-} from '../../../components/ui/index.js';
+} from '../../../components/index.js';
 
 /**
  * Get icon component for provider

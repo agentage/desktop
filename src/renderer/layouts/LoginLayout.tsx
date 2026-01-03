@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { TitleBar } from '../components/layout/TitleBar.js';
+import { TitleBar } from './components/TitleBar.js';
 
 /**
  * Layout for unauthenticated users (login/signup screens)

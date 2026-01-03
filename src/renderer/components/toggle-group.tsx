@@ -1,4 +1,4 @@
-import { cn } from '../../lib/utils.js';
+import { cn } from '../lib/utils.js';
 
 export interface ToggleOption<T extends string> {
   /** Option value */

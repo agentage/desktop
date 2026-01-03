@@ -1,5 +1,5 @@
 import * as SwitchPrimitive from '@radix-ui/react-switch';
-import { cn } from '../../lib/utils.js';
+import { cn } from '../lib/utils.js';
 
 export const Switch = ({
   className,

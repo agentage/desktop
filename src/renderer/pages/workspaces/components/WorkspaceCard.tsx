@@ -11,7 +11,7 @@ import {
   IconButton,
   TrashIcon,
   XIcon,
-} from '../../../components/ui/index.js';
+} from '../../../components/index.js';
 import { cn } from '../../../lib/utils.js';
 import { WORKSPACE_COLORS, WORKSPACE_ICONS } from '../constants.js';
 import { WorkspaceIconDisplay } from './WorkspaceIconDisplay.js';

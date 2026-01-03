@@ -8,7 +8,7 @@ import {
   Section,
   SettingsIcon,
   UserIcon,
-} from '../../components/ui/index.js';
+} from '../../components/index.js';
 import { useAuth } from '../../hooks/index.js';
 
 /**

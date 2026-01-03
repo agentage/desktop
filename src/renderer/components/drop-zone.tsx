@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cn } from '../../lib/utils.js';
+import { cn } from '../lib/utils.js';
 import { PlusIcon } from './icons.js';
 
 export interface DropZoneProps {

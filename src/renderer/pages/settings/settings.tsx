@@ -15,7 +15,7 @@ import {
   SettingsIcon,
   SunIcon,
   ToggleGroup,
-} from '../../components/ui/index.js';
+} from '../../components/index.js';
 
 // Default composer settings
 const DEFAULT_COMPOSER_SETTINGS: ComposerSettings = {

@@ -7,7 +7,7 @@ import {
   ToggleGroup,
   WrenchIcon,
   type ToggleOption,
-} from '../../components/ui/index.js';
+} from '../../components/index.js';
 import { cn } from '../../lib/utils.js';
 
 /**

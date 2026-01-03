@@ -1,7 +1,7 @@
 /**
  * Workspaces page exports
  */
-export { CheckIcon, EditIcon, PlusIcon, TrashIcon, XIcon } from '../../components/ui/icons.js';
+export { CheckIcon, EditIcon, PlusIcon, TrashIcon, XIcon } from '../../components/icons.js';
 export {
   WORKSPACE_COLORS,
   WORKSPACE_ICONS,

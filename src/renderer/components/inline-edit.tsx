@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { cn } from '../../lib/utils.js';
+import { cn } from '../lib/utils.js';
 import { IconButton } from './icon-button.js';
 import { CheckIcon, EditIcon, XIcon } from './icons.js';
 

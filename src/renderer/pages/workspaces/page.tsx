@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import type { Workspace } from '../../../shared/types/workspace.types.js';
-import { FolderIcon } from '../../components/ui/index.js';
+import { FolderIcon } from '../../components/index.js';
 import { DropZone } from './components/DropZone.js';
 import { WorkspaceCard } from './components/WorkspaceCard.js';
 
