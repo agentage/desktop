@@ -44,7 +44,8 @@ export const registerWidgetToolHandlers = (ipcMain: IpcMain): void => {
     async (_event, toolName: string, params: unknown): Promise<unknown> => {
       const handler = toolHandlers.get(toolName);
       if (!handler) {
-        throw new Error(`Unknown tool: ${toolName}`);
+        const available = Array.from(toolHandlers.keys()).join(', ');
+        throw new Error(`Unknown tool: ${toolName}. Available tools: ${available}`);
       }
       return handler(params);
     }
