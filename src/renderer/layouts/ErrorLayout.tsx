@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { TitleBar } from '../components/TitleBar.js';
+import { TitleBar } from './components/TitleBar.js';
 
 interface ErrorLayoutProps {
   error?: string;

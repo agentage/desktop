@@ -1,4 +1,4 @@
-import { BotIcon, CheckCircleIcon, StatCard } from '../components/ui/index.js';
+import { BotIcon, CheckCircleIcon, StatCard } from '../components/index.js';
 
 /**
  * Home page - Dashboard overview with stats

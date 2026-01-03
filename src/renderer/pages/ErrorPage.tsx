@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useRouteError } from 'react-router-dom';
-import { TitleBar } from '../components/TitleBar.js';
+import { TitleBar } from '../layouts/components/TitleBar.js';
 
 /**
  * Error page for routing errors (404, etc.)

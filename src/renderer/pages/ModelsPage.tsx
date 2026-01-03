@@ -19,7 +19,7 @@ import {
   OpenAIIcon,
   RefreshIcon,
   Section,
-} from '../components/ui/index.js';
+} from '../components/index.js';
 import { cn } from '../lib/utils.js';
 
 interface ProviderState {

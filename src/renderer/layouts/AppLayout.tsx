@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { ChatPanel } from '../components/chat/index.js';
-import { Footer, Sidebar, SiteHeader, TitleBar } from '../components/index.js';
+import { ChatPanel } from '../features/chat/index.js';
+import { Sidebar, SiteFooter, SiteHeader, TitleBar } from './components/index.js';
 
 // Mobile breakpoint (matches Tailwind's 'md')
 const MOBILE_BREAKPOINT = 768;
@@ -76,7 +76,7 @@ export const AppLayout = (): React.JSX.Element => {
       </main>
 
       {/* Footer at bottom - full width */}
-      <Footer />
+      <SiteFooter />
     </div>
   );
 };
