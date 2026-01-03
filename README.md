@@ -66,7 +66,7 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 | **UI**         | React            | 18+              |
 | **Language**   | TypeScript       | 5.9+ (strict)    |
 | **Bundler**    | Vite             | 6+               |
-| **Validation** | Zod              | 3.25+            |
+| **Validation** | Zod              | 4.3+             |
 | **Testing**    | Jest             | 30+              |
 | **Linting**    | ESLint           | 9+ (flat config) |
 | **Packaging**  | electron-builder | 25+              |
@@ -82,12 +82,31 @@ src/
 ├── main/                 # Electron main process
 │   ├── index.ts          # App entry, window creation
 │   ├── preload.ts        # Context bridge (IPC)
-│   ├── ipc-handlers.ts   # IPC handler registration
-│   └── services/         # Business logic services
+│   ├── ipc/              # IPC layer
+│   │   ├── handlers/     # IPC handler implementations
+│   │   ├── index.ts      # IPC setup
+│   │   ├── registry.ts   # Handler registration
+│   │   └── types.ts      # IPC type definitions
+│   ├── services/         # Business logic services
+│   └── tools/            # Tool system
+│       └── handlers/     # Tool handler implementations
 ├── renderer/             # React app (UI)
 │   ├── main.tsx          # React entry point
 │   ├── App.tsx           # Main component
+│   ├── router.tsx        # Application routing
 │   ├── components/       # UI components
+│   │   ├── chat/         # Chat interface components
+│   │   ├── composer/     # Message composer
+│   │   ├── features/     # Feature-specific components
+│   │   ├── layout/       # Layout components
+│   │   ├── sidebar/      # Sidebar components
+│   │   └── ui/           # Reusable UI components
+│   ├── config/           # App configuration
+│   ├── guards/           # Route guards
+│   ├── hooks/            # Custom React hooks
+│   ├── layouts/          # Page layouts
+│   ├── lib/              # Utility libraries
+│   ├── pages/            # Page components
 │   └── styles/           # CSS files
 └── shared/               # Shared types & schemas
     ├── schemas/          # Zod validation schemas
