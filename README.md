@@ -67,11 +67,6 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 | **Language**   | TypeScript       | 5.9+ (strict)    |
 | **Bundler**    | Vite             | 6+               |
 | **Validation** | Zod              | 4.3+             |
-| **Testing**    | Jest             | 30+              |
-| **Linting**    | ESLint           | 9+ (flat config) |
-| **Packaging**  | electron-builder | 25+              |
-| **AI**         | Anthropic SDK    | 0.71+            |
-| **Git**        | simple-git       | 3.30+            |
 
 ---
 
@@ -143,16 +138,13 @@ npm run package:win
 | Command                 | Description                                |
 | ----------------------- | ------------------------------------------ |
 | `npm run dev`           | Start Vite dev server (renderer)           |
-| `npm run dev:electron`  | Build + run Electron app                   |
 | `npm run build`         | Production build                           |
 | `npm run type-check`    | TypeScript validation                      |
 | `npm run lint`          | ESLint check                               |
 | `npm run lint:fix`      | Auto-fix lint issues                       |
 | `npm run test`          | Run Jest tests                             |
-| `npm run test:coverage` | Coverage report                            |
 | `npm run verify`        | Full CI check (type + lint + build + test) |
 | `npm run package`       | Cross-platform packaging                   |
-| `npm run clean`         | Clean build artifacts                      |
 
 ---
 
@@ -190,8 +182,6 @@ Local config file: `~/.agentage/config.json`
 ## 🔒 Security
 
 - ✅ Context isolation enabled
-- ✅ Node integration disabled in renderer
-- ✅ Preload scripts for safe IPC
 - ✅ Zod validation on all inputs
 - ✅ OAuth token storage in config
 - ✅ No secrets in repository
@@ -204,14 +194,7 @@ Local config file: `~/.agentage/config.json`
 # Run all tests
 npm run test
 
-# Watch mode
-npm run test:watch
-
-# Coverage report (70% threshold)
-npm run test:coverage
 ```
-
-**Coverage Requirements**: 70% for branches, functions, lines, and statements.
 
 ---
 
