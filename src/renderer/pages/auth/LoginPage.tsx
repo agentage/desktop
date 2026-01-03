@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Button, GoogleIcon, RefreshIcon } from '../../components/index.js';
 import { useAuth } from '../../hooks/useAuth.js';
 
 /**
@@ -28,21 +29,54 @@ export const LoginPage = (): React.JSX.Element => {
   };
 
   return (
-    <div>
-      <h1>Agentage</h1>
+    <div className="flex w-full max-w-md flex-col items-center gap-8 rounded-xl border border-border bg-card p-8 shadow-lg">
+      {/* Logo/Brand */}
+      <div className="flex flex-col items-center gap-3">
+        <div className="flex size-16 items-center justify-center rounded-xl bg-primary/10">
+          <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 8V4H8" />
+            <rect width="16" height="12" x="4" y="8" rx="2" />
+            <path d="M2 14h2" />
+            <path d="M20 14h2" />
+            <path d="M15 13v2" />
+            <path d="M9 13v2" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-foreground">Agentage</h1>
+      </div>
 
+      {/* Content */}
       {isLoading ? (
-        <p>Loading...</p>
+        <div className="flex flex-col items-center gap-3 py-4">
+          <div className="animate-spin">
+            <RefreshIcon />
+          </div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
       ) : user ? (
-        <div>
-          <p>Welcome back, {user.name ?? user.email}!</p>
-          <button onClick={handleContinue}>Get Started</button>
+        <div className="flex w-full flex-col items-center gap-6">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <p className="text-base text-foreground">Welcome back,</p>
+            <p className="text-lg font-semibold text-foreground">{user.name ?? user.email}!</p>
+          </div>
+          <Button onClick={handleContinue} className="w-full" size="lg">
+            Get Started
+          </Button>
         </div>
       ) : (
-        <div>
-          <p>Sign in to sync agents and settings</p>
-          <button onClick={handleLogin}>Sign in to Agentage</button>
-          <button onClick={handleContinue}>Continue without signing in</button>
+        <div className="flex w-full flex-col gap-6">
+          <p className="text-center text-sm text-muted-foreground">
+            Sign in to sync agents and settings
+          </p>
+          <div className="flex flex-col gap-3">
+            <Button onClick={handleLogin} className="w-full" size="lg">
+              <GoogleIcon />
+              <span>Sign in with Google</span>
+            </Button>
+            <Button onClick={handleContinue} variant="outline" className="w-full" size="lg">
+              Continue without signing in
+            </Button>
+          </div>
         </div>
       )}
     </div>
