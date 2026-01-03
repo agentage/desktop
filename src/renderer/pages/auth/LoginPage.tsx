@@ -69,7 +69,7 @@ export const LoginPage = (): React.JSX.Element => {
             Sign in to sync agents and settings
           </p>
           <div className="flex flex-col gap-3">
-            <Button onClick={handleLogin} className="w-full" size="lg">
+            <Button onClick={handleLogin} className="w-full" size="lg" aria-label="Sign in with Google">
               <GoogleIcon />
               <span>Sign in with Google</span>
             </Button>
