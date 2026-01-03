@@ -90,7 +90,7 @@ const createWindow = (): BrowserWindow => {
 
   // Load URL after window setup is complete
   // In dev mode, use VITE_DEV_SERVER_URL set by vite-plugin-electron
-  const devServerUrl = process.env['VITE_DEV_SERVER_URL'];
+  const devServerUrl = process.env.VITE_DEV_SERVER_URL;
   const loadUrl = isDev && devServerUrl
     ? win.loadURL(devServerUrl)
     : win.loadFile(join(__dirname, '../renderer/index.html'));

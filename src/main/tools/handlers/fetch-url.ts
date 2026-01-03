@@ -62,10 +62,10 @@ export const handler: ToolHandler<FetchUrlInput, FetchUrlOutput> = async (input)
 
   if (!article) {
     // Fallback: return truncated raw text
-    const text = document.body?.textContent ?? '';
+    const text = document.body.textContent;
     const cleanText = text.replace(/\s+/g, ' ').trim();
     return {
-      title: document.title ?? '',
+      title: document.title || '',
       content: cleanText.slice(0, MAX_CONTENT_LENGTH),
       url: input.url,
       truncated: cleanText.length > MAX_CONTENT_LENGTH,

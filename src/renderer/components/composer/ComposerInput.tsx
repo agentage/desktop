@@ -263,7 +263,7 @@ export const ComposerInput = ({
       void fetchContext();
     }, 10000);
 
-    return () => {
+    return (): void => {
       clearInterval(interval);
     };
   }, [fetchContext]);

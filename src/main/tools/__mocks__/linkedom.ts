@@ -6,7 +6,7 @@
 interface MockElement {
   textContent: string | null;
   getAttribute: (name: string) => string | null;
-  querySelector: <T>(selector: string) => T | null;
+  querySelector: (selector: string) => MockElement | null;
   querySelectorAll: (selector: string) => MockElement[];
 }
 
