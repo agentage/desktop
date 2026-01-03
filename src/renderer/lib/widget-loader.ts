@@ -1,10 +1,11 @@
-import type { WidgetInstance } from '../../shared/types/widget.types.js';
+import type { WidgetFactory, WidgetInstance } from '../../shared/types/widget.types.js';
+import { widgetHost } from './widget-host.js';
 
 /**
  * Registry of bundled widgets with lazy loading
  * Add new widgets here to make them available in the app
  */
-const WIDGET_LOADERS: Record<string, () => Promise<WidgetInstance>> = {
+const WIDGET_LOADERS: Record<string, () => Promise<{ default: WidgetFactory }>> = {
   'agent-stats': () => import('../widgets/agent-stats/index.js'),
 };
 
@@ -13,9 +14,16 @@ const WIDGET_LOADERS: Record<string, () => Promise<WidgetInstance>> = {
  * Returns null if the widget is not found
  */
 export const loadWidget = async (widgetId: string): Promise<WidgetInstance | null> => {
-  const loader = WIDGET_LOADERS[widgetId] as (() => Promise<WidgetInstance>) | undefined;
+  const loader = WIDGET_LOADERS[widgetId] as
+    | (() => Promise<{ default: WidgetFactory }>)
+    | undefined;
   if (!loader) return null;
-  return loader();
+
+  const module = await loader();
+  const factory = module.default;
+
+  // Call factory with host to get widget instance
+  return factory(widgetHost);
 };
 
 /**
