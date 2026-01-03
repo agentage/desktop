@@ -5,9 +5,9 @@ import { z } from 'zod';
  */
 export const userSchema = z.object({
   id: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   name: z.string().optional(),
-  avatar: z.string().url().optional(),
+  avatar: z.url().optional(),
   verifiedAlias: z.string().optional(),
 });
 
@@ -17,7 +17,7 @@ export const userSchema = z.object({
  */
 export const authStateSchema = z.object({
   token: z.string(),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z.iso.datetime().optional(),
   user: userSchema.optional(),
 });
 

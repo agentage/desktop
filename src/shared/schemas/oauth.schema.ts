@@ -23,7 +23,7 @@ export const oAuthProfileSchema = z.object({
   id: z.string(),
   email: z.string().optional(),
   name: z.string().optional(),
-  avatar: z.string().url().optional(),
+  avatar: z.url().optional(),
 });
 
 /**
@@ -39,7 +39,7 @@ export const oAuthProviderDataSchema = z.object({
  * OAuth storage data schema
  */
 export const oAuthStorageDataSchema = z.object({
-  providers: z.record(oAuthProviderIdSchema, oAuthProviderDataSchema.optional()).default({}),
+  providers: z.partialRecord(oAuthProviderIdSchema, oAuthProviderDataSchema).default({}),
 });
 
 /**
