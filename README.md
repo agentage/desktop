@@ -19,14 +19,14 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 
 ## ✨ Key Features
 
-| Feature                    | Description                                           |
-| -------------------------- | ----------------------------------------------------- |
-| 🔍 **Agent Discovery**     | Browse local files, GitHub repos, and public registry |
-| ✏️ **Visual Editor**       | Monaco editor with YAML frontmatter + Markdown        |
-| ▶️ **Execution Engine**    | Embedded `@agentage/cli` with real-time log streaming |
-| 🔐 **Dual Authentication** | Agentage account + optional GitHub connection         |
-| 🔄 **Cross-Device Sync**   | Settings sync via backend API                         |
-| 📦 **Cross-Platform**      | Windows 10+, macOS 11+, Linux (Ubuntu 20.04+)         |
+| Feature                    | Description                                     |
+| -------------------------- | ----------------------------------------------- |
+| 🔍 **Agent Discovery**     | Browse and manage local agent files             |
+| 🤖 **Chat Interface**      | Claude integration with streaming responses     |
+| 🔐 **OAuth Authentication**| Claude and Codex provider connections           |
+| 🛠️ **Tools System**        | Extensible tool handlers and converters         |
+| 📁 **Workspace Management**| Organize agents across multiple workspaces      |
+| 📦 **Cross-Platform**      | Windows 10+, macOS 11+, Linux (Ubuntu 20.04+)   |
 
 ---
 
@@ -37,22 +37,22 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 │                Desktop Application (Electron)                │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │         React + TypeScript Frontend (Renderer)         │ │
-│  │  • Agent Discovery UI    • Monaco Editor               │ │
-│  │  • Execution Console     • Settings Management         │ │
+│  │  • Chat Interface        • Agent Management            │ │
+│  │  • Tools Settings        • Workspace UI                │ │
 │  └─────────────────────────┬──────────────────────────────┘ │
 │                            │ IPC                             │
 │  ┌─────────────────────────▼──────────────────────────────┐ │
 │  │              Electron Main Process                      │ │
-│  │  • File System Ops       • OAuth Flow (port 3737)      │ │
-│  │  • Embedded CLI Engine   • Encrypted Storage           │ │
+│  │  • File System Ops       • OAuth Flow (dynamic port)   │ │
+│  │  • Chat Service          • Model Providers             │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └───────────────────────────────┬─────────────────────────────┘
                                 │
            ┌────────────────────┼────────────────────┐
            ▼                    ▼                    ▼
     ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-    │ Backend API  │    │   GitHub     │    │ ~/.agentage/ │
-    │ agentage.io  │    │     API      │    │ Local Files  │
+    │ Backend API  │    │  OAuth APIs  │    │ ~/.agentage/ │
+    │ agentage.io  │    │ Claude/Codex │    │ Local Files  │
     └──────────────┘    └──────────────┘    └──────────────┘
 ```
 
@@ -70,6 +70,8 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 | **Testing**    | Jest             | 30+              |
 | **Linting**    | ESLint           | 9+ (flat config) |
 | **Packaging**  | electron-builder | 25+              |
+| **AI**         | Anthropic SDK    | 0.71+            |
+| **Git**        | simple-git       | 3.30+            |
 
 ---
 
@@ -107,10 +109,10 @@ src/
 # Install dependencies
 npm install
 
-# Start dev server (renderer only)
+# Start Vite dev server (renderer only)
 npm run dev
 
-# Start full Electron dev mode
+# Build and run full Electron app
 npm run dev:electron
 ```
 
@@ -157,20 +159,27 @@ Local config file: `~/.agentage/config.json`
 {
   "auth": {
     "token": "<jwt-token>",
-    "expiresAt": "2025-12-14T00:00:00Z"
+    "expiresAt": "2025-12-14T00:00:00Z",
+    "user": {
+      "id": "user-id",
+      "email": "user@example.com"
+    }
   },
-  "backendUrl": "https://agentage.io",
-  "theme": "system"
+  "registry": {
+    "url": "https://dev.agentage.io"
+  },
+  "deviceId": "unique-device-id",
+  "tokens": [],
+  "settings": {}
 }
 ```
 
 ### Agent Sources
 
-| Source  | Path                   | Description              |
-| ------- | ---------------------- | ------------------------ |
-| Local   | `~/.agentage/local/`   | User-created agents      |
-| Library | `~/.agentage/library/` | Downloaded from registry |
-| Synced  | `~/.agentage/synced/`  | GitHub repository clones |
+| Source       | Path                             | Description              |
+| ------------ | -------------------------------- | ------------------------ |
+| Local        | `~/.agentage/agents/`            | User-managed agent files |
+| Workspaces   | `~/.agentage/{userId}/`          | User-specific workspaces |
 
 ---
 
@@ -180,7 +189,7 @@ Local config file: `~/.agentage/config.json`
 - ✅ Node integration disabled in renderer
 - ✅ Preload scripts for safe IPC
 - ✅ Zod validation on all inputs
-- ✅ Encrypted token storage
+- ✅ OAuth token storage in config
 - ✅ No secrets in repository
 
 ---
