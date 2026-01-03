@@ -91,22 +91,29 @@ src/
 │   └── tools/            # Tool system
 │       └── handlers/     # Tool handler implementations
 ├── renderer/             # React app (UI)
-│   ├── main.tsx          # React entry point
-│   ├── App.tsx           # Main component
-│   ├── router.tsx        # Application routing
-│   ├── components/       # UI components
-│   │   ├── chat/         # Chat interface components
-│   │   ├── composer/     # Message composer
-│   │   ├── features/     # Feature-specific components
-│   │   ├── layout/       # Layout components
-│   │   ├── sidebar/      # Sidebar components
-│   │   └── ui/           # Reusable UI components
+│   ├── app/              # App bootstrap
+│   │   ├── App.tsx       # Main component
+│   │   ├── main.tsx      # React entry point
+│   │   ├── router.tsx    # Application routing
+│   │   └── global.d.ts   # Global type definitions
+│   ├── components/       # Reusable UI components
+│   │   ├── layout/       # Layout components (Sidebar, TitleBar, etc.)
+│   │   └── ui/           # Generic UI primitives
 │   ├── config/           # App configuration
+│   ├── features/         # Stateful features
+│   │   ├── chat/         # Chat feature (components, hooks)
+│   │   └── composer/     # Message composer feature
 │   ├── guards/           # Route guards
 │   ├── hooks/            # Custom React hooks
 │   ├── layouts/          # Page layouts
 │   ├── lib/              # Utility libraries
 │   ├── pages/            # Page components
+│   │   ├── agents/       # Agent pages and components
+│   │   ├── auth/         # Auth pages (Login, Account, etc.)
+│   │   ├── settings/     # Settings page and components
+│   │   ├── tools/        # Tools page and components
+│   │   ├── workspaces/   # Workspaces page and components
+│   │   └── *.tsx         # Other standalone pages
 │   └── styles/           # CSS files
 └── shared/               # Shared types & schemas
     ├── schemas/          # Zod validation schemas
