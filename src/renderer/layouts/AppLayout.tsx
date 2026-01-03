@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import type { WidgetPlacement } from '../../shared/types/widget.types.js';
 import { ChatPanel } from '../features/chat/index.js';
 import { Sidebar, SiteFooter, SiteHeader, TitleBar } from './components/index.js';
 
@@ -17,6 +18,12 @@ export const AppLayout = (): React.JSX.Element => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [pendingWidgetOrder, setPendingWidgetOrder] = useState<WidgetPlacement[]>([]);
+  const location = useLocation();
+
+  // Check if we're on the dashboard page
+  const isDashboard = location.pathname === '/';
 
   // Handle responsive sidebar collapse
   useEffect(() => {
@@ -47,6 +54,30 @@ export const AppLayout = (): React.JSX.Element => {
     setIsChatOpen((prev) => !prev);
   };
 
+  const toggleEditMode = (): void => {
+    setIsEditMode((prev) => !prev);
+  };
+
+  const handleLayoutChange = (widgets: WidgetPlacement[]): void => {
+    setPendingWidgetOrder(widgets);
+  };
+
+  const handleSaveLayout = async (): Promise<void> => {
+    try {
+      await window.agentage.widgets.saveLayout('home', pendingWidgetOrder);
+      setIsEditMode(false);
+      // Optionally show a success message
+      console.log('Layout saved successfully');
+    } catch (error) {
+      console.error('Failed to save layout:', error);
+      // Optionally show an error message
+    }
+  };
+
+  const handleSaveLayoutClick = (): void => {
+    void handleSaveLayout();
+  };
+
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Title bar at top */}
@@ -63,11 +94,17 @@ export const AppLayout = (): React.JSX.Element => {
         {/* Content area */}
         <section className="flex flex-1 flex-col overflow-hidden">
           {/* Site header with breadcrumbs */}
-          <SiteHeader onToggleSidebar={toggleSidebar} />
+          <SiteHeader
+            onToggleSidebar={toggleSidebar}
+            isEditMode={isEditMode}
+            onEditModeToggle={toggleEditMode}
+            onSaveLayout={handleSaveLayoutClick}
+            showEditButton={isDashboard}
+          />
 
           {/* Main content */}
           <div className="flex-1 overflow-auto p-6">
-            <Outlet />
+            <Outlet context={{ isEditMode, onLayoutChange: handleLayoutChange }} />
           </div>
         </section>
 

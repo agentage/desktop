@@ -1,7 +1,93 @@
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  rectSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVerticalIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import type { Layout, WidgetInstance } from '../../shared/types/widget.types.js';
+import { useOutletContext } from 'react-router-dom';
+import type { Layout, WidgetInstance, WidgetPlacement } from '../../shared/types/widget.types.js';
+import { cn } from '../lib/utils.js';
 import { widgetHost } from '../lib/widget-host.js';
 import { loadWidget } from '../lib/widget-loader.js';
+
+interface OutletContext {
+  isEditMode: boolean;
+  onLayoutChange: (widgets: WidgetPlacement[]) => void;
+}
+
+/**
+ * Sortable widget wrapper component
+ */
+interface SortableWidgetProps {
+  placement: WidgetPlacement;
+  widget: WidgetInstance;
+  isEditMode: boolean;
+  gridColumns: number;
+  rowHeight: number;
+}
+
+const SortableWidget = ({
+  placement,
+  widget,
+  isEditMode,
+}: SortableWidgetProps): React.JSX.Element => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: placement.id,
+    disabled: !isEditMode,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    gridColumn: `span ${String(placement.size.w)}`,
+    gridRow: `span ${String(placement.size.h)}`,
+  };
+
+  const Component = widget.component;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'rounded-xl border border-border bg-card p-4 relative',
+        isEditMode && 'cursor-move hover:border-primary/50 hover:shadow-md',
+        isDragging && 'opacity-50 z-50'
+      )}
+    >
+      {/* Drag handle - visible only in edit mode */}
+      {isEditMode && (
+        <div
+          {...attributes}
+          {...listeners}
+          className={cn(
+            'absolute top-2 right-2 p-1.5 rounded-md',
+            'bg-muted hover:bg-accent cursor-grab active:cursor-grabbing',
+            'text-muted-foreground hover:text-foreground',
+            'transition-colors z-10'
+          )}
+          title="Drag to reorder"
+        >
+          <GripVerticalIcon className="size-4" />
+        </div>
+      )}
+      <Component host={widgetHost} />
+    </div>
+  );
+};
 
 /**
  * Home page - Dashboard overview with widgets
@@ -11,9 +97,11 @@ import { loadWidget } from '../lib/widget-loader.js';
  * Features: Dynamic widget loading from layout configuration
  */
 export const HomePage = (): React.JSX.Element => {
+  const { isEditMode, onLayoutChange } = useOutletContext<OutletContext>();
   const [layout, setLayout] = useState<Layout | null>(null);
   const [widgets, setWidgets] = useState<Map<string, WidgetInstance>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [widgetOrder, setWidgetOrder] = useState<WidgetPlacement[]>([]);
 
   useEffect(() => {
     const init = async (): Promise<void> => {
@@ -26,6 +114,7 @@ export const HomePage = (): React.JSX.Element => {
         }
 
         setLayout(result.layout);
+        setWidgetOrder(result.layout.widgets);
 
         // Import components for widgets in layout
         const loaded = new Map<string, WidgetInstance>();
@@ -43,6 +132,33 @@ export const HomePage = (): React.JSX.Element => {
 
     void init();
   }, []);
+
+  // Notify parent about layout changes
+  useEffect(() => {
+    if (widgetOrder.length > 0) {
+      onLayoutChange(widgetOrder);
+    }
+  }, [widgetOrder, onLayoutChange]);
+
+  // dnd-kit sensors for mouse and keyboard
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent): void => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setWidgetOrder((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -62,33 +178,33 @@ export const HomePage = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <div
-        className="grid gap-4"
-        style={{
-          gridTemplateColumns: `repeat(${String(layout.grid.columns)}, 1fr)`,
-          gridAutoRows: `${String(layout.grid.rowHeight)}px`,
-        }}
-      >
-        {layout.widgets.map((placement) => {
-          const widget = widgets.get(placement.id);
-          if (!widget) return null;
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={widgetOrder.map((w) => w.id)} strategy={rectSortingStrategy}>
+          <div
+            className="grid gap-4"
+            style={{
+              gridTemplateColumns: `repeat(${String(layout.grid.columns)}, 1fr)`,
+              gridAutoRows: `${String(layout.grid.rowHeight)}px`,
+            }}
+          >
+            {widgetOrder.map((placement) => {
+              const widget = widgets.get(placement.id);
+              if (!widget) return null;
 
-          const Component = widget.component;
-
-          return (
-            <div
-              key={placement.id}
-              className="rounded-xl border border-border bg-card p-4"
-              style={{
-                gridColumn: `span ${String(placement.size.w)}`,
-                gridRow: `span ${String(placement.size.h)}`,
-              }}
-            >
-              <Component host={widgetHost} />
-            </div>
-          );
-        })}
-      </div>
+              return (
+                <SortableWidget
+                  key={placement.id}
+                  placement={placement}
+                  widget={widget}
+                  isEditMode={isEditMode}
+                  gridColumns={layout.grid.columns}
+                  rowHeight={layout.grid.rowHeight}
+                />
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 };

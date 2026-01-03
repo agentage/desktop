@@ -1,7 +1,12 @@
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
-import type { Layout, LayoutConfig, WidgetsConfig } from '../../shared/types/widget.types.js';
+import type {
+  Layout,
+  LayoutConfig,
+  WidgetPlacement,
+  WidgetsConfig,
+} from '../../shared/types/widget.types.js';
 
 const AGENTAGE_DIR = join(homedir(), '.agentage');
 const GLOBAL_WIDGETS_PATH = join(AGENTAGE_DIR, 'widgets.json');
@@ -169,4 +174,52 @@ export const loadLayout = async (
   return {
     layout: { ...layout, widgets: filteredWidgets },
   };
+};
+
+/**
+ * Save widget layout
+ */
+export const saveLayout = async (
+  layoutId: string,
+  widgets: WidgetPlacement[],
+  projectPath?: string
+): Promise<{ success: boolean }> => {
+  const layoutPath = projectPath ? getProjectLayoutPath(projectPath) : GLOBAL_LAYOUT_PATH;
+
+  // Ensure directory exists
+  if (projectPath) {
+    await mkdir(join(projectPath, '.agentage'), { recursive: true });
+  } else {
+    await mkdir(AGENTAGE_DIR, { recursive: true });
+  }
+
+  // Load existing config or use default
+  let config: LayoutConfig;
+  try {
+    const content = await readFile(layoutPath, 'utf-8');
+    config = JSON.parse(content) as LayoutConfig;
+  } catch {
+    config = DEFAULT_LAYOUT_CONFIG;
+  }
+
+  // Update layout
+  const existingLayout = config.layouts[layoutId] as Layout | undefined;
+  if (existingLayout) {
+    config.layouts[layoutId] = {
+      ...existingLayout,
+      widgets,
+    };
+  } else {
+    // Create new layout if doesn't exist
+    config.layouts[layoutId] = {
+      name: layoutId,
+      grid: { columns: 4, rowHeight: 120 },
+      widgets,
+    };
+  }
+
+  // Write to disk
+  await writeFile(layoutPath, JSON.stringify(config, null, 2), 'utf-8');
+
+  return { success: true };
 };

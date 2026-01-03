@@ -1,3 +1,4 @@
+import { Edit3Icon, SaveIcon } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils.js';
 
@@ -11,13 +12,23 @@ const PanelLeftIcon = (): React.JSX.Element => (
 
 interface SiteHeaderProps {
   onToggleSidebar?: () => void;
+  isEditMode?: boolean;
+  onEditModeToggle?: () => void;
+  onSaveLayout?: () => void;
+  showEditButton?: boolean;
 }
 
 /**
  * Site header with breadcrumb navigation
  * Displays current page title based on route
  */
-export const SiteHeader = ({ onToggleSidebar }: SiteHeaderProps): React.JSX.Element => {
+export const SiteHeader = ({
+  onToggleSidebar,
+  isEditMode,
+  onEditModeToggle,
+  onSaveLayout,
+  showEditButton,
+}: SiteHeaderProps): React.JSX.Element => {
   const location = useLocation();
 
   // Get page title from path
@@ -54,6 +65,42 @@ export const SiteHeader = ({ onToggleSidebar }: SiteHeaderProps): React.JSX.Elem
       </button>
       <div className="h-4 w-px bg-border" />
       <h1 className="text-xs font-medium text-foreground">{getPageTitle()}</h1>
+
+      {/* Edit mode toggle button - shown only on Dashboard */}
+      {showEditButton && (
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            onClick={onEditModeToggle}
+            title={isEditMode ? 'Exit Edit Mode' : 'Edit Widget Layout'}
+            className={cn(
+              'flex size-7 items-center justify-center rounded-md transition-colors',
+              'focus:outline-none',
+              isEditMode
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+            )}
+          >
+            <Edit3Icon className="size-3.5" />
+            <span className="sr-only">{isEditMode ? 'Exit Edit Mode' : 'Edit Layout'}</span>
+          </button>
+
+          {/* Save button - shown only in edit mode */}
+          {isEditMode && (
+            <button
+              onClick={onSaveLayout}
+              title="Save Layout"
+              className={cn(
+                'flex size-7 items-center justify-center rounded-md transition-colors',
+                'bg-green-600 text-white hover:bg-green-700',
+                'focus:outline-none'
+              )}
+            >
+              <SaveIcon className="size-3.5" />
+              <span className="sr-only">Save Layout</span>
+            </button>
+          )}
+        </div>
+      )}
     </header>
   );
 };

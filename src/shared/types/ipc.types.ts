@@ -79,6 +79,12 @@ export interface IpcChannelMap {
   'tools:list': () => Promise<ToolListResult>;
   'tools:updateSettings': (update: ToolSettingsUpdate) => Promise<void>;
 
+  // Widgets
+  'widgets:loadLayout': (layoutId: string) => Promise<unknown>;
+  'widgets:saveLayout': (layoutId: string, widgets: unknown[]) => Promise<{ success: boolean }>;
+  'widgets:callTool': (toolName: string, params?: unknown) => Promise<unknown>;
+  'widgets:listTools': () => Promise<unknown[]>;
+
   // Workspace
   'workspace:list': () => Promise<Workspace[]>;
   'workspace:getActive': () => Promise<Workspace | null>;

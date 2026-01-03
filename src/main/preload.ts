@@ -424,6 +424,7 @@ export interface AgentageAPI {
   };
   widgets: {
     loadLayout: (layoutId: string) => Promise<LoadLayoutResult | null>;
+    saveLayout: (layoutId: string, widgets: WidgetPlacement[]) => Promise<{ success: boolean }>;
     callTool: (toolName: string, params?: unknown) => Promise<unknown>;
     listTools: () => Promise<WidgetToolDefinition[]>;
   };
@@ -549,6 +550,8 @@ const api: AgentageAPI = {
   },
   widgets: {
     loadLayout: (layoutId: string) => ipcRenderer.invoke('widgets:loadLayout', layoutId),
+    saveLayout: (layoutId: string, widgets: WidgetPlacement[]) =>
+      ipcRenderer.invoke('widgets:saveLayout', layoutId, widgets),
     callTool: (toolName: string, params?: unknown) =>
       ipcRenderer.invoke('widgets:callTool', toolName, params),
     listTools: () => ipcRenderer.invoke('widgets:listTools'),
