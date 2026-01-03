@@ -84,40 +84,19 @@ src/
 │   ├── preload.ts        # Context bridge (IPC)
 │   ├── ipc/              # IPC layer
 │   │   ├── handlers/     # IPC handler implementations
-│   │   ├── index.ts      # IPC setup
-│   │   ├── registry.ts   # Handler registration
-│   │   └── types.ts      # IPC type definitions
 │   ├── services/         # Business logic services
-│   └── tools/            # Tool system
-│       └── handlers/     # Tool handler implementations
 ├── renderer/             # React app (UI)
 │   ├── app/              # App bootstrap
-│   │   ├── App.tsx       # Main component
-│   │   ├── main.tsx      # React entry point
-│   │   ├── router.tsx    # Application routing
-│   │   └── global.d.ts   # Global type definitions
 │   ├── components/       # Reusable UI components (primitives)
 │   ├── config/           # App configuration
 │   ├── features/         # Stateful features
-│   │   ├── chat/         # Chat feature (components, hooks)
-│   │   └── composer/     # Message composer feature
 │   ├── guards/           # Route guards
 │   ├── hooks/            # Custom React hooks
 │   ├── layouts/          # Page layouts
-│   │   ├── components/   # Layout-specific components (Sidebar, TitleBar, etc.)
-│   │   └── *.tsx         # Layout containers (AppLayout, LoginLayout, etc.)
 │   ├── lib/              # Utility libraries
 │   ├── pages/            # Page components
-│   │   ├── agents/       # Agent pages and components
-│   │   ├── auth/         # Auth pages (Login, Account, etc.)
-│   │   ├── settings/     # Settings page and components
-│   │   ├── tools/        # Tools page and components
-│   │   ├── workspaces/   # Workspaces page and components
-│   │   └── *.tsx         # Other standalone pages
 │   └── styles/           # CSS files
 └── shared/               # Shared types & schemas
-    ├── schemas/          # Zod validation schemas
-    └── types/            # TypeScript type definitions
 ```
 
 ---
