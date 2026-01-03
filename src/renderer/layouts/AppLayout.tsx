@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { ChatPanel } from '../features/chat/index.js';
-import { SiteFooter, Sidebar, SiteHeader, TitleBar } from './components/index.js';
+import { Sidebar, SiteFooter, SiteHeader, TitleBar } from './components/index.js';
 
 // Mobile breakpoint (matches Tailwind's 'md')
 const MOBILE_BREAKPOINT = 768;

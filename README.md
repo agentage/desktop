@@ -19,14 +19,14 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 
 ## ✨ Key Features
 
-| Feature                    | Description                                     |
-| -------------------------- | ----------------------------------------------- |
-| 🔍 **Agent Discovery**     | Browse and manage local agent files             |
-| 🤖 **Chat Interface**      | Claude integration with streaming responses     |
-| 🔐 **OAuth Authentication**| Claude and Codex provider connections           |
-| 🛠️ **Tools System**        | Extensible tool handlers and converters         |
-| 📁 **Workspace Management**| Organize agents across multiple workspaces      |
-| 📦 **Cross-Platform**      | Windows 10+, macOS 11+, Linux (Ubuntu 20.04+)   |
+| Feature                     | Description                                   |
+| --------------------------- | --------------------------------------------- |
+| 🔍 **Agent Discovery**      | Browse and manage local agent files           |
+| 🤖 **Chat Interface**       | Claude integration with streaming responses   |
+| 🔐 **OAuth Authentication** | Claude and Codex provider connections         |
+| 🛠️ **Tools System**         | Extensible tool handlers and converters       |
+| 📁 **Workspace Management** | Organize agents across multiple workspaces    |
+| 📦 **Cross-Platform**       | Windows 10+, macOS 11+, Linux (Ubuntu 20.04+) |
 
 ---
 
@@ -96,9 +96,7 @@ src/
 │   │   ├── main.tsx      # React entry point
 │   │   ├── router.tsx    # Application routing
 │   │   └── global.d.ts   # Global type definitions
-│   ├── components/       # Reusable UI components
-│   │   ├── layout/       # Layout components (Sidebar, TitleBar, etc.)
-│   │   └── ui/           # Generic UI primitives
+│   ├── components/       # Reusable UI components (primitives)
 │   ├── config/           # App configuration
 │   ├── features/         # Stateful features
 │   │   ├── chat/         # Chat feature (components, hooks)
@@ -106,6 +104,8 @@ src/
 │   ├── guards/           # Route guards
 │   ├── hooks/            # Custom React hooks
 │   ├── layouts/          # Page layouts
+│   │   ├── components/   # Layout-specific components (Sidebar, TitleBar, etc.)
+│   │   └── *.tsx         # Layout containers (AppLayout, LoginLayout, etc.)
 │   ├── lib/              # Utility libraries
 │   ├── pages/            # Page components
 │   │   ├── agents/       # Agent pages and components
@@ -201,10 +201,10 @@ Local config file: `~/.agentage/config.json`
 
 ### Agent Sources
 
-| Source       | Path                             | Description              |
-| ------------ | -------------------------------- | ------------------------ |
-| Local        | `~/.agentage/agents/`            | User-managed agent files |
-| Workspaces   |                                  | User-specific workspaces |
+| Source     | Path                  | Description              |
+| ---------- | --------------------- | ------------------------ |
+| Local      | `~/.agentage/agents/` | User-managed agent files |
+| Workspaces |                       | User-specific workspaces |
 
 ---
 

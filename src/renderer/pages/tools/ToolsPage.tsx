@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { TabFilter, ToolInfo, ToolSource } from '../../../shared/types/index.js';
-import { ToolCard } from './components/ToolCard.js';
 import {
   IconButton,
   RefreshIcon,
@@ -9,6 +8,7 @@ import {
   type ToggleOption,
 } from '../../components/index.js';
 import { cn } from '../../lib/utils.js';
+import { ToolCard } from './components/ToolCard.js';
 
 /**
  * Tab options for filtering tools by source

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { OAuthProviderStatus } from '../../../../shared/types/oauth.types.js';
-import { cn } from '../../../lib/utils.js';
 import {
   AlertCircleIcon,
   AnthropicIcon,
@@ -12,6 +11,7 @@ import {
   RefreshIcon,
   Section,
 } from '../../../components/index.js';
+import { cn } from '../../../lib/utils.js';
 
 /**
  * Get icon component for provider

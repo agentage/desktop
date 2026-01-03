@@ -1,6 +1,6 @@
 import type { ToolSource, ToolStatus } from '../../../../shared/types/index.js';
-import { cn } from '../../../lib/utils.js';
 import { Switch } from '../../../components/index.js';
+import { cn } from '../../../lib/utils.js';
 
 export interface ToolCardProps {
   name: string;
