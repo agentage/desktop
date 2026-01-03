@@ -4,15 +4,15 @@
  */
 
 interface MockElement {
-  textContent: string | null;
+  textContent: string;
   getAttribute: (name: string) => string | null;
-  querySelector: <T>(selector: string) => T | null;
+  querySelector: (selector: string) => MockElement | null;
   querySelectorAll: (selector: string) => MockElement[];
 }
 
 interface MockDocument {
   title: string;
-  body: MockElement | null;
+  body: MockElement;
   querySelectorAll: (selector: string) => MockElement[];
 }
 
