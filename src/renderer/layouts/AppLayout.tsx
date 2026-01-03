@@ -20,6 +20,8 @@ export const AppLayout = (): React.JSX.Element => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [pendingWidgetOrder, setPendingWidgetOrder] = useState<WidgetPlacement[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [saveSuccessTrigger, setSaveSuccessTrigger] = useState(0);
   const location = useLocation();
 
   // Check if we're on the dashboard page
@@ -58,14 +60,17 @@ export const AppLayout = (): React.JSX.Element => {
     setIsEditMode((prev) => !prev);
   };
 
-  const handleLayoutChange = (widgets: WidgetPlacement[]): void => {
+  const handleLayoutChange = (widgets: WidgetPlacement[], hasChanges: boolean): void => {
     setPendingWidgetOrder(widgets);
+    setHasChanges(hasChanges);
   };
 
   const handleSaveLayout = async (): Promise<void> => {
     try {
       await window.agentage.widgets.saveLayout('home', pendingWidgetOrder);
+      setSaveSuccessTrigger((prev) => prev + 1);
       setIsEditMode(false);
+      setHasChanges(false);
       // Optionally show a success message
       console.log('Layout saved successfully');
     } catch (error) {
@@ -100,11 +105,14 @@ export const AppLayout = (): React.JSX.Element => {
             onEditModeToggle={toggleEditMode}
             onSaveLayout={handleSaveLayoutClick}
             showEditButton={isDashboard}
+            hasChanges={hasChanges}
           />
 
           {/* Main content */}
           <div className="flex-1 overflow-auto p-6">
-            <Outlet context={{ isEditMode, onLayoutChange: handleLayoutChange }} />
+            <Outlet
+              context={{ isEditMode, onLayoutChange: handleLayoutChange, saveSuccessTrigger }}
+            />
           </div>
         </section>
 

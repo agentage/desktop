@@ -116,6 +116,8 @@ export interface WidgetHostComponents {
 export interface WidgetHost {
   /** Call a widget tool by name */
   callTool: <T = unknown>(toolName: string, params?: unknown) => Promise<T>;
+  /** Navigate to a specific route */
+  navigate: (path: string) => void;
   /** UI components available to widgets */
   components: WidgetHostComponents;
 }

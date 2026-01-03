@@ -17,15 +17,16 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { GripVerticalIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import type { Layout, WidgetInstance, WidgetPlacement } from '../../shared/types/widget.types.js';
 import { cn } from '../lib/utils.js';
-import { widgetHost } from '../lib/widget-host.js';
+import { createWidgetHost } from '../lib/widget-host.js';
 import { loadWidget } from '../lib/widget-loader.js';
 
 interface OutletContext {
   isEditMode: boolean;
-  onLayoutChange: (widgets: WidgetPlacement[]) => void;
+  onLayoutChange: (widgets: WidgetPlacement[], hasChanges: boolean) => void;
+  saveSuccessTrigger?: number;
 }
 
 /**
@@ -37,12 +38,14 @@ interface SortableWidgetProps {
   isEditMode: boolean;
   gridColumns: number;
   rowHeight: number;
+  widgetHost: import('../../shared/types/widget.types.js').WidgetHost;
 }
 
 const SortableWidget = ({
   placement,
   widget,
   isEditMode,
+  widgetHost,
 }: SortableWidgetProps): React.JSX.Element => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: placement.id,
@@ -64,7 +67,7 @@ const SortableWidget = ({
       style={style}
       className={cn(
         'rounded-xl border border-border bg-card p-4 relative',
-        isEditMode && 'cursor-move hover:border-primary/50 hover:shadow-md',
+        isEditMode && 'cursor-move hover:border-primary/50 hover:shadow-md select-none',
         isDragging && 'opacity-50 z-50'
       )}
     >
@@ -97,11 +100,14 @@ const SortableWidget = ({
  * Features: Dynamic widget loading from layout configuration
  */
 export const HomePage = (): React.JSX.Element => {
-  const { isEditMode, onLayoutChange } = useOutletContext<OutletContext>();
+  const navigate = useNavigate();
+  const widgetHost = createWidgetHost(navigate);
+  const { isEditMode, onLayoutChange, saveSuccessTrigger } = useOutletContext<OutletContext>();
   const [layout, setLayout] = useState<Layout | null>(null);
   const [widgets, setWidgets] = useState<Map<string, WidgetInstance>>(new Map());
   const [loading, setLoading] = useState(true);
   const [widgetOrder, setWidgetOrder] = useState<WidgetPlacement[]>([]);
+  const [initialOrder, setInitialOrder] = useState<WidgetPlacement[]>([]);
 
   useEffect(() => {
     const init = async (): Promise<void> => {
@@ -115,6 +121,7 @@ export const HomePage = (): React.JSX.Element => {
 
         setLayout(result.layout);
         setWidgetOrder(result.layout.widgets);
+        setInitialOrder(result.layout.widgets);
 
         // Import components for widgets in layout
         const loaded = new Map<string, WidgetInstance>();
@@ -136,9 +143,27 @@ export const HomePage = (): React.JSX.Element => {
   // Notify parent about layout changes
   useEffect(() => {
     if (widgetOrder.length > 0) {
-      onLayoutChange(widgetOrder);
+      // Check if order has changed from initial
+      const hasChanges =
+        JSON.stringify(widgetOrder.map((w) => w.id)) !==
+        JSON.stringify(initialOrder.map((w) => w.id));
+      onLayoutChange(widgetOrder, hasChanges);
     }
-  }, [widgetOrder, onLayoutChange]);
+  }, [widgetOrder, initialOrder, onLayoutChange]);
+
+  // Reset to initial order when exiting edit mode
+  useEffect(() => {
+    if (!isEditMode && initialOrder.length > 0) {
+      setWidgetOrder(initialOrder);
+    }
+  }, [isEditMode, initialOrder]);
+
+  // Update initial order when save succeeds
+  useEffect(() => {
+    if (saveSuccessTrigger && saveSuccessTrigger > 0) {
+      setInitialOrder(widgetOrder);
+    }
+  }, [saveSuccessTrigger, widgetOrder]);
 
   // dnd-kit sensors for mouse and keyboard
   const sensors = useSensors(
@@ -199,6 +224,7 @@ export const HomePage = (): React.JSX.Element => {
                   isEditMode={isEditMode}
                   gridColumns={layout.grid.columns}
                   rowHeight={layout.grid.rowHeight}
+                  widgetHost={widgetHost}
                 />
               );
             })}

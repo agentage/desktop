@@ -8,11 +8,11 @@ interface ToolsCountResult {
 /**
  * Tools Statistics Widget
  *
- * Displays the count of available tools with a settings icon.
- * Updates on mount by calling the tools:count tool.
+ * Displays the count of available tools in a compact 1x1 format.
+ * Clickable to navigate to the Tools page.
  */
 const factory: WidgetFactory = (host): WidgetInstance => {
-  const { Flex, Stack, Text, Icons } = host.components;
+  const { Stack, Text, Icons } = host.components;
   const { Icon } = Icons;
 
   const Component = (): React.JSX.Element => {
@@ -34,32 +34,37 @@ const factory: WidgetFactory = (host): WidgetInstance => {
       void fetchCount();
     }, []);
 
+    const handleClick = (): void => {
+      host.navigate('/tools');
+    };
+
     return (
-      <Stack spacing="md" flex={1}>
-        <Flex align="center" gap="sm">
-          <Icon name="settings" color="violet" size="sm" bg />
-          <Text size="xs" variant="muted">
-            Active Tools
-          </Text>
-        </Flex>
-        <Stack spacing={1} flex={1} justify="center">
-          <Text size="2xl" weight="semibold" className="tabular-nums">
-            {loading ? '...' : count}
-          </Text>
-          <Text size="xs" variant="muted">
-            Available tools
-          </Text>
+      <button
+        onClick={handleClick}
+        className="w-full h-full text-left hover:bg-accent/50 transition-colors rounded-lg p-0 border-0 cursor-pointer"
+        type="button"
+      >
+        <Stack spacing="sm" flex={1} justify="center">
+          <Icon name="settings" color="violet" size="md" bg />
+          <Stack spacing={1}>
+            <Text size="2xl" weight="semibold" className="tabular-nums">
+              {loading ? '...' : count}
+            </Text>
+            <Text size="xs" variant="muted">
+              Tools
+            </Text>
+          </Stack>
         </Stack>
-      </Stack>
+      </button>
     );
   };
 
   return {
     manifest: {
       id: 'tools-stats',
-      name: 'Tools Statistics',
-      description: 'Shows active tools count',
-      size: { w: 2, h: 1 },
+      name: 'Tools',
+      description: 'Shows active tools count. Click to manage.',
+      size: { w: 1, h: 1 },
       category: 'system',
     },
     component: Component,

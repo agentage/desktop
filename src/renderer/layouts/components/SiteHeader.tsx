@@ -1,4 +1,4 @@
-import { Edit3Icon, SaveIcon } from 'lucide-react';
+import { Edit3Icon, SaveIcon, XIcon } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils.js';
 
@@ -16,6 +16,7 @@ interface SiteHeaderProps {
   onEditModeToggle?: () => void;
   onSaveLayout?: () => void;
   showEditButton?: boolean;
+  hasChanges?: boolean;
 }
 
 /**
@@ -28,6 +29,7 @@ export const SiteHeader = ({
   onEditModeToggle,
   onSaveLayout,
   showEditButton,
+  hasChanges,
 }: SiteHeaderProps): React.JSX.Element => {
   const location = useLocation();
 
@@ -71,7 +73,7 @@ export const SiteHeader = ({
         <div className="ml-auto flex items-center gap-2">
           <button
             onClick={onEditModeToggle}
-            title={isEditMode ? 'Exit Edit Mode' : 'Edit Widget Layout'}
+            title={isEditMode ? 'Exit Edit Mode (Esc)' : 'Edit Widget Layout'}
             className={cn(
               'flex size-7 items-center justify-center rounded-md transition-colors',
               'focus:outline-none',
@@ -80,7 +82,7 @@ export const SiteHeader = ({
                 : 'text-muted-foreground hover:text-foreground hover:bg-accent'
             )}
           >
-            <Edit3Icon className="size-3.5" />
+            {isEditMode ? <XIcon className="size-3.5" /> : <Edit3Icon className="size-3.5" />}
             <span className="sr-only">{isEditMode ? 'Exit Edit Mode' : 'Edit Layout'}</span>
           </button>
 
@@ -88,11 +90,14 @@ export const SiteHeader = ({
           {isEditMode && (
             <button
               onClick={onSaveLayout}
-              title="Save Layout"
+              disabled={!hasChanges}
+              title={hasChanges ? 'Save Layout' : 'No changes to save'}
               className={cn(
                 'flex size-7 items-center justify-center rounded-md transition-colors',
-                'bg-green-600 text-white hover:bg-green-700',
-                'focus:outline-none'
+                'focus:outline-none',
+                hasChanges
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
               )}
             >
               <SaveIcon className="size-3.5" />
