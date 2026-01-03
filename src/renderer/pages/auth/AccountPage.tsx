@@ -87,7 +87,7 @@ export const AccountPage = (): React.JSX.Element => {
               </Button>
             }
           >
-            <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {/* Avatar */}
                 <div className="relative">
@@ -112,12 +112,11 @@ export const AccountPage = (): React.JSX.Element => {
                 </div>
               </div>
 
-              <div className="border-t border-border pt-4">
-                <Button variant="outline" className="w-full" onClick={handleLogout}>
-                  <LogOutIcon />
-                  <span>Sign Out</span>
-                </Button>
-              </div>
+              {/* Logout button in right corner */}
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOutIcon />
+                <span>Sign Out</span>
+              </Button>
             </div>
           </Section>
         </div>
