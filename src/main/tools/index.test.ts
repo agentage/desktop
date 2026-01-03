@@ -30,6 +30,14 @@ describe('tools - definitions', () => {
     expect(tool?.inputSchema.required).toContain('command');
   });
 
+  it('should define web_search tool', () => {
+    const tool = builtinTools.find((t) => t.name === 'web_search');
+    expect(tool).toBeDefined();
+    expect(tool?.description).toContain('DuckDuckGo');
+    expect(tool?.inputSchema.properties).toHaveProperty('query');
+    expect(tool?.inputSchema.required).toContain('query');
+  });
+
   it('should have valid JSON Schema for all tools', () => {
     for (const tool of builtinTools) {
       expect(tool.inputSchema.type).toBe('object');

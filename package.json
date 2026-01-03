@@ -36,11 +36,13 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
+    "@mozilla/readability": "^0.6.0",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-switch": "^1.2.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "linkedom": "^0.18.12",
     "lucide-react": "^0.562.0",
     "markdown-it": "^14.1.0",
     "react": "^18.3.1",

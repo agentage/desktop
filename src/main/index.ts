@@ -89,17 +89,19 @@ const createWindow = (): BrowserWindow => {
   });
 
   // Load URL after window setup is complete
-  const loadUrl = isDev
-    ? win.loadURL('http://localhost:5173')
+  // In dev mode, use VITE_DEV_SERVER_URL set by vite-plugin-electron
+  const devServerUrl = process.env['VITE_DEV_SERVER_URL'];
+  const loadUrl = isDev && devServerUrl
+    ? win.loadURL(devServerUrl)
     : win.loadFile(join(__dirname, '../renderer/index.html'));
 
   // Handle load failures in dev mode (Vite not ready yet)
-  if (isDev) {
+  if (isDev && devServerUrl) {
     void loadUrl.catch(() => {
       // Retry loading after a short delay if Vite dev server isn't ready
       console.warn('Failed to load dev server, retrying in 1s...');
       setTimeout(() => {
-        void win.loadURL('http://localhost:5173').catch((err: unknown) => {
+        void win.loadURL(devServerUrl).catch((err: unknown) => {
           console.error('Failed to load dev server:', err);
         });
       }, 1000);

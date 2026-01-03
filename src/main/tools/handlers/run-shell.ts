@@ -13,11 +13,31 @@ interface RunShellOutput {
   stdout: string;
   stderr: string;
   exitCode: number;
+  truncated: boolean;
 }
+
+/**
+ * Maximum output length to prevent context window exhaustion (~5k tokens)
+ */
+const MAX_OUTPUT_LENGTH = 20000;
+
+/**
+ * Truncate output and add indicator if needed
+ */
+const truncateOutput = (output: string): { text: string; wasTruncated: boolean } => {
+  if (output.length <= MAX_OUTPUT_LENGTH) {
+    return { text: output, wasTruncated: false };
+  }
+  return {
+    text: output.slice(0, MAX_OUTPUT_LENGTH) + '\n\n[Output truncated...]',
+    wasTruncated: true,
+  };
+};
 
 /**
  * Execute a shell command
  * Uses workspace path as cwd if available in context
+ * Output is truncated to prevent context window exhaustion
  */
 export const handler: ToolHandler<RunShellInput, RunShellOutput> = async (
   input,
@@ -32,7 +52,15 @@ export const handler: ToolHandler<RunShellInput, RunShellOutput> = async (
       maxBuffer: 10 * 1024 * 1024, // 10MB buffer
     });
 
-    return { stdout, stderr, exitCode: 0 };
+    const truncatedStdout = truncateOutput(stdout);
+    const truncatedStderr = truncateOutput(stderr);
+
+    return {
+      stdout: truncatedStdout.text,
+      stderr: truncatedStderr.text,
+      exitCode: 0,
+      truncated: truncatedStdout.wasTruncated || truncatedStderr.wasTruncated,
+    };
   } catch (error) {
     const execError = error as Error & {
       stdout?: string;
@@ -43,10 +71,14 @@ export const handler: ToolHandler<RunShellInput, RunShellOutput> = async (
 
     // Command failed but completed (non-zero exit code)
     if (execError.code !== undefined && !execError.killed) {
+      const truncatedStdout = truncateOutput(execError.stdout ?? '');
+      const truncatedStderr = truncateOutput(execError.stderr ?? execError.message);
+
       return {
-        stdout: execError.stdout ?? '',
-        stderr: execError.stderr ?? execError.message,
+        stdout: truncatedStdout.text,
+        stderr: truncatedStderr.text,
         exitCode: execError.code,
+        truncated: truncatedStdout.wasTruncated || truncatedStderr.wasTruncated,
       };
     }
 

@@ -13,8 +13,16 @@ export default defineConfig({
         vite: {
           build: {
             outDir: 'dist/main',
+            lib: {
+              // Output as ESM to support dynamic imports of ESM modules like linkedom
+              entry: 'src/main/index.ts',
+              formats: ['es'],
+              fileName: () => 'index.js',
+            },
             rollupOptions: {
-              external: ['electron'],
+              // Externalize linkedom and readability for dynamic import at runtime
+              // They're ESM packages that work with Node's native ESM loader
+              external: ['electron', 'linkedom', '@mozilla/readability'],
             },
           },
         },

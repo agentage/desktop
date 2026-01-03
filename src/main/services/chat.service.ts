@@ -34,6 +34,11 @@ const ANTHROPIC_BETA = 'oauth-2025-04-20,claude-code-20250219,interleaved-thinki
 const MAX_TOOL_ITERATIONS = 10;
 
 /**
+ * Maximum characters for tool result content to prevent context exhaustion
+ */
+const MAX_TOOL_RESULT_CHARS = 30000;
+
+/**
  * In-memory conversation storage
  */
 const conversations = new Map<string, Conversation>();
@@ -48,6 +53,14 @@ const activeRequests = new Map<string, AbortController>();
  */
 const generateId = (prefix: string): string =>
   `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+
+/**
+ * Truncate tool result content to prevent context window exhaustion
+ */
+const truncateToolResult = (content: string): string => {
+  if (content.length <= MAX_TOOL_RESULT_CHARS) return content;
+  return content.slice(0, MAX_TOOL_RESULT_CHARS) + '\n\n[Output truncated...]';
+};
 
 /**
  * Get Anthropic client with current token
@@ -222,7 +235,8 @@ const executeToolCall = async (
       context
     );
 
-    const content = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+    const rawContent = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+    const content = truncateToolResult(rawContent);
 
     // Emit tool_result event for UI
     emitEvent({
