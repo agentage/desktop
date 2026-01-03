@@ -7,6 +7,9 @@ import { widgetHost } from './widget-host.js';
  */
 const WIDGET_LOADERS: Record<string, () => Promise<{ default: WidgetFactory }>> = {
   'agent-stats': () => import('../widgets/agent-stats/index.js'),
+  'tools-stats': () => import('../widgets/tools-stats/index.js'),
+  'models-stats': () => import('../widgets/models-stats/index.js'),
+  'connections-stats': () => import('../widgets/connections-stats/index.js'),
 };
 
 /**

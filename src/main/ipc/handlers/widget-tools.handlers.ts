@@ -1,6 +1,9 @@
 import type { IpcMain } from 'electron';
 import type { ToolDefinition } from '../../../shared/types/widget.types.js';
 import { listAgents } from '../../services/agent.service.js';
+import { getLinkedProviders } from '../../services/auth.service.js';
+import { getModels } from '../../services/chat.service.js';
+import { listTools } from '../../tools/index.js';
 
 // Tool handler registry
 type ToolHandler = (params: unknown) => Promise<unknown>;
@@ -31,6 +34,45 @@ const initializeBuiltinTools = (): void => {
     async () => {
       const agents = await listAgents();
       return { count: agents.length };
+    }
+  );
+
+  // tools:count tool
+  registerTool(
+    {
+      name: 'tools:count',
+      description: 'Get the count of available tools',
+      inputSchema: { type: 'object', properties: {} },
+    },
+    async () => {
+      const tools = listTools();
+      return { count: tools.length };
+    }
+  );
+
+  // models:count tool
+  registerTool(
+    {
+      name: 'models:count',
+      description: 'Get the count of available AI models',
+      inputSchema: { type: 'object', properties: {} },
+    },
+    async () => {
+      const models = await getModels();
+      return { count: models.length };
+    }
+  );
+
+  // connections:count tool
+  registerTool(
+    {
+      name: 'connections:count',
+      description: 'Get the count of active connections',
+      inputSchema: { type: 'object', properties: {} },
+    },
+    async () => {
+      const providers = await getLinkedProviders();
+      return { count: providers.length };
     }
   );
 };

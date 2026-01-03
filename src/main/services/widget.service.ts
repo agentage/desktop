@@ -26,6 +26,9 @@ const DEFAULT_WIDGETS_CONFIG: WidgetsConfig = {
   version: '1.0',
   widgets: {
     'agent-stats': { enabled: true },
+    'tools-stats': { enabled: true },
+    'models-stats': { enabled: true },
+    'connections-stats': { enabled: true },
   },
 };
 
@@ -38,7 +41,12 @@ const DEFAULT_LAYOUT_CONFIG: LayoutConfig = {
     home: {
       name: 'Dashboard',
       grid: { columns: 4, rowHeight: 120 },
-      widgets: [{ id: 'agent-stats', position: { x: 0, y: 0 }, size: { w: 2, h: 1 } }],
+      widgets: [
+        { id: 'agent-stats', position: { x: 0, y: 0 }, size: { w: 2, h: 1 } },
+        { id: 'tools-stats', position: { x: 2, y: 0 }, size: { w: 2, h: 1 } },
+        { id: 'models-stats', position: { x: 0, y: 1 }, size: { w: 2, h: 1 } },
+        { id: 'connections-stats', position: { x: 2, y: 1 }, size: { w: 2, h: 1 } },
+      ],
     },
   },
 };
