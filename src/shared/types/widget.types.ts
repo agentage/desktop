@@ -33,7 +33,14 @@ export interface WidgetManifest {
 /**
  * Icon container color options
  */
-export type WidgetIconContainerColor = 'blue' | 'green' | 'amber' | 'violet' | 'rose' | 'cyan' | 'muted';
+export type WidgetIconContainerColor =
+  | 'blue'
+  | 'green'
+  | 'amber'
+  | 'violet'
+  | 'rose'
+  | 'cyan'
+  | 'muted';
 
 /**
  * Icon container size options
@@ -44,16 +51,63 @@ export type WidgetIconContainerSize = 'sm' | 'md' | 'lg';
  * Widget host components - UI components available to widgets
  */
 export interface WidgetHostComponents {
-  BotIcon: React.FC;
-  CheckCircleIcon: React.FC;
-  SettingsIcon: React.FC;
-  AlertCircleIcon: React.FC;
-  IconContainer: React.FC<{
-    color: WidgetIconContainerColor;
-    size?: WidgetIconContainerSize;
-    children: React.ReactNode;
+  // Layout primitives
+  Flex: React.FC<{
+    direction?: 'row' | 'column';
+    gap?: number | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+    align?: 'start' | 'center' | 'end' | 'stretch';
+    justify?: 'start' | 'center' | 'end' | 'between' | 'around';
+    wrap?: boolean;
+    flex?: number;
     className?: string;
+    children: React.ReactNode;
   }>;
+  Stack: React.FC<{
+    direction?: 'horizontal' | 'vertical';
+    spacing?: number | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+    align?: 'start' | 'center' | 'end' | 'stretch';
+    justify?: 'start' | 'center' | 'end' | 'between' | 'around';
+    flex?: number;
+    className?: string;
+    children: React.ReactNode;
+  }>;
+  Grid: React.FC<{
+    columns?: number | string;
+    rows?: string;
+    gap?: number | 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+    className?: string;
+    children: React.ReactNode;
+  }>;
+  // UI primitives
+  Text: React.FC<{
+    size?: 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl';
+    weight?: 'normal' | 'medium' | 'semibold' | 'bold';
+    variant?: 'default' | 'muted' | 'primary' | 'destructive';
+    align?: 'left' | 'center' | 'right';
+    truncate?: boolean;
+    className?: string;
+    children: React.ReactNode;
+  }>;
+  // Icons
+  Icons: {
+    Icon: React.FC<{
+      name: string;
+      size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+      color?: 'blue' | 'green' | 'amber' | 'violet' | 'rose' | 'cyan' | 'muted';
+      bg?: boolean;
+      className?: string;
+    }>;
+    BotIcon: React.FC;
+    CheckCircleIcon: React.FC;
+    SettingsIcon: React.FC;
+    AlertCircleIcon: React.FC;
+    IconContainer: React.FC<{
+      color: WidgetIconContainerColor;
+      size?: WidgetIconContainerSize;
+      children: React.ReactNode;
+      className?: string;
+    }>;
+  };
 }
 
 /**
@@ -81,6 +135,11 @@ export interface WidgetInstance {
   component: React.ComponentType<WidgetComponentProps>;
   tools: ToolDefinition[];
 }
+
+/**
+ * Widget factory function - creates a widget with access to host
+ */
+export type WidgetFactory = (host: WidgetHost) => WidgetInstance;
 
 /**
  * Widget placement in a layout
