@@ -8,8 +8,8 @@ import {
   Section,
   SettingsIcon,
   UserIcon,
-} from '../components/ui/index.js';
-import { useAuth } from '../hooks/index.js';
+} from '../../components/ui/index.js';
+import { useAuth } from '../../hooks/index.js';
 
 /**
  * Account page - displays user account information

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Workspace } from '../../../shared/types/workspace.types.js';
 import { cn } from '../../lib/utils.js';
-import { WorkspaceIconDisplay } from '../../pages/workspaces/WorkspaceIconDisplay.js';
+import { WorkspaceIconDisplay } from '../../pages/workspaces/components/WorkspaceIconDisplay.js';
 
 // Chevron down icon (matching composer style)
 const ChevronDownIcon = (): React.JSX.Element => (

@@ -21,7 +21,7 @@ const openLink = (url: string): void => {
  * Application footer component
  * Displays version info and useful links
  */
-export const Footer = (): React.JSX.Element => (
+export const SiteFooter = (): React.JSX.Element => (
   <footer className="flex h-7 items-center justify-between border-t border-border bg-sidebar px-3">
     <span className="text-[10px] text-muted-foreground">Agentage Desktop v{APP_VERSION}</span>
     <div className="flex items-center gap-3">

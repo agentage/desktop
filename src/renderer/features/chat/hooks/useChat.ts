@@ -5,7 +5,7 @@ import type {
   ChatModelInfo,
   ChatSendResponse,
   ChatToolInfo,
-} from '../../shared/types/chat.types.js';
+} from '../../../../shared/types/chat.types.js';
 
 /**
  * Tool call status
