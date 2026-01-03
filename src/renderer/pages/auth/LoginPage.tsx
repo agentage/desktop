@@ -1,5 +1,22 @@
 import { useNavigate } from 'react-router-dom';
+import { Button, UserIcon } from '../../components/index.js';
 import { useAuth } from '../../hooks/useAuth.js';
+
+// Loader icon (Lucide loader-2)
+const LoaderIcon = (): React.JSX.Element => (
+  <svg
+    className="h-6 w-6 animate-spin text-primary"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+  </svg>
+);
 
 /**
  * Login page - renders inside LoginLayout
@@ -28,23 +45,52 @@ export const LoginPage = (): React.JSX.Element => {
   };
 
   return (
-    <div>
-      <h1>Agentage</h1>
+    <div className="flex flex-col items-center justify-center gap-6 p-8">
+      {/* Logo/Brand */}
+      <div className="flex flex-col items-center gap-2">
+        <h1 className="text-3xl font-bold text-primary">Agentage</h1>
+        <p className="text-sm text-muted-foreground">AI Agent Management</p>
+      </div>
 
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : user ? (
-        <div>
-          <p>Welcome back, {user.name ?? user.email}!</p>
-          <button onClick={handleContinue}>Get Started</button>
-        </div>
-      ) : (
-        <div>
-          <p>Sign in to sync agents and settings</p>
-          <button onClick={handleLogin}>Sign in to Agentage</button>
-          <button onClick={handleContinue}>Continue without signing in</button>
-        </div>
-      )}
+      {/* Card Container */}
+      <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-sm">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-8">
+            <LoaderIcon />
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
+        ) : user ? (
+          <div className="flex flex-col items-center gap-6">
+            {/* User Avatar */}
+            <div className="flex size-16 items-center justify-center rounded-full bg-primary/10">
+              <UserIcon />
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-medium text-foreground">
+                Welcome back, {user.name ?? user.email}!
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Ready to continue?</p>
+            </div>
+            <Button className="w-full" onClick={handleContinue}>
+              Get Started
+            </Button>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-6">
+            <p className="text-center text-sm text-muted-foreground">
+              Sign in to sync agents and settings across devices
+            </p>
+            <div className="flex w-full flex-col gap-3">
+              <Button className="w-full" onClick={handleLogin}>
+                Sign in to Agentage
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={handleContinue}>
+                Continue without signing in
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
