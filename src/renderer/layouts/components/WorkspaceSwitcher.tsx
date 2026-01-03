@@ -73,21 +73,89 @@ export const WorkspaceSwitcher = ({
 
   if (isCollapsed) {
     return (
-      <button
-        className={cn(
-          'flex size-8 items-center justify-center rounded-md mx-auto',
-          'bg-muted',
-          'hover:bg-accent transition-colors',
-          'focus:outline-none'
+      <div className="relative">
+        <button
+          onClick={() => {
+            setIsOpen(!isOpen);
+          }}
+          className={cn(
+            'flex size-8 items-center justify-center rounded-md mx-auto',
+            'bg-muted',
+            'hover:bg-accent transition-colors',
+            'focus:outline-none',
+            isOpen && 'bg-accent'
+          )}
+          title={activeWorkspace?.name ?? 'No workspace'}
+        >
+          <WorkspaceIconDisplay
+            icon={activeWorkspace?.icon}
+            color={activeWorkspace?.color}
+            className="size-4"
+          />
+        </button>
+
+        {/* Dropdown for collapsed state */}
+        {isOpen && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 z-50 bg-black/20"
+              onClick={() => {
+                setIsOpen(false);
+              }}
+            />
+
+            {/* Dropdown menu */}
+            <div className="absolute left-0 top-full mt-1 z-[60] rounded-md border border-border bg-sidebar shadow-lg min-w-48">
+              <div className="p-1">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  Workspaces
+                </div>
+                {workspaces.map((workspace) => (
+                  <button
+                    key={workspace.id}
+                    onClick={() => {
+                      void handleSwitchWorkspace(workspace.id);
+                    }}
+                    className={cn(
+                      'w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm',
+                      'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left',
+                      activeWorkspace?.id === workspace.id && 'bg-accent/50'
+                    )}
+                  >
+                    <div className="flex size-5 items-center justify-center rounded-sm bg-muted/50">
+                      <WorkspaceIconDisplay
+                        icon={workspace.icon}
+                        color={workspace.color}
+                        className="size-3.5"
+                      />
+                    </div>
+                    <span className="flex-1 truncate">{workspace.name}</span>
+                    {workspace.isDefault && (
+                      <span className="text-[10px] text-muted-foreground">Default</span>
+                    )}
+                    {activeWorkspace?.id === workspace.id && (
+                      <span className="text-primary">
+                        <CheckIcon />
+                      </span>
+                    )}
+                  </button>
+                ))}
+                <div className="my-1 h-px bg-border" />
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    void navigate('/workspaces');
+                  }}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 text-xs rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left"
+                >
+                  Manage workspaces...
+                </button>
+              </div>
+            </div>
+          </>
         )}
-        title={activeWorkspace?.name ?? 'No workspace'}
-      >
-        <WorkspaceIconDisplay
-          icon={activeWorkspace?.icon}
-          color={activeWorkspace?.color}
-          className="size-4"
-        />
-      </button>
+      </div>
     );
   }
 
