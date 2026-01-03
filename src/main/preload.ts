@@ -190,6 +190,33 @@ interface ToolSettingsUpdate {
   enabledTools: string[];
 }
 
+// Widget types
+interface WidgetPlacement {
+  id: string;
+  position: { x: number; y: number };
+  size: { w: number; h: number };
+}
+
+interface Layout {
+  name: string;
+  grid: { columns: number; rowHeight: number };
+  widgets: WidgetPlacement[];
+}
+
+interface LoadLayoutResult {
+  layout: Layout;
+}
+
+interface WidgetToolDefinition {
+  name: string;
+  description: string;
+  inputSchema: {
+    type: 'object';
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
 // Chat types
 interface ChatModelOptions {
   maxTokens?: number;
@@ -395,6 +422,11 @@ export interface AgentageAPI {
     updateSettings: (update: ToolSettingsUpdate) => Promise<void>;
     onChange: (callback: (enabledTools: string[]) => void) => () => void;
   };
+  widgets: {
+    loadLayout: (layoutId: string) => Promise<LoadLayoutResult | null>;
+    callTool: (toolName: string, params?: unknown) => Promise<unknown>;
+    listTools: () => Promise<WidgetToolDefinition[]>;
+  };
 }
 
 const api: AgentageAPI = {
@@ -514,6 +546,12 @@ const api: AgentageAPI = {
         ipcRenderer.removeListener('tools:changed', handler);
       };
     },
+  },
+  widgets: {
+    loadLayout: (layoutId: string) => ipcRenderer.invoke('widgets:loadLayout', layoutId),
+    callTool: (toolName: string, params?: unknown) =>
+      ipcRenderer.invoke('widgets:callTool', toolName, params),
+    listTools: () => ipcRenderer.invoke('widgets:listTools'),
   },
 };
 
