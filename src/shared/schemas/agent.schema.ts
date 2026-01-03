@@ -5,7 +5,7 @@ export const agentSchema = z.object({
   model: z.string().default('gpt-4'),
   instructions: z.string().min(1),
   tools: z.array(z.string()).optional(),
-  variables: z.record(z.unknown()).optional(),
+  variables: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type Agent = z.infer<typeof agentSchema>;

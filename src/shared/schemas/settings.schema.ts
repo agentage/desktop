@@ -43,7 +43,7 @@ export const syncedSettingsSchema = z.object({
  * Note: modelProviders moved to ~/.agentage/models.json
  */
 export const settingsSchema = z.object({
-  backendUrl: z.string().url().default('https://agentage.io'),
+  backendUrl: z.url().default('https://agentage.io'),
   theme: z.enum(['light', 'dark', 'system']).default('system'),
   defaultModelProvider: z.string().optional(),
   logRetention: z.union([z.literal(7), z.literal(30), z.literal(90), z.literal(-1)]).default(30),

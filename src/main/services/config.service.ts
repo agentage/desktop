@@ -18,9 +18,9 @@ const CONFIG_FILE = join(CONFIG_DIR, 'config.json');
  */
 const userSchema = z.object({
   id: z.string(),
-  email: z.string().email(),
+  email: z.email(),
   name: z.string().optional(),
-  avatar: z.string().url().optional(),
+  avatar: z.url().optional(),
   verifiedAlias: z.string().optional(),
 });
 
@@ -30,7 +30,7 @@ const userSchema = z.object({
  */
 const authConfigSchema = z.object({
   token: z.string(),
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z.iso.datetime().optional(),
   user: userSchema.optional(),
 });
 
@@ -42,14 +42,14 @@ const externalTokenSchema = z.object({
   scope: z.array(z.string()),
   value: z.string(),
   username: z.string().optional(),
-  connectedAt: z.string().datetime(),
+  connectedAt: z.iso.datetime(),
 });
 
 /**
  * Registry config schema - compatible with CLI
  */
 const registryConfigSchema = z.object({
-  url: z.string().url().default('https://dev.agentage.io'),
+  url: z.url().default('https://dev.agentage.io'),
 });
 
 /**
@@ -59,7 +59,7 @@ const modelProviderSchema = z.object({
   id: z.string(),
   provider: z.enum(['openai', 'anthropic', 'ollama', 'custom']),
   apiKey: z.string().optional(),
-  baseUrl: z.string().url().optional(),
+  baseUrl: z.url().optional(),
   defaultModel: z.string().optional(),
   isDefault: z.boolean().optional(),
 });
