@@ -86,6 +86,8 @@ export const WorkspaceSwitcher = ({
             isOpen && 'bg-accent'
           )}
           title={activeWorkspace?.name ?? 'No workspace'}
+          aria-label="Switch workspace"
+          aria-expanded={isOpen}
         >
           <WorkspaceIconDisplay
             icon={activeWorkspace?.icon}
@@ -103,10 +105,15 @@ export const WorkspaceSwitcher = ({
               onClick={() => {
                 setIsOpen(false);
               }}
+              aria-hidden="true"
             />
 
             {/* Dropdown menu */}
-            <div className="absolute left-0 top-full mt-1 z-[60] rounded-md border border-border bg-sidebar shadow-lg min-w-48">
+            <div 
+              className="absolute left-0 top-full mt-1 z-[60] rounded-md border border-border bg-sidebar shadow-lg min-w-48"
+              role="menu"
+              aria-label="Workspace selection menu"
+            >
               <div className="p-1">
                 <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
                   Workspaces
@@ -122,6 +129,8 @@ export const WorkspaceSwitcher = ({
                       'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors text-left',
                       activeWorkspace?.id === workspace.id && 'bg-accent/50'
                     )}
+                    role="menuitem"
+                    aria-current={activeWorkspace?.id === workspace.id ? 'true' : undefined}
                   >
                     <div className="flex size-5 items-center justify-center rounded-sm bg-muted/50">
                       <WorkspaceIconDisplay
