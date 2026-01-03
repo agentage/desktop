@@ -3,6 +3,8 @@ import { existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { registerIpcHandlers, setupRendererReadyMonitor } from './ipc/index.js';
+import { initConversationStore } from './services/conversation.store.service.js';
+import { initLogger } from './services/logger.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -127,6 +129,10 @@ const createWindow = (): BrowserWindow => {
 
 const initialize = async (): Promise<void> => {
   await app.whenReady();
+
+  // Initialize logger and conversation store
+  await initLogger();
+  await initConversationStore();
 
   registerIpcHandlers(ipcMain, getMainWindow);
   const win = createWindow();

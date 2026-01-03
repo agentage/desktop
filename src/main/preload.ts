@@ -240,6 +240,13 @@ interface ChatReference {
   range?: { start: number; end: number };
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  references?: ChatReference[];
+  timestamp: string;
+}
+
 interface ChatSendRequest {
   prompt: string;
   references?: ChatReference[];
@@ -357,6 +364,78 @@ interface FilesOnlyResponse {
 
 type ContextResponse = FullContextResponse | FilesOnlyResponse;
 
+// Conversation types
+interface ConversationRef {
+  id: string;
+  path: string;
+  title: string;
+  agentId?: string;
+  model: string;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
+  tags?: string[];
+  isPinned?: boolean;
+}
+
+interface ConversationSnapshot {
+  id: string;
+  title: string;
+  agentId?: string;
+  systemPrompt: string;
+  model: string;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+  config?: SessionConfig;
+  tags?: string[];
+  isPinned?: boolean;
+  usage?: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+  };
+}
+
+interface CreateConversationOptions {
+  agentId?: string;
+  systemPrompt: string;
+  model: string;
+  title?: string;
+  tags?: string[];
+  config?: SessionConfig;
+}
+
+interface ListConversationsOptions {
+  agentId?: string;
+  model?: string;
+  tags?: string[];
+  search?: string;
+  pinnedFirst?: boolean;
+  sortBy?: 'createdAt' | 'updatedAt' | 'messageCount';
+  sortDirection?: 'asc' | 'desc';
+  skip?: number;
+  limit?: number;
+}
+
+interface UpdateConversationMetadata {
+  title?: string;
+  tags?: string[];
+  isPinned?: boolean;
+}
+
+interface ConversationAPI {
+  create: (options: CreateConversationOptions) => Promise<ConversationSnapshot>;
+  get: (id: string) => Promise<ConversationSnapshot | null>;
+  list: (options?: ListConversationsOptions) => Promise<ConversationRef[]>;
+  appendMessage: (id: string, message: ChatMessage) => Promise<void>;
+  updateMetadata: (id: string, updates: UpdateConversationMetadata) => Promise<void>;
+  updateUsage: (id: string, inputTokens: number, outputTokens: number) => Promise<void>;
+  delete: (id: string) => Promise<void>;
+  export: (id: string) => Promise<string>;
+  import: (jsonString: string) => Promise<ConversationSnapshot>;
+}
+
 export interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
@@ -427,6 +506,7 @@ export interface AgentageAPI {
     callTool: (toolName: string, params?: unknown) => Promise<unknown>;
     listTools: () => Promise<WidgetToolDefinition[]>;
   };
+  conversations: ConversationAPI;
 }
 
 const api: AgentageAPI = {
@@ -552,6 +632,22 @@ const api: AgentageAPI = {
     callTool: (toolName: string, params?: unknown) =>
       ipcRenderer.invoke('widgets:callTool', toolName, params),
     listTools: () => ipcRenderer.invoke('widgets:listTools'),
+  },
+  conversations: {
+    create: (options: CreateConversationOptions) =>
+      ipcRenderer.invoke('conversations:create', options),
+    get: (id: string) => ipcRenderer.invoke('conversations:get', id),
+    list: (options?: ListConversationsOptions) =>
+      ipcRenderer.invoke('conversations:list', options),
+    appendMessage: (id: string, message: ChatMessage) =>
+      ipcRenderer.invoke('conversations:append', id, message),
+    updateMetadata: (id: string, updates: UpdateConversationMetadata) =>
+      ipcRenderer.invoke('conversations:update', id, updates),
+    updateUsage: (id: string, inputTokens: number, outputTokens: number) =>
+      ipcRenderer.invoke('conversations:updateUsage', id, inputTokens, outputTokens),
+    delete: (id: string) => ipcRenderer.invoke('conversations:delete', id),
+    export: (id: string) => ipcRenderer.invoke('conversations:export', id),
+    import: (jsonString: string) => ipcRenderer.invoke('conversations:import', jsonString),
   },
 };
 
