@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Button, GoogleIcon, RefreshIcon } from '../../components/index.js';
+import { BotIcon, Button, RefreshIcon } from '../../components/index.js';
 import { useAuth } from '../../hooks/useAuth.js';
 
 /**
@@ -31,9 +31,9 @@ export const LoginPage = (): React.JSX.Element => {
   return (
     <div className="flex w-full max-w-md flex-col items-center gap-8 rounded-xl border border-border bg-card p-8 shadow-lg">
       {/* Logo/Brand */}
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex size-16 items-center justify-center rounded-xl bg-primary/10">
-          <svg className="size-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex size-20 items-center justify-center rounded-2xl bg-primary shadow-lg">
+          <svg className="size-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M12 8V4H8" />
             <rect width="16" height="12" x="4" y="8" rx="2" />
             <path d="M2 14h2" />
@@ -69,9 +69,9 @@ export const LoginPage = (): React.JSX.Element => {
             Sign in to sync agents and settings
           </p>
           <div className="flex flex-col gap-3">
-            <Button onClick={handleLogin} className="w-full" size="lg" aria-label="Sign in with Google">
-              <GoogleIcon />
-              <span>Sign in with Google</span>
+            <Button onClick={handleLogin} className="w-full" size="lg" aria-label="Sign in to Agentage">
+              <BotIcon />
+              <span>Sign in to Agentage</span>
             </Button>
             <Button onClick={handleContinue} variant="outline" className="w-full" size="lg">
               Continue without signing in
