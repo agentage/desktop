@@ -1,4 +1,4 @@
-import type { ToolDefinition } from '../../../../shared/types/widget.types.js';
+import type { ToolDefinition } from '../../../shared/types/widget.types.js';
 
 export const tools: ToolDefinition[] = [
   {

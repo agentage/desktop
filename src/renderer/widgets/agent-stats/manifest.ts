@@ -1,4 +1,4 @@
-import type { WidgetManifest } from '../../../../shared/types/widget.types.js';
+import type { WidgetManifest } from '../../../shared/types/widget.types.js';
 
 export const manifest: WidgetManifest = {
   id: 'agent-stats',

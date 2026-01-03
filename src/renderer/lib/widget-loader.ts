@@ -5,7 +5,7 @@ import type { WidgetInstance } from '../../shared/types/widget.types.js';
  * Add new widgets here to make them available in the app
  */
 const WIDGET_LOADERS: Record<string, () => Promise<WidgetInstance>> = {
-  'agent-stats': () => import('../components/widgets/agent-stats/index.js'),
+  'agent-stats': () => import('../widgets/agent-stats/index.js'),
 };
 
 /**

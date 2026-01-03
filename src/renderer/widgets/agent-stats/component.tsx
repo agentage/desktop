@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
-import { BotIcon, IconContainer } from '../../index.js';
+import type { WidgetComponentProps } from '../../../shared/types/widget.types.js';
 
 interface AgentCountResult {
   count: number;
 }
 
-export const AgentStatsComponent = (): React.JSX.Element => {
+export const AgentStatsComponent = ({ host }: WidgetComponentProps): React.JSX.Element => {
   const [count, setCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+
+  const { BotIcon, IconContainer } = host.components;
 
   useEffect(() => {
     const fetchCount = async (): Promise<void> => {
       try {
-        const result = (await window.agentage.widgets.callTool('agents:count', {})) as AgentCountResult;
+        const result = await host.callTool<AgentCountResult>('agents:count', {});
         setCount(result.count);
       } catch (error) {
         console.error('Failed to fetch agent count:', error);
@@ -22,7 +24,7 @@ export const AgentStatsComponent = (): React.JSX.Element => {
     };
 
     void fetchCount();
-  }, []);
+  }, [host]);
 
   return (
     <div className="flex flex-col h-full">

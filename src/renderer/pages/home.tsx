@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Layout, WidgetInstance } from '../../shared/types/widget.types.js';
+import { widgetHost } from '../lib/widget-host.js';
 import { loadWidget } from '../lib/widget-loader.js';
 
 /**
@@ -83,7 +84,7 @@ export const HomePage = (): React.JSX.Element => {
                 gridRow: `span ${String(placement.size.h)}`,
               }}
             >
-              <Component />
+              <Component host={widgetHost} />
             </div>
           );
         })}
