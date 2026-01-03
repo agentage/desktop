@@ -1,4 +1,4 @@
-import { TitleBar } from '../components/TitleBar.js';
+import { TitleBar } from '../components/layout/TitleBar.js';
 
 // Loader icon (Lucide loader-2)
 const LoaderIcon = (): React.JSX.Element => (
