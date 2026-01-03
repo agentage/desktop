@@ -25,7 +25,7 @@ export const setMainWindow = (window: BrowserWindow | null): void => {
  */
 const notifyWorkspaceListChanged = (): void => {
   if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('workspace:listChanged');
+    mainWindow.webContents.send('workspace:changed');
   }
 };
 

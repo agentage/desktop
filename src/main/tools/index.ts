@@ -2,6 +2,7 @@ import { builtinTools } from './definitions.js';
 import { handler as fetchUrl } from './handlers/fetch-url.js';
 import { handler as runShell } from './handlers/run-shell.js';
 import { handler as searchGithub } from './handlers/search-github.js';
+import { handler as webSearch } from './handlers/web-search.js';
 import type { Tool, ToolContext, ToolHandler } from './types.js';
 
 /**
@@ -17,6 +18,7 @@ const handlers: Record<string, ToolHandler<any, any>> = {
   search_github: searchGithub,
   fetch_url: fetchUrl,
   run_shell: runShell,
+  web_search: webSearch,
 };
 
 /**

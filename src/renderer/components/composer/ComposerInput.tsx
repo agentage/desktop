@@ -7,13 +7,6 @@ import { ModelSelector } from './ModelSelector.js';
 import { ToolsPopover } from './ToolsPopover.js';
 import type { AgentOption, ContextBreakdownData, ModelOption } from './types.js';
 
-// Mock data for demonstration - would come from actual context in production
-const DEFAULT_MODEL: ModelOption = {
-  id: 'opus-4-5',
-  name: 'opus-4-5',
-  provider: 'Anthropic',
-};
-
 // Default empty context data (shown while loading)
 const DEFAULT_CONTEXT_DATA: ContextBreakdownData = {
   currentContext: 0,
@@ -50,7 +43,7 @@ interface StatusLineProps {
 const StatusLine = ({
   selectedModel,
   onModelChange,
-  models,
+  models = [],
   tokenCount,
   isFocused,
   contextData,
@@ -163,16 +156,18 @@ interface ComposerInputProps {
   className?: string;
   /** Available models from API */
   models?: ModelOption[];
-  /** Currently selected model */
-  selectedModel?: ModelOption;
+  /** Currently selected model (required) */
+  selectedModel: ModelOption;
   /** Callback when model changes */
-  onModelChange?: (model: ModelOption) => void;
+  onModelChange: (model: ModelOption) => void;
   /** Available agents from IPC */
   agents?: AgentOption[];
   /** Currently selected agent */
   selectedAgent?: AgentOption;
   /** Callback when agent changes */
   onAgentChange?: (agent: AgentOption) => void;
+  /** Conversation tokens for context display */
+  conversationTokens?: number;
 }
 
 /**
@@ -190,27 +185,31 @@ export const ComposerInput = ({
   disabled = false,
   className,
   models,
-  selectedModel: propSelectedModel,
+  selectedModel,
   onModelChange,
   agents,
   selectedAgent,
   onAgentChange,
+  conversationTokens = 0,
 }: ComposerInputProps): React.JSX.Element => {
   const [value, setValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [internalSelectedModel, setInternalSelectedModel] = useState<ModelOption>(DEFAULT_MODEL);
   const [contextData, setContextData] = useState<ContextBreakdownData>(DEFAULT_CONTEXT_DATA);
-
-  // Use prop if provided, otherwise use internal state
-  const selectedModel = propSelectedModel ?? internalSelectedModel;
-  const handleModelChange = onModelChange ?? setInternalSelectedModel;
 
   // Fetch context data function - extracted for reuse
   const fetchContext = useCallback(async (): Promise<void> => {
     try {
       const response = await window.agentage.chat.context.get();
       if ('breakdown' in response) {
-        setContextData(response.breakdown);
+        // Update conversation tokens from prop
+        const updatedBreakdown = {
+          ...response.breakdown,
+          items: response.breakdown.items.map((item) =>
+            item.name === 'Conversation' ? { ...item, tokens: conversationTokens } : item
+          ),
+          currentContext: response.breakdown.currentContext + conversationTokens,
+        };
+        setContextData(updatedBreakdown);
       } else if ('files' in response) {
         // Files-only response - build minimal breakdown
         const globalTokens = response.files.global.tokens;
@@ -253,7 +252,7 @@ export const ComposerInput = ({
     } catch (error) {
       console.error('Failed to fetch context:', error);
     }
-  }, []);
+  }, [conversationTokens]);
 
   // Fetch context data on mount and periodically
   useEffect(() => {
@@ -324,7 +323,7 @@ export const ComposerInput = ({
       {/* Status line */}
       <StatusLine
         selectedModel={selectedModel}
-        onModelChange={handleModelChange}
+        onModelChange={onModelChange}
         models={models}
         tokenCount={contextData.currentContext}
         isFocused={isFocused}

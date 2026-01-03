@@ -1,5 +1,5 @@
 import type { IpcMain } from 'electron';
-import { listAgents, runAgent } from '../services/agent.service.js';
+import { listAgents, runAgent } from '../../services/agent.service.js';
 
 export const registerAgentsHandlers = (ipcMain: IpcMain): void => {
   ipcMain.handle('agents:list', async () => listAgents());

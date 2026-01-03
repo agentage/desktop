@@ -10,6 +10,7 @@ export default {
     '^@main/(.*)$': '<rootDir>/src/main/$1',
     '^@renderer/(.*)$': '<rootDir>/src/renderer/$1',
     '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^linkedom$': '<rootDir>/src/main/tools/__mocks__/linkedom.ts',
   },
   transform: {
     '^.+\\.tsx?$': [
@@ -20,8 +21,9 @@ export default {
       },
     ],
   },
-  testMatch: ['**/src/**/*.test.ts', '**/src/**/*.test.tsx'],
-  testPathIgnorePatterns: ['/node_modules/', '/example-reference/'],
+  transformIgnorePatterns: ['/node_modules/'],
+  testMatch: ['<rootDir>/src/**/*.test.ts', '<rootDir>/src/**/*.test.tsx'],
+  testPathIgnorePatterns: ['/node_modules/', '/example/'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.test.{ts,tsx}',

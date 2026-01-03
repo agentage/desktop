@@ -5,8 +5,8 @@ import type {
   OAuthDisconnectRequest,
   OAuthDisconnectResult,
   OAuthListResult,
-} from '../../shared/types/oauth.types.js';
-import { getOAuthManager } from '../services/oauth/index.js';
+} from '../../../shared/types/oauth.types.js';
+import { getOAuthManager } from '../../services/oauth/index.js';
 
 /**
  * Register OAuth connect IPC handlers

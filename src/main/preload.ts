@@ -216,6 +216,7 @@ interface ChatReference {
 interface ChatSendRequest {
   prompt: string;
   references?: ChatReference[];
+  config: SessionConfig;
 }
 
 interface ChatSendResponse {
@@ -275,7 +276,6 @@ type ChatStreamEvent =
 type ChatEvent = { requestId: string } & ChatStreamEvent;
 
 interface ChatAPI {
-  configure: (config: SessionConfig) => void;
   send: (request: ChatSendRequest) => Promise<ChatSendResponse>;
   cancel: (requestId: string) => void;
   onEvent: (callback: (event: ChatEvent) => void) => () => void;
@@ -349,6 +349,7 @@ export interface AgentageAPI {
       save: (request: SaveProviderRequest) => Promise<SaveProviderResult>;
     };
     validate: (request: ValidateTokenRequest) => Promise<ValidateTokenResponse>;
+    onChange: (callback: (models: ChatModelInfo[]) => void) => () => void;
   };
   config: {
     get: () => Promise<Record<string, unknown>>;
@@ -392,6 +393,7 @@ export interface AgentageAPI {
   tools: {
     list: () => Promise<ToolListResult>;
     updateSettings: (update: ToolSettingsUpdate) => Promise<void>;
+    onChange: (callback: (enabledTools: string[]) => void) => () => void;
   };
 }
 
@@ -411,10 +413,19 @@ const api: AgentageAPI = {
   },
   models: {
     providers: {
-      load: (autoRefresh?: boolean) => ipcRenderer.invoke('models:providers:load', autoRefresh),
-      save: (request: SaveProviderRequest) => ipcRenderer.invoke('models:providers:save', request),
+      load: (autoRefresh?: boolean) => ipcRenderer.invoke('models.providers:load', autoRefresh),
+      save: (request: SaveProviderRequest) => ipcRenderer.invoke('models.providers:save', request),
     },
     validate: (request: ValidateTokenRequest) => ipcRenderer.invoke('models:validate', request),
+    onChange: (callback: (models: ChatModelInfo[]) => void) => {
+      const handler = (_event: unknown, models: ChatModelInfo[]): void => {
+        callback(models);
+      };
+      ipcRenderer.on('models:changed', handler);
+      return () => {
+        ipcRenderer.removeListener('models:changed', handler);
+      };
+    },
   },
   config: {
     get: () => ipcRenderer.invoke('config:get'),
@@ -448,9 +459,9 @@ const api: AgentageAPI = {
       const handler = (): void => {
         callback();
       };
-      ipcRenderer.on('workspace:listChanged', handler);
+      ipcRenderer.on('workspace:changed', handler);
       return () => {
-        ipcRenderer.removeListener('workspace:listChanged', handler);
+        ipcRenderer.removeListener('workspace:changed', handler);
       };
     },
   },
@@ -461,9 +472,6 @@ const api: AgentageAPI = {
     isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
   },
   chat: {
-    configure: (config: SessionConfig) => {
-      void ipcRenderer.invoke('chat:configure', config);
-    },
     send: (request: ChatSendRequest) => ipcRenderer.invoke('chat:send', request),
     cancel: (requestId: string) => {
       void ipcRenderer.invoke('chat:cancel', requestId);
@@ -477,14 +485,14 @@ const api: AgentageAPI = {
         ipcRenderer.removeListener('chat:event', handler);
       };
     },
-    getModels: () => ipcRenderer.invoke('chat:getModels'),
-    getTools: () => ipcRenderer.invoke('chat:getTools'),
-    getAgents: () => ipcRenderer.invoke('chat:getAgents'),
+    getModels: () => ipcRenderer.invoke('chat.models:get'),
+    getTools: () => ipcRenderer.invoke('chat.tools:get'),
+    getAgents: () => ipcRenderer.invoke('chat.agents:get'),
     clear: () => {
       void ipcRenderer.invoke('chat:clear');
     },
     context: {
-      get: (threadId?: string) => ipcRenderer.invoke('chat:context:get', threadId),
+      get: (threadId?: string) => ipcRenderer.invoke('chat.context:get', threadId),
     },
   },
   oauth: {
@@ -497,6 +505,15 @@ const api: AgentageAPI = {
     list: () => ipcRenderer.invoke('tools:list'),
     updateSettings: (update: ToolSettingsUpdate) =>
       ipcRenderer.invoke('tools:updateSettings', update),
+    onChange: (callback: (enabledTools: string[]) => void) => {
+      const handler = (_event: unknown, tools: string[]): void => {
+        callback(tools);
+      };
+      ipcRenderer.on('tools:changed', handler);
+      return () => {
+        ipcRenderer.removeListener('tools:changed', handler);
+      };
+    },
   },
 };
 

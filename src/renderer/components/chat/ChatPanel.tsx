@@ -196,7 +196,11 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
           selectedModel={
             selectedModel
               ? { id: selectedModel.id, name: selectedModel.name, provider: selectedModel.provider }
-              : undefined
+              : {
+                  id: 'claude-sonnet-4-5-20250929',
+                  name: 'claude-sonnet-4-5-20250929',
+                  provider: 'anthropic',
+                }
           }
           onModelChange={handleModelChange}
           agents={agents.map((a) => ({ id: a.id, name: a.name }))}
@@ -204,6 +208,7 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
             selectedAgent ? { id: selectedAgent.id, name: selectedAgent.name } : undefined
           }
           onAgentChange={handleAgentChange}
+          conversationTokens={messages.reduce((sum, m) => sum + Math.ceil(m.content.length / 4), 0)}
         />
       </div>
     </aside>

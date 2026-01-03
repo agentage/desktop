@@ -1,27 +1,19 @@
 import type { BrowserWindow, IpcMain } from 'electron';
-import type { ChatSendRequest, SessionConfig } from '../../shared/types/chat.types.js';
+import type { ChatSendRequest } from '../../../shared/types/chat.types.js';
 import {
   cancelRequest,
   clearHistory,
-  configureSession,
   getAgents,
   getModels,
   getTools,
   sendMessage,
-} from '../services/chat.service.js';
-import { getContextInfo } from '../services/context.service.js';
+} from '../../services/chat.service.js';
+import { getContextInfo } from '../../services/context.service.js';
 
 export const registerChatHandlers = (
   ipcMain: IpcMain,
   getMainWindow: () => BrowserWindow | null
 ): void => {
-  /**
-   * Configure active chat session
-   */
-  ipcMain.handle('chat:configure', (_event, config: SessionConfig) => {
-    configureSession(config);
-  });
-
   /**
    * Send chat message and stream response
    */
@@ -46,17 +38,17 @@ export const registerChatHandlers = (
   /**
    * Get available models
    */
-  ipcMain.handle('chat:getModels', () => getModels());
+  ipcMain.handle('chat.models:get', () => getModels());
 
   /**
    * Get available tools (Phase 2)
    */
-  ipcMain.handle('chat:getTools', () => getTools());
+  ipcMain.handle('chat.tools:get', () => getTools());
 
   /**
    * Get available agents (Phase 2)
    */
-  ipcMain.handle('chat:getAgents', () => getAgents());
+  ipcMain.handle('chat.agents:get', () => getAgents());
 
   /**
    * Clear conversation history
@@ -68,5 +60,5 @@ export const registerChatHandlers = (
   /**
    * Get context breakdown info
    */
-  ipcMain.handle('chat:context:get', (_event, threadId?: string) => getContextInfo(threadId));
+  ipcMain.handle('chat.context:get', (_event, threadId?: string) => getContextInfo(threadId));
 };
