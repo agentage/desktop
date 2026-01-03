@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Button,
-  GoogleIcon,
-  IconContainer,
   LogOutIcon,
   Section,
   SettingsIcon,
@@ -89,60 +87,36 @@ export const AccountPage = (): React.JSX.Element => {
               </Button>
             }
           >
-            <div className="flex items-center gap-4">
-              {/* Avatar */}
-              <div className="relative">
-                {user.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.name ?? user.email}
-                    className="size-10 rounded-md object-cover"
-                  />
-                ) : (
-                  <div className="flex size-10 items-center justify-center rounded-md bg-muted text-foreground text-sm font-medium">
-                    {initials}
-                  </div>
-                )}
-              </div>
-              {/* User Info */}
-              <div className="flex flex-col gap-0.5">
-                {user.name && (
-                  <div className="text-sm font-medium text-foreground">{user.name}</div>
-                )}
-                <div className="text-xs text-muted-foreground">{user.email}</div>
-              </div>
-            </div>
-          </Section>
-
-          {/* Authentication Section */}
-          <Section
-            icon={<GoogleIcon />}
-            iconColor="amber"
-            title="Authentication"
-            description="Sign-in method and session"
-          >
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <IconContainer color="muted">
-                    <GoogleIcon />
-                  </IconContainer>
-                  <div>
-                    <div className="text-sm text-foreground">Google</div>
-                    <div className="text-xs text-muted-foreground">Connected</div>
-                  </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {/* Avatar */}
+                <div className="relative">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name ?? user.email}
+                      className="size-10 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-10 items-center justify-center rounded-md bg-muted text-foreground text-sm font-medium">
+                      {initials}
+                    </div>
+                  )}
                 </div>
-                <div className="flex size-6 items-center justify-center rounded-full bg-success/10">
-                  <div className="size-2 rounded-full bg-success" />
+                {/* User Info */}
+                <div className="flex flex-col gap-0.5">
+                  {user.name && (
+                    <div className="text-sm font-medium text-foreground">{user.name}</div>
+                  )}
+                  <div className="text-xs text-muted-foreground">{user.email}</div>
                 </div>
               </div>
 
-              <div className="border-t border-border pt-4">
-                <Button variant="outline" className="w-full" onClick={handleLogout}>
-                  <LogOutIcon />
-                  <span>Sign Out</span>
-                </Button>
-              </div>
+              {/* Logout button in right corner */}
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOutIcon />
+                <span>Sign Out</span>
+              </Button>
             </div>
           </Section>
         </div>
