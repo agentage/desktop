@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { Button, UserIcon } from '../../components/index.js';
+import { UserIcon } from '../../../shared/index.js';
+import { Button } from '../../components/index.js';
 import { useAuth } from '../../hooks/useAuth.js';
 
 // Loader icon (Lucide loader-2)

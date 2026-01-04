@@ -3,14 +3,13 @@ import type { OAuthProviderStatus } from '../../../../shared/types/oauth.types.j
 import {
   AlertCircleIcon,
   AnthropicIcon,
-  Button,
   CheckCircleIcon,
   IconButton,
   LinkIcon,
   OpenAIIcon,
   RefreshIcon,
-  Section,
-} from '../../../components/index.js';
+} from '../../../../shared/index.js';
+import { Button, Section } from '../../../components/index.js';
 import { cn } from '../../../lib/utils.js';
 
 /**

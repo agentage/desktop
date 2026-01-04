@@ -2,21 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Workspace } from '../../../shared/types/workspace.types.js';
 import { cn } from '../../lib/utils.js';
-import { WorkspaceIconDisplay } from '../../pages/workspaces/components/WorkspaceIconDisplay.js';
-
-// Chevron down icon (matching composer style)
-const ChevronDownIcon = (): React.JSX.Element => (
-  <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="m6 9 6 6 6-6" />
-  </svg>
-);
-
-// Check icon for selected item
-const CheckIcon = (): React.JSX.Element => (
-  <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
+import { WorkspaceIconDisplay, ChevronDownIcon, CheckIcon } from '../../../shared/index.js';
 
 interface WorkspaceSwitcherProps {
   isCollapsed?: boolean;

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { cn } from '../../../lib/utils.js';
 import { ContextBreakdown } from './ContextBreakdown.js';
-import { ChevronUpIcon, ToolsIcon } from './icons.js';
+import { ChevronUpIcon, ToolsIcon } from '../../../../shared/index.js';
 import { ModelSelector } from './ModelSelector.js';
 import { ToolsPopover } from './ToolsPopover.js';
 import type { AgentOption, ContextBreakdownData, ModelOption } from '../types.js';

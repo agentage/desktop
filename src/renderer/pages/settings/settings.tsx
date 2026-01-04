@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import type { ComposerSettings, Settings } from '../../../shared/types/index.js';
 import {
-  ACCENT_COLORS,
-  ColorPicker,
   FolderIcon,
-  FormField,
   IconButton,
-  InlineEdit,
   MonitorIcon,
   MoonIcon,
   PaletteIcon,
-  Section,
   ServerIcon,
   SettingsIcon,
   SunIcon,
+} from '../../../shared/index.js';
+import {
+  ACCENT_COLORS,
+  ColorPicker,
+  FormField,
+  InlineEdit,
+  Section,
   ToggleGroup,
 } from '../../components/index.js';
 

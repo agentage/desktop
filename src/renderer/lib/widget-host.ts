@@ -1,10 +1,9 @@
 import type { WidgetHost, WidgetHostComponents } from '../../shared/types/widget.types.js';
-import { IconContainer } from '../components/icon-container.js';
-import * as Icons from '../components/icons.js';
+import { IconContainer, Icon } from '../../shared/index.js';
+import * as Icons from '../../shared/index.js';
 import { Flex } from '../components/layout/Flex.js';
 import { Grid } from '../components/layout/Grid.js';
 import { Stack } from '../components/layout/Stack.js';
-import { Icon } from '../components/primitives/Icon.js';
 import { Text } from '../components/primitives/Text.js';
 
 /**

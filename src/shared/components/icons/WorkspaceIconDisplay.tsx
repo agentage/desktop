@@ -1,7 +1,7 @@
 /**
  * Workspace icon display component
  */
-import { WORKSPACE_COLORS, type WorkspaceIconId } from '../constants.js';
+import { WORKSPACE_COLORS, type WorkspaceIconId } from './workspace-constants.js';
 
 const getIconColor = (color?: string): string => {
   if (!color) return 'currentColor';

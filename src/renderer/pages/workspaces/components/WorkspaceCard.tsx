@@ -4,17 +4,20 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Workspace } from '../../../../shared/types/workspace.types.js';
 import {
-  Button,
   CheckIcon,
-  ColorPicker,
   EditIcon,
   IconButton,
   TrashIcon,
+  WorkspaceIconDisplay,
+  WORKSPACE_COLORS,
+  WORKSPACE_ICONS,
   XIcon,
+} from '../../../../shared/index.js';
+import {
+  Button,
+  ColorPicker,
 } from '../../../components/index.js';
 import { cn } from '../../../lib/utils.js';
-import { WORKSPACE_COLORS, WORKSPACE_ICONS } from '../constants.js';
-import { WorkspaceIconDisplay } from './WorkspaceIconDisplay.js';
 
 // Map WORKSPACE_COLORS to ColorPicker format
 const WORKSPACE_COLOR_OPTIONS = WORKSPACE_COLORS.map((c) => ({

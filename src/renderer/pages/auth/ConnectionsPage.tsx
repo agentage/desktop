@@ -4,7 +4,7 @@
  * Purpose: Connect and manage external AI provider OAuth connections
  * Features: Connect/disconnect providers, view connection status
  */
-import { LinkIcon } from '../../components/index.js';
+import { LinkIcon } from '../../../shared/index.js';
 import { OAuthConnections } from '../settings/components/OAuthConnections.js';
 
 export const ConnectionsPage = (): React.JSX.Element => (

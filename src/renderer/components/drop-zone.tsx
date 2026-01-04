@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { cn } from '../lib/utils.js';
-import { PlusIcon } from './icons.js';
+import { PlusIcon } from '../../shared/index.js';
 
 export interface DropZoneProps {
   /** Callback when a file/folder is dropped */

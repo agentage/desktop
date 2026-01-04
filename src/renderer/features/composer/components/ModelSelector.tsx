@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 
 import { cn } from '../../../lib/utils.js';
-import { BotIcon, ChevronDownIcon, FolderIcon } from './icons.js';
+import { BotIcon, ChevronDownIcon, FolderIcon } from '../../../../shared/index.js';
 import type { AgentOption, ModelOption } from '../types.js';
 
 // Default "none" agent - always available

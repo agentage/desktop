@@ -1,6 +1,5 @@
 import { cn } from '../lib/utils.js';
-import { IconContainer, type IconContainerColor } from './icon-container.js';
-import { TrendingUpIcon } from './icons.js';
+import { IconContainer, type IconContainerColor, TrendingUpIcon } from '../../shared/index.js';
 
 // ============================================================================
 // Section Component

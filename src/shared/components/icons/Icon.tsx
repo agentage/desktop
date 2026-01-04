@@ -1,6 +1,6 @@
 import { cn } from '../../lib/utils.js';
-import { IconContainer } from '../icon-container.js';
-import * as Icons from '../icons.js';
+import { IconContainer } from './icon-container.js';
+import * as Icons from './icons.js';
 
 type IconName =
   | 'home'

@@ -138,6 +138,13 @@ export const RefreshIcon = (): React.JSX.Element => (
   </svg>
 );
 
+export const SendIcon = (): React.JSX.Element => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="m22 2-7 20-4-9-9-4Z" />
+    <path d="M22 2 11 13" />
+  </svg>
+);
+
 // ============================================================================
 // UI Icons
 // ============================================================================
@@ -321,6 +328,13 @@ export const ToolsIcon = (): React.JSX.Element => (
     <path d="M7 8l-1.5 1.5" />
     <path d="M16 12l5 5l-4 4l-5 -5" />
     <path d="M16 17l1.5 -1.5" />
+  </svg>
+);
+
+export const TerminalIcon = (): React.JSX.Element => (
+  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="4 17 10 11 4 5" />
+    <line x1="12" x2="20" y1="19" y2="19" />
   </svg>
 );
 
