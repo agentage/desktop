@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { ChatPanel } from '../features/chat/index.js';
+import { ChatPanel, type ChatPanelHandle } from '../features/chat/index.js';
 import { Sidebar, SiteFooter, SiteHeader, TitleBar } from './components/index.js';
 
 // Mobile breakpoint (matches Tailwind's 'md')
@@ -17,6 +17,7 @@ export const AppLayout = (): React.JSX.Element => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const chatPanelRef = useRef<ChatPanelHandle>(null);
 
   // Handle responsive sidebar collapse
   useEffect(() => {
@@ -47,6 +48,22 @@ export const AppLayout = (): React.JSX.Element => {
     setIsChatOpen((prev) => !prev);
   };
 
+  const handleNewChat = (): void => {
+    // Clear the current conversation
+    chatPanelRef.current?.clearChat();
+    // Open the chat panel
+    setIsChatOpen(true);
+  };
+
+  const handleLoadConversation = (conversationId: string): void => {
+    // Load the conversation in the chat panel
+    void chatPanelRef.current?.loadConversation(conversationId);
+    // Open the chat panel if not already open
+    if (!isChatOpen) {
+      setIsChatOpen(true);
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Title bar at top */}
@@ -57,7 +74,8 @@ export const AppLayout = (): React.JSX.Element => {
         <Sidebar
           isCollapsed={isSidebarCollapsed || isMobile}
           onToggle={toggleSidebar}
-          onChatToggle={toggleChat}
+          onChatToggle={handleNewChat}
+          onLoadConversation={handleLoadConversation}
         />
 
         {/* Content area */}
@@ -72,7 +90,7 @@ export const AppLayout = (): React.JSX.Element => {
         </section>
 
         {/* Chat panel on the right */}
-        <ChatPanel isOpen={isChatOpen} onClose={toggleChat} />
+        <ChatPanel ref={chatPanelRef} isOpen={isChatOpen} onClose={toggleChat} />
       </main>
 
       {/* Footer at bottom - full width */}

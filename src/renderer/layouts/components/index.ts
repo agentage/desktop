@@ -1,3 +1,4 @@
+export * from './ConversationHistory.js';
 export * from './NavUser.js';
 export * from './Sidebar.js';
 export * from './SiteFooter.js';

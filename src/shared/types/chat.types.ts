@@ -33,7 +33,7 @@ export interface SessionConfig {
   tools?: string[];
 
   /** Model parameters */
-  options?: ChatModelOptions;
+  modelConfig?: ChatModelOptions;
 }
 
 /**
@@ -153,6 +153,25 @@ export type ChatEvent = { requestId: string } & ChatStreamEvent;
 export type ChatMessageRole = 'user' | 'assistant';
 
 /**
+ * Tool call in assistant message
+ */
+export interface ToolCall {
+  id: string;
+  name: string;
+  input: unknown;
+}
+
+/**
+ * Tool result from execution
+ */
+export interface ToolResult {
+  id: string;
+  name: string;
+  result: string;
+  isError?: boolean;
+}
+
+/**
  * Message in conversation history
  */
 export interface ChatMessage {
@@ -160,6 +179,15 @@ export interface ChatMessage {
   content: string;
   references?: ChatReference[];
   timestamp: string;
+
+  /** Config used for this message (model, tools, etc.) */
+  config?: SessionConfig;
+
+  /** Tool calls made by assistant (only for assistant messages) */
+  toolCalls?: ToolCall[];
+
+  /** Tool results provided (only for user messages with tool results) */
+  toolResults?: ToolResult[];
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useImperativeHandle, useRef, useState } from 'react';
 
 import { useChat } from '../hooks/useChat.js';
 import { cn } from '../../../lib/utils.js';
@@ -39,13 +39,15 @@ interface ChatPanelProps {
   onClose: () => void;
 }
 
-/**
- * Chat panel component - right side panel for AI chat
- *
- * Purpose: Provide a chat interface for interacting with AI agents
- * Features: Resizable panel, composer input with model selector and context breakdown
- */
-export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Element | null => {
+export interface ChatPanelHandle {
+  loadConversation: (conversationId: string) => Promise<void>;
+  clearChat: () => void;
+}
+
+const ChatPanelComponent = (
+  { isOpen, onClose }: ChatPanelProps,
+  ref: React.Ref<ChatPanelHandle>
+): React.JSX.Element | null => {
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const isResizing = useRef(false);
 
@@ -62,7 +64,14 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
     clear,
     selectModel,
     selectAgent,
+    loadConversation,
   } = useChat();
+
+  // Expose loadConversation and clearChat to parent via ref
+  useImperativeHandle(ref, () => ({
+    loadConversation,
+    clearChat: clear,
+  }));
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -214,3 +223,11 @@ export const ChatPanel = ({ isOpen, onClose }: ChatPanelProps): React.JSX.Elemen
     </aside>
   );
 };
+
+/**
+ * Chat panel component - right side panel for AI chat
+ *
+ * Purpose: Provide a chat interface for interacting with AI agents
+ * Features: Resizable panel, composer input with model selector and context breakdown
+ */
+export const ChatPanel = React.forwardRef<ChatPanelHandle, ChatPanelProps>(ChatPanelComponent);

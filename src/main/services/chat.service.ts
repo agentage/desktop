@@ -14,6 +14,13 @@ import type {
 import { toAnthropicTools } from '../tools/converter.js';
 import { executeTool, listTools } from '../tools/index.js';
 import type { ToolContext } from '../tools/types.js';
+import {
+  appendMessage,
+  createConversation,
+  restoreConversation,
+  updateUsageStats,
+} from './conversation.store.service.js';
+import { logChatEvent, logError } from './logger.service.js';
 import { loadProviders, resolveProviderToken } from './model.providers.service.js';
 import { getActiveWorkspace } from './workspace.service.js';
 
@@ -98,10 +105,21 @@ const getAnthropicClient = async (): Promise<{ client: Anthropic; isOAuth: boole
 /**
  * Get or create conversation
  */
-const getOrCreateConversation = (
+const getOrCreateConversation = async (
   sessionConfig: SessionConfig,
   conversationId?: string
-): Conversation => {
+): Promise<Conversation> => {
+  // Try to restore existing conversation from store (includes tool history)
+  if (conversationId) {
+    const restored = await restoreConversation(conversationId);
+    if (restored) {
+      // Update in-memory cache
+      conversations.set(restored.id, restored);
+      return restored;
+    }
+  }
+
+  // Check in-memory cache
   if (conversationId && conversations.has(conversationId)) {
     const existing = conversations.get(conversationId);
     if (existing) return existing;
@@ -119,6 +137,27 @@ const getOrCreateConversation = (
   };
 
   conversations.set(id, conversation);
+
+  // Create persistent conversation in store with the same ID
+  await createConversation({
+    id, // Pass the same ID
+    agentId: sessionConfig.agent,
+    system: sessionConfig.system ?? '',
+    model: sessionConfig.model,
+    provider:
+      sessionConfig.model.startsWith('gpt-') || sessionConfig.model.startsWith('o1-')
+        ? 'openai'
+        : sessionConfig.model.startsWith('claude-')
+          ? 'anthropic'
+          : 'custom',
+    title: 'New conversation',
+    tools: sessionConfig.tools,
+    modelConfig: sessionConfig.modelConfig,
+  }).catch((err: unknown) => {
+    const errorDetails = err instanceof Error ? { message: err.message, stack: err.stack } : err;
+    void logError('Failed to create conversation in store', errorDetails);
+  });
+
   return conversation;
 };
 
@@ -131,12 +170,45 @@ const buildMessages = (
 ): Anthropic.MessageParam[] => {
   const messages: Anthropic.MessageParam[] = [];
 
-  // Add history
+  // Add history - reconstruct with tool calls and results
   for (const msg of conversation.messages) {
-    messages.push({
-      role: msg.role,
-      content: msg.content,
-    });
+    if (msg.role === 'assistant' && msg.toolCalls) {
+      // Assistant message with tool calls
+      const content: Anthropic.ContentBlock[] = [];
+
+      // Add text content if present
+      if (msg.content) {
+        content.push({ type: 'text', text: msg.content, citations: null });
+      }
+
+      // Add tool use blocks
+      for (const toolCall of msg.toolCalls) {
+        content.push({
+          type: 'tool_use',
+          id: toolCall.id,
+          name: toolCall.name,
+          input: toolCall.input,
+        });
+      }
+
+      messages.push({ role: 'assistant', content });
+    } else if (msg.role === 'user' && msg.toolResults) {
+      // User message with tool results
+      const content: Anthropic.ToolResultBlockParam[] = msg.toolResults.map((result) => ({
+        type: 'tool_result',
+        tool_use_id: result.id,
+        content: result.result,
+        is_error: result.isError,
+      }));
+
+      messages.push({ role: 'user', content });
+    } else {
+      // Regular message
+      messages.push({
+        role: msg.role,
+        content: msg.content,
+      });
+    }
   }
 
   // Add new user message with references
@@ -286,32 +358,51 @@ export const sendMessage = (
   const config = validated.config;
 
   const requestId = generateId('req');
-  const conversation = getOrCreateConversation(config, config.conversationId);
-  const abortController = new AbortController();
 
-  activeRequests.set(requestId, abortController);
+  // Make conversation loading async
+  void (async (): Promise<void> => {
+    const conversation = await getOrCreateConversation(config, config.conversationId);
+    const abortController = new AbortController();
 
-  // Add user message to history
-  const userMessage: ChatMessage = {
-    role: 'user',
-    content: validated.prompt,
-    references: validated.references,
-    timestamp: new Date().toISOString(),
-  };
-  conversation.messages.push(userMessage);
-  conversation.updatedAt = userMessage.timestamp;
+    activeRequests.set(requestId, abortController);
 
-  // Start streaming in background
-  void streamResponse(
-    requestId,
-    conversation,
-    validated,
-    emitEvent,
-    abortController.signal,
-    config
-  );
+    // Log chat event
+    await logChatEvent(conversation.id, requestId, 'MESSAGE_START', {
+      prompt: validated.prompt,
+      model: config.model,
+      hasReferences: Boolean(validated.references?.length),
+    });
 
-  return { requestId, conversationId: conversation.id };
+    // Add user message to history
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content: validated.prompt,
+      references: validated.references,
+      timestamp: new Date().toISOString(),
+      config, // Store config with user message for restoration
+    };
+    conversation.messages.push(userMessage);
+    conversation.updatedAt = userMessage.timestamp;
+
+    // Persist user message to store
+    await appendMessage(conversation.id, userMessage).catch((err: unknown) => {
+      const errorDetails = err instanceof Error ? { message: err.message, stack: err.stack } : err;
+      void logError('Failed to append user message to store', errorDetails);
+    });
+
+    // Start streaming in background
+    void streamResponse(
+      requestId,
+      conversation,
+      validated,
+      emitEvent,
+      abortController.signal,
+      config
+    );
+  })();
+
+  // Return immediately with requestId (conversationId will be available after async operation)
+  return { requestId, conversationId: config.conversationId ?? '' };
 };
 
 /**
@@ -352,9 +443,9 @@ const streamResponse = async (
       const stream = client.messages.stream(
         {
           model: config.model,
-          max_tokens: config.options?.maxTokens ?? 4096,
-          temperature: config.options?.temperature,
-          top_p: config.options?.topP,
+          max_tokens: config.modelConfig?.maxTokens ?? 4096,
+          temperature: config.modelConfig?.temperature,
+          top_p: config.modelConfig?.topP,
           system: systemPrompt,
           messages,
           tools: tools.length > 0 ? tools : undefined,
@@ -386,12 +477,60 @@ const streamResponse = async (
       if (stopReason === 'tool_use') {
         const toolUseBlocks = extractToolUseBlocks(finalMessage.content);
 
+        // Store assistant message with tool calls
+        const assistantToolCalls: ChatMessage = {
+          role: 'assistant',
+          content: fullResponse,
+          timestamp: new Date().toISOString(),
+          toolCalls: toolUseBlocks.map((block) => ({
+            id: block.id,
+            name: block.name,
+            input: block.input,
+          })),
+        };
+        conversation.messages.push(assistantToolCalls);
+
+        // Persist assistant message with tool calls
+        await appendMessage(conversation.id, assistantToolCalls).catch((err: unknown) => {
+          const errorDetails =
+            err instanceof Error ? { message: err.message, stack: err.stack } : err;
+          void logError('Failed to append assistant tool calls to store', errorDetails);
+        });
+
         // Execute all tool calls sequentially
         const toolResults: ToolResultBlock[] = [];
+        const toolResultsData: { id: string; name: string; result: unknown; isError?: boolean }[] =
+          [];
+
         for (const toolUse of toolUseBlocks) {
           const result = await executeToolCall(toolUse, toolContext, emitEvent, requestId);
           toolResults.push(result);
+          toolResultsData.push({
+            id: toolUse.id,
+            name: toolUse.name,
+            result: result.content,
+            isError: result.is_error,
+          });
         }
+
+        // Store tool results as a user message
+        const toolResultsMessage: ChatMessage = {
+          role: 'user',
+          content: '', // No user content, just tool results
+          timestamp: new Date().toISOString(),
+          toolResults: toolResultsData.map((tr) => ({
+            ...tr,
+            result: typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result),
+          })),
+        };
+        conversation.messages.push(toolResultsMessage);
+
+        // Persist tool results
+        await appendMessage(conversation.id, toolResultsMessage).catch((err: unknown) => {
+          const errorDetails =
+            err instanceof Error ? { message: err.message, stack: err.stack } : err;
+          void logError('Failed to append tool results to store', errorDetails);
+        });
 
         // Add assistant message + tool results to conversation for next iteration
         messages = [
@@ -423,6 +562,29 @@ const streamResponse = async (
         conversation.messages.push(assistantMessage);
         conversation.updatedAt = assistantMessage.timestamp;
 
+        // Persist assistant message and usage to store
+        await appendMessage(conversation.id, assistantMessage).catch((err: unknown) => {
+          const errorDetails =
+            err instanceof Error ? { message: err.message, stack: err.stack } : err;
+          void logError('Failed to append assistant message to store', errorDetails);
+        });
+
+        await updateUsageStats(conversation.id, totalInputTokens, totalOutputTokens).catch(
+          (err: unknown) => {
+            const errorDetails =
+              err instanceof Error ? { message: err.message, stack: err.stack } : err;
+            void logError('Failed to update usage stats', errorDetails);
+          }
+        );
+
+        // Log completion
+        await logChatEvent(conversation.id, requestId, 'MESSAGE_COMPLETE', {
+          messageCount: conversation.messages.length,
+          inputTokens: totalInputTokens,
+          outputTokens: totalOutputTokens,
+          stopReason: stopReason ?? 'end_turn',
+        });
+
         // Emit done
         emitEvent({
           requestId,
@@ -434,6 +596,12 @@ const streamResponse = async (
 
     // Check if we hit max iterations
     if (iterations >= MAX_TOOL_ITERATIONS && continueLoop) {
+      await logChatEvent(
+        conversation.id,
+        requestId,
+        'ERROR',
+        `Tool loop exceeded max iterations (${String(MAX_TOOL_ITERATIONS)})`
+      );
       emitEvent({
         requestId,
         type: 'error',
@@ -444,6 +612,13 @@ const streamResponse = async (
     }
   } catch (error) {
     const err = error as Error & { status?: number; error?: { type?: string } };
+
+    // Log error
+    await logChatEvent(conversation.id, requestId, 'ERROR', {
+      message: err.message,
+      status: err.status,
+      type: err.error?.type,
+    });
 
     if (signal.aborted || err.name === 'AbortError') {
       emitEvent({
