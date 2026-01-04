@@ -1,3 +1,4 @@
+import type { BrowserWindow } from 'electron';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
@@ -20,6 +21,27 @@ import type {
   ToolMessage,
   UserMessage,
 } from '../../shared/types/conversation.types.js';
+
+/**
+ * Main window reference for event emission
+ */
+let mainWindowRef: BrowserWindow | null = null;
+
+/**
+ * Set main window for event emission
+ */
+export const setConversationStoreWindow = (window: BrowserWindow | null): void => {
+  mainWindowRef = window;
+};
+
+/**
+ * Emit conversations changed event
+ */
+const emitConversationsChanged = (): void => {
+  if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+    mainWindowRef.webContents.send('conversations:changed');
+  }
+};
 
 const CONFIG_DIR = join(homedir(), '.agentage');
 const CONVERSATIONS_DIR = join(CONFIG_DIR, 'conversations');
@@ -203,6 +225,9 @@ export const createConversation = async (
   index.conversations.unshift(ref); // Add to beginning
   await saveIndex(index);
 
+  // Emit change event
+  emitConversationsChanged();
+
   return snapshot;
 };
 
@@ -383,6 +408,9 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
   ref.title = snapshot.title;
 
   await saveIndex(index);
+
+  // Emit change event
+  emitConversationsChanged();
 };
 
 /**

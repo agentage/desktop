@@ -430,6 +430,7 @@ interface ConversationAPI {
     createdAt: string;
     updatedAt: string;
   } | null>;
+  onChange: (callback: () => void) => () => void;
 }
 
 export interface AgentageAPI {
@@ -632,6 +633,15 @@ const api: AgentageAPI = {
   conversations: {
     list: (options?: ListConversationsOptions) => ipcRenderer.invoke('conversations:list', options),
     restore: (id: string) => ipcRenderer.invoke('conversations:restore', id),
+    onChange: (callback: () => void) => {
+      const handler = (): void => {
+        callback();
+      };
+      ipcRenderer.on('conversations:changed', handler);
+      return () => {
+        ipcRenderer.removeListener('conversations:changed', handler);
+      };
+    },
   },
 };
 

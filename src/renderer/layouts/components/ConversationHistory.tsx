@@ -5,6 +5,7 @@ import { cn } from '../../lib/utils.js';
 
 interface ConversationHistoryProps {
   isCollapsed?: boolean;
+  activeConversationId?: string;
   onNewChat?: () => void;
   onSelectConversation?: (conversationId: string) => void;
 }
@@ -18,16 +19,25 @@ interface ConversationHistoryProps {
  */
 export const ConversationHistory = ({
   isCollapsed = false,
+  activeConversationId,
   onNewChat,
   onSelectConversation,
 }: ConversationHistoryProps): React.JSX.Element => {
-  const { conversations, loadConversations } = useConversations();
+  const { conversations, loadConversations, onChange } = useConversations();
   const [recentConversations, setRecentConversations] = useState<ConversationRef[]>([]);
 
   // Load conversations on mount and get 5 most recent
   useEffect(() => {
     void loadConversations({ limit: 5, sortBy: 'updatedAt', sortDirection: 'desc' });
   }, [loadConversations]);
+
+  // Subscribe to conversation changes
+  useEffect(() => {
+    const unsubscribe = onChange(() => {
+      void loadConversations({ limit: 5, sortBy: 'updatedAt', sortDirection: 'desc' });
+    });
+    return unsubscribe;
+  }, [onChange, loadConversations]);
 
   // Update recent conversations when data changes
   useEffect(() => {
@@ -96,47 +106,52 @@ export const ConversationHistory = ({
       </button>
 
       {/* Recent Conversations */}
-      {recentConversations.map((conversation) => (
-        <button
-          key={conversation.id}
-          onClick={() => {
-            handleConversationClick(conversation.id);
-          }}
-          title={isCollapsed ? conversation.title : undefined}
-          className={cn(
-            'flex items-center gap-2 rounded-md py-1.5 text-xs',
-            isCollapsed ? 'px-2' : 'pl-4 pr-2',
-            'transition-colors',
-            'focus:outline-none',
-            'text-foreground hover:bg-accent',
-            isCollapsed && 'justify-center'
-          )}
-        >
-          {/* Message icon */}
-          <svg
-            className="size-4 flex-shrink-0"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {recentConversations.map((conversation) => {
+        const isActive = conversation.id === activeConversationId;
+        return (
+          <button
+            key={conversation.id}
+            onClick={() => {
+              handleConversationClick(conversation.id);
+            }}
+            title={isCollapsed ? conversation.title : undefined}
+            className={cn(
+              'flex items-center gap-2 rounded-md py-1.5 text-xs',
+              isCollapsed ? 'px-2' : 'pl-4 pr-2',
+              'transition-colors',
+              'focus:outline-none',
+              isActive
+                ? 'bg-primary text-primary-foreground'
+                : 'text-foreground hover:bg-accent',
+              isCollapsed && 'justify-center'
+            )}
           >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
+            {/* Message icon */}
+            <svg
+              className="size-4 flex-shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
 
-          {!isCollapsed && (
-            <div className="flex flex-1 flex-col items-start min-w-0">
-              <span className="truncate w-full text-left">
-                {truncateTitle(conversation.title)}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {formatDate(conversation.updatedAt)}
-              </span>
-            </div>
-          )}
-        </button>
-      ))}
+            {!isCollapsed && (
+              <div className="flex flex-1 flex-col items-start min-w-0">
+                <span className="truncate w-full text-left">
+                  {truncateTitle(conversation.title)}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  {formatDate(conversation.updatedAt)}
+                </span>
+              </div>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 };
