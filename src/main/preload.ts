@@ -1,196 +1,63 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import type {
+  AuthResult,
+  LinkedProvider,
+  LinkProviderResult,
+  OAuthProvider,
+  UnlinkProviderResult,
+  User,
+} from '../shared/types/auth.types.js';
+import type {
+  ChatAgentInfo,
+  ChatEvent,
+  ChatMessage,
+  ChatModelInfo,
+  ChatModelOptions,
+  ChatReference,
+  ChatSendRequest,
+  ChatSendResponse,
+  ChatToolInfo,
+  SessionConfig,
+  ToolCall,
+  ToolResult,
+} from '../shared/types/chat.types.js';
+import type { ComposerSettings, ModelProvider } from '../shared/types/config.types.js';
+import type {
+  ContextBreakdownData,
+  ContextFileInfo,
+  FilesOnlyResponse,
+  FullContextResponse,
+} from '../shared/types/context.types.js';
+import type {
+  ConversationRef,
+  ListConversationsOptions,
+  SessionConfig as SessionConfigPreload,
+} from '../shared/types/conversation.types.js';
+import type {
+  LoadProvidersResult,
+  ModelInfo,
+  ModelProviderConfig,
+  ModelProviderType,
+  SaveProviderRequest,
+  SaveProviderResult,
+  ValidateTokenRequest,
+  ValidateTokenResponse,
+} from '../shared/types/model.providers.types.js';
+import type {
+  OAuthConnectResult,
+  OAuthDisconnectResult,
+  OAuthListResult,
+  OAuthProviderId,
+} from '../shared/types/oauth.types.js';
+import type { Settings } from '../shared/types/settings.types.js';
+import type {
+  ToolInfo,
+  ToolListResult,
+  ToolSettingsUpdate,
+} from '../shared/types/tools.types.js';
+import type { Workspace, WorkspaceUpdate } from '../shared/types/workspace.types.js';
 
-// Inline types to avoid import issues in preload context
-type OAuthProvider = 'google' | 'github' | 'microsoft';
-
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  avatar?: string;
-  verifiedAlias?: string;
-}
-
-interface AuthResult {
-  success: boolean;
-  user?: User;
-  error?: string;
-}
-
-interface LinkedProvider {
-  name: OAuthProvider;
-  email: string;
-  connectedAt: string;
-}
-
-interface LinkProviderResult {
-  success: boolean;
-  provider?: LinkedProvider;
-  providerToken?: string;
-  error?: string;
-}
-
-interface UnlinkProviderResult {
-  success: boolean;
-  error?: string;
-}
-
-interface ModelProvider {
-  id: string;
-  provider: 'openai' | 'anthropic' | 'ollama' | 'custom';
-  apiKey?: string;
-  baseUrl?: string;
-  defaultModel?: string;
-  isDefault?: boolean;
-}
-
-interface ComposerSettings {
-  fontSize: 'small' | 'medium' | 'large';
-  iconSize: 'small' | 'medium' | 'large';
-  spacing: 'compact' | 'normal' | 'relaxed';
-  accentColor: string;
-}
-
-interface Settings {
-  models: ModelProvider[];
-  backendUrl: string;
-  theme: 'light' | 'dark' | 'system';
-  defaultModelProvider?: string;
-  logRetention: 7 | 30 | 90 | -1;
-  language: string;
-  composer?: ComposerSettings;
-}
-
-interface Workspace {
-  id: string;
-  name: string;
-  path: string;
-  icon?: string;
-  color?: string;
-  isDefault?: boolean;
-  gitStatus?: {
-    isGitRepo: boolean;
-    isDirty: boolean;
-    changedFiles: number;
-    branch?: string;
-    diff?: string;
-  };
-}
-
-interface WorkspaceUpdate {
-  name?: string;
-  icon?: string;
-  color?: string;
-}
-
-// Model providers types
-type ModelProviderType = 'anthropic' | 'openai';
-
-interface ValidateTokenRequest {
-  provider: ModelProviderType;
-  token: string;
-}
-
-interface ModelInfo {
-  id: string;
-  displayName: string;
-  createdAt?: string;
-  enabled: boolean;
-  isDefault?: boolean;
-}
-
-interface ValidateTokenResponse {
-  valid: boolean;
-  models?: ModelInfo[];
-  error?: 'invalid_token' | 'network_error';
-}
-
-interface ModelProviderConfig {
-  provider: ModelProviderType;
-  token: string;
-  enabled: boolean;
-  lastFetchedAt?: string;
-  models: ModelInfo[];
-}
-
-interface SaveProviderRequest {
-  provider: ModelProviderType;
-  token: string;
-  enabled: boolean;
-  lastFetchedAt?: string;
-  models: ModelInfo[];
-}
-
-interface LoadProvidersResult {
-  providers: ModelProviderConfig[];
-}
-
-interface SaveProviderResult {
-  success: boolean;
-  error?: string;
-}
-
-// OAuth Connect types
-type OAuthProviderId = 'openai' | 'anthropic';
-
-interface OAuthProfile {
-  id: string;
-  email?: string;
-  name?: string;
-  avatar?: string;
-}
-
-interface OAuthProviderStatus {
-  id: OAuthProviderId;
-  name: string;
-  icon: string;
-  description: string;
-  connected: boolean;
-  profile?: OAuthProfile;
-  expiresAt?: number;
-  isExpired?: boolean;
-}
-
-interface OAuthListResult {
-  providers: OAuthProviderStatus[];
-}
-
-interface OAuthConnectResult {
-  success: boolean;
-  profile?: OAuthProfile;
-  error?: string;
-}
-
-interface OAuthDisconnectResult {
-  success: boolean;
-  error?: string;
-}
-
-// Tools types
-type ToolSource = 'builtin' | 'global' | 'workspace';
-type ToolStatus = 'ready' | 'warning' | 'error';
-
-interface ToolInfo {
-  name: string;
-  description: string;
-  source: ToolSource;
-  status: ToolStatus;
-}
-
-interface ToolSettings {
-  enabledTools: string[];
-}
-
-interface ToolListResult {
-  tools: ToolInfo[];
-  settings: ToolSettings;
-}
-
-interface ToolSettingsUpdate {
-  enabledTools: string[];
-}
-
-// Widget types
+// Widget types (keeping local for now as they have React dependencies)
 interface WidgetPlacement {
   id: string;
   position: { x: number; y: number };
@@ -217,114 +84,10 @@ interface WidgetToolDefinition {
   };
 }
 
-// Chat types
-interface ChatModelOptions {
-  maxTokens?: number;
-  temperature?: number;
-  topP?: number;
-}
+// Context types (re-exported for compatibility)
+type ContextResponse = FullContextResponse | FilesOnlyResponse;
 
-interface SessionConfig {
-  conversationId?: string;
-  model: string;
-  system?: string;
-  agent?: string;
-  tools?: string[];
-  options?: ChatModelOptions;
-}
-
-interface ChatReference {
-  type: 'file' | 'selection' | 'image';
-  uri: string;
-  content?: string;
-  range?: { start: number; end: number };
-}
-
-interface ToolCall {
-  id: string;
-  name: string;
-  input: unknown;
-}
-
-interface ToolResult {
-  id: string;
-  name: string;
-  result: unknown;
-  isError?: boolean;
-}
-
-interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-  references?: ChatReference[];
-  timestamp: string;
-  config?: SessionConfig;
-  toolCalls?: ToolCall[];
-  toolResults?: ToolResult[];
-}
-
-interface ChatSendRequest {
-  prompt: string;
-  references?: ChatReference[];
-  config: SessionConfig;
-}
-
-interface ChatSendResponse {
-  requestId: string;
-  conversationId: string;
-}
-
-interface ChatModelInfo {
-  id: string;
-  name: string;
-  provider: ModelProviderType;
-  contextWindow: number;
-  capabilities?: string[];
-}
-
-interface ChatToolInfo {
-  id: string;
-  name: string;
-  description: string;
-}
-
-interface ChatAgentInfo {
-  id: string;
-  name: string;
-  description: string;
-  defaultModel?: string;
-  defaultTools?: string[];
-}
-
-type ChatStopReason = 'end_turn' | 'tool_use' | 'max_tokens' | 'stop_sequence';
-
-type ChatErrorCode =
-  | 'AUTH_ERROR'
-  | 'RATE_LIMIT'
-  | 'MODEL_UNAVAILABLE'
-  | 'CONTEXT_LENGTH'
-  | 'CANCELLED'
-  | 'NETWORK_ERROR'
-  | 'TOOL_ERROR'
-  | 'INTERNAL_ERROR';
-
-type ChatStreamEvent =
-  | { type: 'text'; text: string }
-  | { type: 'thinking'; text: string }
-  | { type: 'tool_call'; toolCallId: string; name: string; input: unknown }
-  | { type: 'tool_result'; toolCallId: string; name: string; result: unknown; isError?: boolean }
-  | { type: 'usage'; inputTokens: number; outputTokens: number }
-  | { type: 'done'; stopReason: ChatStopReason }
-  | {
-      type: 'error';
-      code: ChatErrorCode;
-      message: string;
-      recoverable: boolean;
-      retryAfter?: number;
-    };
-
-type ChatEvent = { requestId: string } & ChatStreamEvent;
-
+// Chat API interface
 interface ChatAPI {
   send: (request: ChatSendRequest) => Promise<ChatSendResponse>;
   cancel: (requestId: string) => void;
@@ -338,89 +101,7 @@ interface ChatAPI {
   };
 }
 
-// Context types
-interface ContextItem {
-  name: string;
-  tokens: number;
-  percentage: number;
-  color: string;
-}
-
-interface ContextBreakdownData {
-  currentContext: number;
-  maxContext: number;
-  items: ContextItem[];
-  agentageFiles?: { path: string; tokens: number }[];
-  timestamp: string;
-}
-
-interface ContextFileInfo {
-  path: string;
-  exists: boolean;
-  tokens: number;
-  lastModified: string | null;
-  content?: string;
-}
-
-interface FullContextResponse {
-  threadId: string;
-  breakdown: ContextBreakdownData;
-  files: {
-    global: ContextFileInfo;
-    project: ContextFileInfo | null;
-  };
-}
-
-interface FilesOnlyResponse {
-  files: {
-    global: ContextFileInfo;
-    project: ContextFileInfo | null;
-  };
-}
-
-type ContextResponse = FullContextResponse | FilesOnlyResponse;
-
-// Conversation types
-interface ConversationRef {
-  id: string;
-  path: string;
-  title: string;
-  agentId?: string;
-  model: string;
-  messageCount: number;
-  createdAt: string;
-  updatedAt: string;
-  tags?: string[];
-  isPinned?: boolean;
-}
-
-// Session config for restored conversations
-interface SessionConfigPreload {
-  model: string;
-  provider: 'openai' | 'anthropic' | 'custom';
-  system?: string;
-  agentId?: string;
-  agentName?: string;
-  tools?: string[];
-  modelConfig?: {
-    maxTokens?: number;
-    temperature?: number;
-    topP?: number;
-  };
-}
-
-interface ListConversationsOptions {
-  agentId?: string;
-  model?: string;
-  tags?: string[];
-  search?: string;
-  pinnedFirst?: boolean;
-  sortBy?: 'createdAt' | 'updatedAt' | 'messageCount';
-  sortDirection?: 'asc' | 'desc';
-  skip?: number;
-  limit?: number;
-}
-
+// Conversation API interface
 interface ConversationAPI {
   list: (options?: ListConversationsOptions) => Promise<ConversationRef[]>;
   restore: (id: string) => Promise<{
@@ -430,6 +111,7 @@ interface ConversationAPI {
     createdAt: string;
     updatedAt: string;
   } | null>;
+  onChange: (callback: () => void) => () => void;
 }
 
 export interface AgentageAPI {
@@ -632,6 +314,15 @@ const api: AgentageAPI = {
   conversations: {
     list: (options?: ListConversationsOptions) => ipcRenderer.invoke('conversations:list', options),
     restore: (id: string) => ipcRenderer.invoke('conversations:restore', id),
+    onChange: (callback: () => void) => {
+      const handler = (): void => {
+        callback();
+      };
+      ipcRenderer.on('conversations:changed', handler);
+      return () => {
+        ipcRenderer.removeListener('conversations:changed', handler);
+      };
+    },
   },
 };
 

@@ -33,7 +33,7 @@ export interface SessionConfig {
   tools?: string[];
 
   /** Model parameters */
-  options?: ChatModelOptions;
+  modelConfig?: ChatModelOptions;
 }
 
 /**
@@ -167,7 +167,7 @@ export interface ToolCall {
 export interface ToolResult {
   id: string;
   name: string;
-  result: unknown;
+  result: string;
   isError?: boolean;
 }
 

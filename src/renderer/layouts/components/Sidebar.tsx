@@ -158,6 +158,7 @@ interface SidebarProps {
   onToggle?: () => void;
   onChatToggle?: () => void;
   onLoadConversation?: (conversationId: string) => void;
+  activeConversationId?: string;
 }
 
 /**
@@ -174,6 +175,7 @@ export const Sidebar = ({
   isCollapsed = false,
   onChatToggle,
   onLoadConversation,
+  activeConversationId,
 }: SidebarProps): React.JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -226,6 +228,7 @@ export const Sidebar = ({
             {group.id === 'chat' ? (
               <ConversationHistory
                 isCollapsed={isCollapsed}
+                activeConversationId={activeConversationId}
                 onNewChat={handleNewChat}
                 onSelectConversation={handleSelectConversation}
               />

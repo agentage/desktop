@@ -1,3 +1,4 @@
+import type { BrowserWindow } from 'electron';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
@@ -20,6 +21,27 @@ import type {
   ToolMessage,
   UserMessage,
 } from '../../shared/types/conversation.types.js';
+
+/**
+ * Main window reference for event emission
+ */
+let mainWindowRef: BrowserWindow | null = null;
+
+/**
+ * Set main window for event emission
+ */
+export const setConversationStoreWindow = (window: BrowserWindow | null): void => {
+  mainWindowRef = window;
+};
+
+/**
+ * Emit conversations changed event
+ */
+const emitConversationsChanged = (): void => {
+  if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+    mainWindowRef.webContents.send('conversations:changed');
+  }
+};
 
 const CONFIG_DIR = join(homedir(), '.agentage');
 const CONVERSATIONS_DIR = join(CONFIG_DIR, 'conversations');
@@ -203,6 +225,9 @@ export const createConversation = async (
   index.conversations.unshift(ref); // Add to beginning
   await saveIndex(index);
 
+  // Emit change event
+  emitConversationsChanged();
+
   return snapshot;
 };
 
@@ -319,7 +344,7 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
         const toolMsg: ToolMessage = {
           type: 'tool',
           id: generateMessageId(),
-          content: JSON.stringify(tr.result),
+          content: tr.result,
           timestamp,
           tool_call_id: tr.id,
           name: tr.name,
@@ -341,8 +366,8 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
         config: message.config
           ? {
               model: message.config.model,
-              temperature: message.config.options?.temperature,
-              maxTokens: message.config.options?.maxTokens,
+              temperature: message.config.modelConfig?.temperature,
+              maxTokens: message.config.modelConfig?.maxTokens,
             }
           : undefined,
       };
@@ -383,6 +408,9 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
   ref.title = snapshot.title;
 
   await saveIndex(index);
+
+  // Emit change event
+  emitConversationsChanged();
 };
 
 /**
@@ -434,7 +462,7 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
         config: msg.config
           ? {
               model: msg.config.model ?? '',
-              options: {
+              modelConfig: {
                 temperature: msg.config.temperature,
                 maxTokens: msg.config.maxTokens,
               },
@@ -447,7 +475,7 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
         userMsg.toolResults = pendingToolResults.map((tm) => ({
           id: tm.tool_call_id,
           name: tm.name,
-          result: JSON.parse(tm.content) as unknown,
+          result: tm.content,
           isError: tm.isError,
         }));
         pendingToolResults.length = 0; // Clear

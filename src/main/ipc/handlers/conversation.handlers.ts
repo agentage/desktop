@@ -1,11 +1,17 @@
 import type { BrowserWindow, IpcMain } from 'electron';
 import type { ListConversationsOptions } from '../../../shared/types/conversation.types.js';
-import { listConversations } from '../../services/conversation.store.service.js';
+import {
+  listConversations,
+  setConversationStoreWindow,
+} from '../../services/conversation.store.service.js';
 
 export const registerConversationHandlers = (
   ipcMain: IpcMain,
-  _getMainWindow: () => BrowserWindow | null
+  getMainWindow: () => BrowserWindow | null
 ): void => {
+  // Set window reference for event emission
+  setConversationStoreWindow(getMainWindow());
+
   /**
    * List conversations with optional filters
    */
