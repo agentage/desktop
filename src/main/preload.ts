@@ -550,6 +550,13 @@ interface ConversationAPI {
   delete: (id: string) => Promise<void>;
   export: (id: string) => Promise<string>;
   import: (jsonString: string) => Promise<ConversationSnapshot>;
+  restore: (id: string) => Promise<{
+    id: string;
+    messages: ChatMessage[];
+    config: SessionConfigPreload;
+    createdAt: string;
+    updatedAt: string;
+  } | null>;
 }
 
 export interface AgentageAPI {
@@ -763,6 +770,7 @@ const api: AgentageAPI = {
     delete: (id: string) => ipcRenderer.invoke('conversations:delete', id),
     export: (id: string) => ipcRenderer.invoke('conversations:export', id),
     import: (jsonString: string) => ipcRenderer.invoke('conversations:import', jsonString),
+    restore: (id: string) => ipcRenderer.invoke('conversations:restore', id),
   },
 };
 

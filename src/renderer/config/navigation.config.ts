@@ -67,16 +67,9 @@ export const navigationConfig: NavigationConfig = {
       ],
     },
     {
-      id: 'communication',
-      label: '',
-      items: [
-        {
-          id: 'chat',
-          title: 'Chat',
-          icon: 'message-square',
-          path: '#chat',
-        },
-      ],
+      id: 'chat',
+      label: 'CHAT',
+      items: [], // Conversation history will be rendered dynamically
     },
   ],
 };

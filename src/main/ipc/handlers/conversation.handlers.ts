@@ -81,4 +81,12 @@ export const registerConversationHandlers = (
   ipcMain.handle('conversations:import', async (_event, jsonString: string) =>
     importConversation(jsonString)
   );
+
+  /**
+   * Restore conversation for continuing chat
+   */
+  ipcMain.handle('conversations:restore', async (_event, id: string) => {
+    const { restoreConversation } = await import('../../services/conversation.store.service.js');
+    return restoreConversation(id);
+  });
 };

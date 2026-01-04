@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { navigationConfig } from '../../config/navigation.config.js';
 import { cn } from '../../lib/utils.js';
+import { ConversationHistory } from './ConversationHistory.js';
 import { NavUser } from './NavUser.js';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher.js';
 
@@ -156,6 +157,7 @@ interface SidebarProps {
   isCollapsed?: boolean;
   onToggle?: () => void;
   onChatToggle?: () => void;
+  onLoadConversation?: (conversationId: string) => void;
 }
 
 /**
@@ -168,7 +170,11 @@ interface SidebarProps {
  *   - User section at bottom
  *   - Collapsible via external toggle (SiteHeader)
  */
-export const Sidebar = ({ isCollapsed = false, onChatToggle }: SidebarProps): React.JSX.Element => {
+export const Sidebar = ({
+  isCollapsed = false,
+  onChatToggle,
+  onLoadConversation,
+}: SidebarProps): React.JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -179,6 +185,14 @@ export const Sidebar = ({ isCollapsed = false, onChatToggle }: SidebarProps): Re
       return;
     }
     void navigate(path);
+  };
+
+  const handleNewChat = (): void => {
+    onChatToggle?.();
+  };
+
+  const handleSelectConversation = (conversationId: string): void => {
+    onLoadConversation?.(conversationId);
   };
 
   const isActive = (path: string): boolean => {
@@ -208,37 +222,46 @@ export const Sidebar = ({ isCollapsed = false, onChatToggle }: SidebarProps): Re
                 {group.label}
               </div>
             )}
-            <nav className="flex flex-col gap-0.5">
-              {group.items.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    handleNavItemClick(item.path);
-                  }}
-                  disabled={item.disabled}
-                  title={isCollapsed ? item.title : undefined}
-                  className={cn(
-                    'flex items-center gap-2 rounded-md py-1.5 text-xs',
-                    isCollapsed ? 'px-2' : 'pl-4 pr-2',
-                    'transition-colors',
-                    'focus:outline-none',
-                    isActive(item.path)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-foreground hover:bg-accent',
-                    item.disabled && 'opacity-50 cursor-not-allowed',
-                    isCollapsed && 'justify-center'
-                  )}
-                >
-                  <NavIcon name={item.icon} />
-                  {!isCollapsed && item.title}
-                  {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
-                    <span className="ml-auto rounded-full bg-destructive px-1.5 py-0.5 text-[10px] text-destructive-foreground">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </nav>
+            {/* Render conversation history for CHAT group */}
+            {group.id === 'chat' ? (
+              <ConversationHistory
+                isCollapsed={isCollapsed}
+                onNewChat={handleNewChat}
+                onSelectConversation={handleSelectConversation}
+              />
+            ) : (
+              <nav className="flex flex-col gap-0.5">
+                {group.items.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      handleNavItemClick(item.path);
+                    }}
+                    disabled={item.disabled}
+                    title={isCollapsed ? item.title : undefined}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md py-1.5 text-xs',
+                      isCollapsed ? 'px-2' : 'pl-4 pr-2',
+                      'transition-colors',
+                      'focus:outline-none',
+                      isActive(item.path)
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-foreground hover:bg-accent',
+                      item.disabled && 'opacity-50 cursor-not-allowed',
+                      isCollapsed && 'justify-center'
+                    )}
+                  >
+                    <NavIcon name={item.icon} />
+                    {!isCollapsed && item.title}
+                    {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
+                      <span className="ml-auto rounded-full bg-destructive px-1.5 py-0.5 text-[10px] text-destructive-foreground">
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            )}
           </div>
         ))}
       </div>
