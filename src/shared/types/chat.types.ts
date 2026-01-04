@@ -33,7 +33,7 @@ export interface SessionConfig {
   tools?: string[];
 
   /** Model parameters */
-  options?: ChatModelOptions;
+  modelConfig?: ChatModelOptions;
 }
 
 /**

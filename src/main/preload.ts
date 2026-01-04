@@ -230,7 +230,7 @@ interface SessionConfig {
   system?: string;
   agent?: string;
   tools?: string[];
-  options?: ChatModelOptions;
+  modelConfig?: ChatModelOptions;
 }
 
 interface ChatReference {

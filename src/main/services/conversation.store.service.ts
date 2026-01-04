@@ -366,8 +366,8 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
         config: message.config
           ? {
               model: message.config.model,
-              temperature: message.config.options?.temperature,
-              maxTokens: message.config.options?.maxTokens,
+              temperature: message.config.modelConfig?.temperature,
+              maxTokens: message.config.modelConfig?.maxTokens,
             }
           : undefined,
       };
@@ -462,7 +462,7 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
         config: msg.config
           ? {
               model: msg.config.model ?? '',
-              options: {
+              modelConfig: {
                 temperature: msg.config.temperature,
                 maxTokens: msg.config.maxTokens,
               },
