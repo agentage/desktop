@@ -29,9 +29,7 @@ export const useConversations = (): {
   /**
    * Subscribe to conversation changes
    */
-  const onChange = useCallback((callback: () => void): (() => void) => {
-    return window.agentage.conversations.onChange(callback);
-  }, []);
+  const onChange = useCallback((callback: () => void): (() => void) => window.agentage.conversations.onChange(callback), []);
 
   /**
    * Load conversations on mount

@@ -518,7 +518,10 @@ const streamResponse = async (
           role: 'user',
           content: '', // No user content, just tool results
           timestamp: new Date().toISOString(),
-          toolResults: toolResultsData,
+          toolResults: toolResultsData.map((tr) => ({
+            ...tr,
+            result: typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result),
+          })),
         };
         conversation.messages.push(toolResultsMessage);
 

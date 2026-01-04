@@ -12,19 +12,11 @@ import type {
   ChatEvent,
   ChatMessage,
   ChatModelInfo,
-  ChatModelOptions,
-  ChatReference,
   ChatSendRequest,
   ChatSendResponse,
   ChatToolInfo,
-  SessionConfig,
-  ToolCall,
-  ToolResult,
 } from '../shared/types/chat.types.js';
-import type { ComposerSettings, ModelProvider } from '../shared/types/config.types.js';
 import type {
-  ContextBreakdownData,
-  ContextFileInfo,
   FilesOnlyResponse,
   FullContextResponse,
 } from '../shared/types/context.types.js';
@@ -35,9 +27,6 @@ import type {
 } from '../shared/types/conversation.types.js';
 import type {
   LoadProvidersResult,
-  ModelInfo,
-  ModelProviderConfig,
-  ModelProviderType,
   SaveProviderRequest,
   SaveProviderResult,
   ValidateTokenRequest,
@@ -51,7 +40,6 @@ import type {
 } from '../shared/types/oauth.types.js';
 import type { Settings } from '../shared/types/settings.types.js';
 import type {
-  ToolInfo,
   ToolListResult,
   ToolSettingsUpdate,
 } from '../shared/types/tools.types.js';

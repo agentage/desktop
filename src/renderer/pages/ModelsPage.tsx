@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
   ModelInfo,
-  ModelProviderConfig,
   ModelProviderType,
   SaveProviderRequest,
   TokenSource,
@@ -184,7 +183,7 @@ export const ModelsPage = (): React.JSX.Element => {
         console.log('[ModelsPage] Loaded saved providers:', result);
         const updates: Partial<Record<ModelProviderType, ProviderState>> = {};
 
-        for (const config of result.providers as ModelProviderConfig[]) {
+        for (const config of result.providers) {
           console.log(`[ModelsPage] Loading config for ${config.provider}:`, {
             source: config.source,
             hasToken: !!config.token,
@@ -356,7 +355,7 @@ export const ModelsPage = (): React.JSX.Element => {
       const result = await window.agentage.models.providers.load(true);
       const updates: Partial<Record<ModelProviderType, ProviderState>> = {};
 
-      for (const config of result.providers as ModelProviderConfig[]) {
+      for (const config of result.providers) {
         const displayToken = config.source === 'manual' ? (config.token ?? '') : '';
         updates[config.provider] = {
           token: displayToken,
