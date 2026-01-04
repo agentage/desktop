@@ -523,52 +523,55 @@ export const useChat = (): UseChatReturn => {
     [agents]
   );
 
-  const loadConversation = useCallback(async (conversationId: string): Promise<void> => {
-    try {
-      const restored = await window.agentage.conversations.restore(conversationId);
-      if (!restored) {
-        console.error('Failed to restore conversation:', conversationId);
-        return;
-      }
-
-      // Convert restored messages to UI format
-      const uiMessages: ChatUIMessage[] = restored.messages.map((msg, idx) => ({
-        id: `msg_restored_${String(idx)}`,
-        role: msg.role,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-      }));
-
-      // Update model if different
-      const restoredModel = models.find((m) => m.id === restored.config.model);
-      if (restoredModel) {
-        setSelectedModel(restoredModel);
-      }
-
-      // Update agent if specified
-      if (restored.config.agentId) {
-        const restoredAgent = agents.find((a) => a.id === restored.config.agentId);
-        if (restoredAgent) {
-          setSelectedAgent(restoredAgent);
+  const loadConversation = useCallback(
+    async (conversationId: string): Promise<void> => {
+      try {
+        const restored = await window.agentage.conversations.restore(conversationId);
+        if (!restored) {
+          console.error('Failed to restore conversation:', conversationId);
+          return;
         }
-      }
 
-      // Set conversation state
-      setState({
-        messages: uiMessages,
-        isLoading: false,
-        error: null,
-        conversationId: restored.id,
-        currentRequestId: null,
-      });
-    } catch (err) {
-      console.error('Error loading conversation:', err);
-      setState((prev) => ({
-        ...prev,
-        error: err instanceof Error ? err.message : 'Failed to load conversation',
-      }));
-    }
-  }, [models, agents]);
+        // Convert restored messages to UI format
+        const uiMessages: ChatUIMessage[] = restored.messages.map((msg, idx) => ({
+          id: `msg_restored_${String(idx)}`,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+        }));
+
+        // Update model if different
+        const restoredModel = models.find((m) => m.id === restored.config.model);
+        if (restoredModel) {
+          setSelectedModel(restoredModel);
+        }
+
+        // Update agent if specified
+        if (restored.config.agentId) {
+          const restoredAgent = agents.find((a) => a.id === restored.config.agentId);
+          if (restoredAgent) {
+            setSelectedAgent(restoredAgent);
+          }
+        }
+
+        // Set conversation state
+        setState({
+          messages: uiMessages,
+          isLoading: false,
+          error: null,
+          conversationId: restored.id,
+          currentRequestId: null,
+        });
+      } catch (err) {
+        console.error('Error loading conversation:', err);
+        setState((prev) => ({
+          ...prev,
+          error: err instanceof Error ? err.message : 'Failed to load conversation',
+        }));
+      }
+    },
+    [models, agents]
+  );
 
   return {
     messages: state.messages,

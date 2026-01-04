@@ -6,6 +6,7 @@
 - Prioritize simplicity, usability, and security.
 - Simple working solution first, then optimize.
 - Less is better: DO NOT add unnecessary features or complexity.
+- DO NOT OVERCOMPLICATED SOLUTIONS - ALWAYS FIND THE SIMPLEST ELEGANT WAY.
 
 ## **Project Overview**
 

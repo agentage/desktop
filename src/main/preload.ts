@@ -394,126 +394,13 @@ interface ConversationRef {
   isPinned?: boolean;
 }
 
-// v1.0.0 conversation schema types
-interface ConversationMetadata {
-  createdAt: string;
-  updatedAt: string;
-  tags?: string[];
-  isPinned?: boolean;
-  workspace?: string;
-  exportedFrom?: {
-    app: string;
-    version: string;
-    timestamp: string;
-  };
-}
-
-interface UsageStats {
-  inputTokens: number;
-  outputTokens: number;
-  totalTokens: number;
-  byModel?: Record<
-    string,
-    {
-      inputTokens: number;
-      outputTokens: number;
-    }
-  >;
-}
-
+// Session config for restored conversations
 interface SessionConfigPreload {
   model: string;
   provider: 'openai' | 'anthropic' | 'custom';
   system?: string;
   agentId?: string;
   agentName?: string;
-  tools?: string[];
-  modelConfig?: {
-    maxTokens?: number;
-    temperature?: number;
-    topP?: number;
-  };
-}
-
-// Message types for v1.0.0 schema
-interface Reference {
-  type: 'file' | 'selection' | 'image';
-  uri: string;
-  content?: string;
-  range?: { start: number; end: number };
-  mimeType?: string;
-  name?: string;
-}
-
-interface ToolCall {
-  id: string;
-  name: string;
-  input: unknown;
-  status?: 'pending' | 'running' | 'completed' | 'error';
-}
-
-interface UserMessage {
-  type: 'user';
-  id: string;
-  content: string;
-  timestamp: string;
-  references?: Reference[];
-  config?: {
-    model?: string;
-    temperature?: number;
-    maxTokens?: number;
-  };
-}
-
-interface AssistantMessage {
-  type: 'assistant';
-  id: string;
-  content: string;
-  timestamp: string;
-  finishReason?:
-    | 'end_turn'
-    | 'max_tokens'
-    | 'stop_sequence'
-    | 'pause_turn'
-    | 'refusal'
-    | 'tool_use';
-  thinking?: string;
-  tool_calls?: ToolCall[];
-}
-
-interface ToolMessage {
-  type: 'tool';
-  id: string;
-  content: string;
-  timestamp: string;
-  tool_call_id: string;
-  name: string;
-  isError?: boolean;
-  duration?: number;
-}
-
-type ConversationMessage = UserMessage | AssistantMessage | ToolMessage;
-
-interface ConversationSnapshot {
-  version: string; // "1.0.0"
-  format: 'agentage-conversation';
-  id: string;
-  title: string;
-  session: SessionConfigPreload;
-  messages: ConversationMessage[];
-  metadata: ConversationMetadata;
-  usage?: UsageStats;
-}
-
-interface CreateConversationOptions {
-  id?: string;
-  agentId?: string;
-  agentName?: string;
-  system: string;
-  model: string;
-  provider: 'openai' | 'anthropic' | 'custom';
-  title?: string;
-  tags?: string[];
   tools?: string[];
   modelConfig?: {
     maxTokens?: number;
@@ -534,22 +421,8 @@ interface ListConversationsOptions {
   limit?: number;
 }
 
-interface UpdateConversationMetadata {
-  title?: string;
-  tags?: string[];
-  isPinned?: boolean;
-}
-
 interface ConversationAPI {
-  create: (options: CreateConversationOptions) => Promise<ConversationSnapshot>;
-  get: (id: string) => Promise<ConversationSnapshot | null>;
   list: (options?: ListConversationsOptions) => Promise<ConversationRef[]>;
-  appendMessage: (id: string, message: ChatMessage) => Promise<void>;
-  updateMetadata: (id: string, updates: UpdateConversationMetadata) => Promise<void>;
-  updateUsage: (id: string, inputTokens: number, outputTokens: number) => Promise<void>;
-  delete: (id: string) => Promise<void>;
-  export: (id: string) => Promise<string>;
-  import: (jsonString: string) => Promise<ConversationSnapshot>;
   restore: (id: string) => Promise<{
     id: string;
     messages: ChatMessage[];
@@ -757,19 +630,7 @@ const api: AgentageAPI = {
     listTools: () => ipcRenderer.invoke('widgets:listTools'),
   },
   conversations: {
-    create: (options: CreateConversationOptions) =>
-      ipcRenderer.invoke('conversations:create', options),
-    get: (id: string) => ipcRenderer.invoke('conversations:get', id),
     list: (options?: ListConversationsOptions) => ipcRenderer.invoke('conversations:list', options),
-    appendMessage: (id: string, message: ChatMessage) =>
-      ipcRenderer.invoke('conversations:append', id, message),
-    updateMetadata: (id: string, updates: UpdateConversationMetadata) =>
-      ipcRenderer.invoke('conversations:update', id, updates),
-    updateUsage: (id: string, inputTokens: number, outputTokens: number) =>
-      ipcRenderer.invoke('conversations:updateUsage', id, inputTokens, outputTokens),
-    delete: (id: string) => ipcRenderer.invoke('conversations:delete', id),
-    export: (id: string) => ipcRenderer.invoke('conversations:export', id),
-    import: (jsonString: string) => ipcRenderer.invoke('conversations:import', jsonString),
     restore: (id: string) => ipcRenderer.invoke('conversations:restore', id),
   },
 };

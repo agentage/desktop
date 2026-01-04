@@ -1,4 +1,4 @@
-import { mkdir, readFile, unlink, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 import {
@@ -6,7 +6,6 @@ import {
   conversationSnapshotSchema,
   createConversationOptionsSchema,
   listConversationsOptionsSchema,
-  updateConversationMetadataSchema,
 } from '../../shared/schemas/conversation.schema.js';
 import type { ChatMessage } from '../../shared/types/chat.types.js';
 import type {
@@ -19,7 +18,6 @@ import type {
   ListConversationsOptions,
   SessionConfig,
   ToolMessage,
-  UpdateConversationMetadata,
   UserMessage,
 } from '../../shared/types/conversation.types.js';
 
@@ -388,47 +386,6 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
 };
 
 /**
- * Update conversation metadata (title, tags, pinned)
- */
-export const updateConversationMetadata = async (
-  id: string,
-  updates: UpdateConversationMetadata
-): Promise<void> => {
-  const validated = updateConversationMetadataSchema.parse(updates);
-  const index = await loadIndex();
-  const ref = index.conversations.find((c) => c.id === id);
-
-  if (!ref) {
-    throw new Error(`Conversation ${id} not found`);
-  }
-
-  const snapshot = await loadSnapshot(ref.path);
-
-  // Update snapshot
-  if (validated.title !== undefined) {
-    snapshot.title = validated.title;
-    ref.title = validated.title;
-  }
-
-  if (validated.tags !== undefined) {
-    snapshot.metadata.tags = validated.tags;
-    ref.tags = validated.tags;
-  }
-
-  if (validated.isPinned !== undefined) {
-    snapshot.metadata.isPinned = validated.isPinned;
-    ref.isPinned = validated.isPinned;
-  }
-
-  snapshot.metadata.updatedAt = new Date().toISOString();
-  ref.updatedAt = snapshot.metadata.updatedAt;
-
-  // Save changes
-  await saveSnapshot(ref.path, snapshot);
-  await saveIndex(index);
-};
-
-/**
  * Update usage statistics for conversation
  */
 export const updateUsageStats = async (
@@ -453,99 +410,6 @@ export const updateUsageStats = async (
   snapshot.metadata.updatedAt = new Date().toISOString();
 
   await saveSnapshot(ref.path, snapshot);
-};
-
-/**
- * Delete conversation
- */
-export const deleteConversation = async (id: string): Promise<void> => {
-  const index = await loadIndex();
-  const refIndex = index.conversations.findIndex((c) => c.id === id);
-
-  if (refIndex === -1) return; // Already deleted
-
-  const ref = index.conversations[refIndex];
-
-  // Delete file (ignore errors if already gone)
-  try {
-    await unlink(getAbsolutePath(ref.path));
-  } catch {
-    // File already deleted or doesn't exist
-  }
-
-  // Remove from index
-  index.conversations.splice(refIndex, 1);
-  await saveIndex(index);
-};
-
-/**
- * Clear all conversations (dangerous!)
- */
-export const clearAllConversations = async (): Promise<void> => {
-  const index = await loadIndex();
-
-  // Delete all conversation files
-  for (const ref of index.conversations) {
-    try {
-      await unlink(getAbsolutePath(ref.path));
-    } catch {
-      // Ignore errors
-    }
-  }
-
-  // Clear index
-  index.conversations = [];
-  await saveIndex(index);
-};
-
-/**
- * Export conversation to JSON string (for sharing/backup)
- */
-export const exportConversation = async (id: string): Promise<string> => {
-  const snapshot = await getConversation(id);
-  if (!snapshot) {
-    throw new Error(`Conversation ${id} not found`);
-  }
-
-  return JSON.stringify(snapshot, null, 2);
-};
-
-/**
- * Import conversation from JSON string
- */
-export const importConversation = async (jsonString: string): Promise<ConversationSnapshot> => {
-  const parsed = JSON.parse(jsonString) as unknown;
-  const snapshot = conversationSnapshotSchema.parse(parsed);
-
-  // Generate new ID to avoid conflicts
-  const newId = generateId();
-  snapshot.id = newId;
-
-  const now = new Date();
-  const relativePath = getConversationPath(newId, now);
-
-  // Save snapshot
-  await saveSnapshot(relativePath, snapshot);
-
-  // Update index
-  const index = await loadIndex();
-  const ref: ConversationRef = {
-    id: newId,
-    path: relativePath,
-    title: snapshot.title,
-    agentId: snapshot.session.agentId,
-    model: snapshot.session.model,
-    messageCount: snapshot.messages.length,
-    createdAt: snapshot.metadata.createdAt,
-    updatedAt: snapshot.metadata.updatedAt,
-    tags: snapshot.metadata.tags ?? [],
-    isPinned: false,
-  };
-
-  index.conversations.unshift(ref);
-  await saveIndex(index);
-
-  return snapshot;
 };
 
 /**
