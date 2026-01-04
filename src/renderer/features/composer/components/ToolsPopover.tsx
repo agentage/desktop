@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { ChevronDownIcon, ChevronUpIcon } from './icons.js';
+import { ChevronDownIcon, ChevronUpIcon } from '../../../../shared/index.js';
 
 interface ToolInfo {
   name: string;

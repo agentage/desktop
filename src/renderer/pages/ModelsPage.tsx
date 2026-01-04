@@ -10,15 +10,14 @@ import {
   AlertCircleIcon,
   AnthropicIcon,
   BrainIcon,
-  Button,
   CheckCircleIcon,
   CheckIcon,
   IconButton,
   LinkIcon,
   OpenAIIcon,
   RefreshIcon,
-  Section,
-} from '../components/index.js';
+} from '../../shared/index.js';
+import { Button, Section } from '../components/index.js';
 import { cn } from '../lib/utils.js';
 
 interface ProviderState {

@@ -3,8 +3,10 @@ import type { TabFilter, ToolInfo, ToolSource } from '../../../shared/types/inde
 import {
   IconButton,
   RefreshIcon,
-  ToggleGroup,
   WrenchIcon,
+} from '../../../shared/index.js';
+import {
+  ToggleGroup,
   type ToggleOption,
 } from '../../components/index.js';
 import { cn } from '../../lib/utils.js';

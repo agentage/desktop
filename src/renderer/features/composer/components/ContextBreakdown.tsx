@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { cn } from '../../../lib/utils.js';
-import { RefreshIcon } from './icons.js';
+import { RefreshIcon } from '../../../../shared/index.js';
 import type { ContextBreakdownData, ContextItem } from '../types.js';
 
 interface ContextBarProps {

@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Button,
   LogOutIcon,
-  Section,
   SettingsIcon,
   UserIcon,
-} from '../../components/index.js';
+} from '../../../shared/index.js';
+import { Button, Section } from '../../components/index.js';
 import { useAuth } from '../../hooks/index.js';
 
 /**
