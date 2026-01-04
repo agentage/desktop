@@ -10,21 +10,19 @@ import type {
   ChatToolInfo,
   Conversation,
   SessionConfig,
-  ToolCall,
-  ToolResult,
 } from '../../shared/types/chat.types.js';
 import { toAnthropicTools } from '../tools/converter.js';
 import { executeTool, listTools } from '../tools/index.js';
 import type { ToolContext } from '../tools/types.js';
-import { loadProviders, resolveProviderToken } from './model.providers.service.js';
-import { getActiveWorkspace } from './workspace.service.js';
 import {
   appendMessage,
   createConversation,
-  getConversation,
+  restoreConversation,
   updateUsageStats,
 } from './conversation.store.service.js';
 import { logChatEvent, logError } from './logger.service.js';
+import { loadProviders, resolveProviderToken } from './model.providers.service.js';
+import { getActiveWorkspace } from './workspace.service.js';
 
 /**
  * Required system prompt for OAuth tokens (Claude Pro/Max)
@@ -111,18 +109,13 @@ const getOrCreateConversation = async (
   sessionConfig: SessionConfig,
   conversationId?: string
 ): Promise<Conversation> => {
-  // Try to load existing conversation from store
+  // Try to restore existing conversation from store (includes tool history)
   if (conversationId) {
-    const stored = await getConversation(conversationId);
-    if (stored) {
-      // Convert snapshot to in-memory conversation format
-      return {
-        id: stored.id,
-        config: sessionConfig,
-        messages: stored.messages,
-        createdAt: stored.createdAt,
-        updatedAt: stored.updatedAt,
-      };
+    const restored = await restoreConversation(conversationId);
+    if (restored) {
+      // Update in-memory cache
+      conversations.set(restored.id, restored);
+      return restored;
     }
   }
 
@@ -149,10 +142,17 @@ const getOrCreateConversation = async (
   await createConversation({
     id, // Pass the same ID
     agentId: sessionConfig.agent,
-    systemPrompt: sessionConfig.system ?? '',
+    system: sessionConfig.system ?? '',
     model: sessionConfig.model,
+    provider:
+      sessionConfig.model.startsWith('gpt-') || sessionConfig.model.startsWith('o1-')
+        ? 'openai'
+        : sessionConfig.model.startsWith('claude-')
+          ? 'anthropic'
+          : 'custom',
     title: 'New conversation',
-    config: sessionConfig,
+    tools: sessionConfig.tools,
+    modelConfig: sessionConfig.options,
   }).catch((err: unknown) => {
     const errorDetails = err instanceof Error ? { message: err.message, stack: err.stack } : err;
     void logError('Failed to create conversation in store', errorDetails);
@@ -170,12 +170,45 @@ const buildMessages = (
 ): Anthropic.MessageParam[] => {
   const messages: Anthropic.MessageParam[] = [];
 
-  // Add history
+  // Add history - reconstruct with tool calls and results
   for (const msg of conversation.messages) {
-    messages.push({
-      role: msg.role,
-      content: msg.content,
-    });
+    if (msg.role === 'assistant' && msg.toolCalls) {
+      // Assistant message with tool calls
+      const content: Anthropic.ContentBlock[] = [];
+
+      // Add text content if present
+      if (msg.content) {
+        content.push({ type: 'text', text: msg.content, citations: null });
+      }
+
+      // Add tool use blocks
+      for (const toolCall of msg.toolCalls) {
+        content.push({
+          type: 'tool_use',
+          id: toolCall.id,
+          name: toolCall.name,
+          input: toolCall.input,
+        });
+      }
+
+      messages.push({ role: 'assistant', content });
+    } else if (msg.role === 'user' && msg.toolResults) {
+      // User message with tool results
+      const content: Anthropic.ToolResultBlockParam[] = msg.toolResults.map((result) => ({
+        type: 'tool_result',
+        tool_use_id: result.id,
+        content: typeof result.result === 'string' ? result.result : JSON.stringify(result.result),
+        is_error: result.isError,
+      }));
+
+      messages.push({ role: 'user', content });
+    } else {
+      // Regular message
+      messages.push({
+        role: msg.role,
+        content: msg.content,
+      });
+    }
   }
 
   // Add new user message with references
@@ -325,7 +358,7 @@ export const sendMessage = (
   const config = validated.config;
 
   const requestId = generateId('req');
-  
+
   // Make conversation loading async
   void (async (): Promise<void> => {
     const conversation = await getOrCreateConversation(config, config.conversationId);
@@ -456,7 +489,7 @@ const streamResponse = async (
           })),
         };
         conversation.messages.push(assistantToolCalls);
-        
+
         // Persist assistant message with tool calls
         await appendMessage(conversation.id, assistantToolCalls).catch((err: unknown) => {
           const errorDetails =
@@ -488,7 +521,7 @@ const streamResponse = async (
           toolResults: toolResultsData,
         };
         conversation.messages.push(toolResultsMessage);
-        
+
         // Persist tool results
         await appendMessage(conversation.id, toolResultsMessage).catch((err: unknown) => {
           const errorDetails =

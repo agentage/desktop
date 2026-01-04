@@ -240,11 +240,27 @@ interface ChatReference {
   range?: { start: number; end: number };
 }
 
+interface ToolCall {
+  id: string;
+  name: string;
+  input: unknown;
+}
+
+interface ToolResult {
+  id: string;
+  name: string;
+  result: unknown;
+  isError?: boolean;
+}
+
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   references?: ChatReference[];
   timestamp: string;
+  config?: SessionConfig;
+  toolCalls?: ToolCall[];
+  toolResults?: ToolResult[];
 }
 
 interface ChatSendRequest {
@@ -378,32 +394,132 @@ interface ConversationRef {
   isPinned?: boolean;
 }
 
-interface ConversationSnapshot {
-  id: string;
-  title: string;
-  agentId?: string;
-  systemPrompt: string;
-  model: string;
-  messages: ChatMessage[];
+// v1.0.0 conversation schema types
+interface ConversationMetadata {
   createdAt: string;
   updatedAt: string;
-  config?: SessionConfig;
   tags?: string[];
   isPinned?: boolean;
-  usage?: {
-    inputTokens: number;
-    outputTokens: number;
-    totalTokens: number;
+  workspace?: string;
+  exportedFrom?: {
+    app: string;
+    version: string;
+    timestamp: string;
   };
 }
 
-interface CreateConversationOptions {
-  agentId?: string;
-  systemPrompt: string;
+interface UsageStats {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  byModel?: Record<
+    string,
+    {
+      inputTokens: number;
+      outputTokens: number;
+    }
+  >;
+}
+
+interface SessionConfigPreload {
   model: string;
+  provider: 'openai' | 'anthropic' | 'custom';
+  system?: string;
+  agentId?: string;
+  agentName?: string;
+  tools?: string[];
+  modelConfig?: {
+    maxTokens?: number;
+    temperature?: number;
+    topP?: number;
+  };
+}
+
+// Message types for v1.0.0 schema
+interface Reference {
+  type: 'file' | 'selection' | 'image';
+  uri: string;
+  content?: string;
+  range?: { start: number; end: number };
+  mimeType?: string;
+  name?: string;
+}
+
+interface ToolCall {
+  id: string;
+  name: string;
+  input: unknown;
+  status?: 'pending' | 'running' | 'completed' | 'error';
+}
+
+interface UserMessage {
+  type: 'user';
+  id: string;
+  content: string;
+  timestamp: string;
+  references?: Reference[];
+  config?: {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+  };
+}
+
+interface AssistantMessage {
+  type: 'assistant';
+  id: string;
+  content: string;
+  timestamp: string;
+  finishReason?:
+    | 'end_turn'
+    | 'max_tokens'
+    | 'stop_sequence'
+    | 'pause_turn'
+    | 'refusal'
+    | 'tool_use';
+  thinking?: string;
+  tool_calls?: ToolCall[];
+}
+
+interface ToolMessage {
+  type: 'tool';
+  id: string;
+  content: string;
+  timestamp: string;
+  tool_call_id: string;
+  name: string;
+  isError?: boolean;
+  duration?: number;
+}
+
+type ConversationMessage = UserMessage | AssistantMessage | ToolMessage;
+
+interface ConversationSnapshot {
+  version: string; // "1.0.0"
+  format: 'agentage-conversation';
+  id: string;
+  title: string;
+  session: SessionConfigPreload;
+  messages: ConversationMessage[];
+  metadata: ConversationMetadata;
+  usage?: UsageStats;
+}
+
+interface CreateConversationOptions {
+  id?: string;
+  agentId?: string;
+  agentName?: string;
+  system: string;
+  model: string;
+  provider: 'openai' | 'anthropic' | 'custom';
   title?: string;
   tags?: string[];
-  config?: SessionConfig;
+  tools?: string[];
+  modelConfig?: {
+    maxTokens?: number;
+    temperature?: number;
+    topP?: number;
+  };
 }
 
 interface ListConversationsOptions {
@@ -637,8 +753,7 @@ const api: AgentageAPI = {
     create: (options: CreateConversationOptions) =>
       ipcRenderer.invoke('conversations:create', options),
     get: (id: string) => ipcRenderer.invoke('conversations:get', id),
-    list: (options?: ListConversationsOptions) =>
-      ipcRenderer.invoke('conversations:list', options),
+    list: (options?: ListConversationsOptions) => ipcRenderer.invoke('conversations:list', options),
     appendMessage: (id: string, message: ChatMessage) =>
       ipcRenderer.invoke('conversations:append', id, message),
     updateMetadata: (id: string, updates: UpdateConversationMetadata) =>

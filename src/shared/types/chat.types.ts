@@ -179,13 +179,13 @@ export interface ChatMessage {
   content: string;
   references?: ChatReference[];
   timestamp: string;
-  
+
   /** Config used for this message (model, tools, etc.) */
   config?: SessionConfig;
-  
+
   /** Tool calls made by assistant (only for assistant messages) */
   toolCalls?: ToolCall[];
-  
+
   /** Tool results provided (only for user messages with tool results) */
   toolResults?: ToolResult[];
 }

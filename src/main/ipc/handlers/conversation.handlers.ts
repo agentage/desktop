@@ -1,4 +1,5 @@
 import type { BrowserWindow, IpcMain } from 'electron';
+import type { ChatMessage } from '../../../shared/types/chat.types.js';
 import type {
   CreateConversationOptions,
   ListConversationsOptions,
@@ -15,7 +16,6 @@ import {
   updateConversationMetadata,
   updateUsageStats,
 } from '../../services/conversation.store.service.js';
-import type { ChatMessage } from '../../../shared/types/chat.types.js';
 
 export const registerConversationHandlers = (
   ipcMain: IpcMain,
@@ -24,7 +24,9 @@ export const registerConversationHandlers = (
   /**
    * Create new conversation
    */
-  ipcMain.handle('conversations:create', async (_event, options: CreateConversationOptions) => createConversation(options));
+  ipcMain.handle('conversations:create', async (_event, options: CreateConversationOptions) =>
+    createConversation(options)
+  );
 
   /**
    * Get conversation by ID
@@ -34,19 +36,24 @@ export const registerConversationHandlers = (
   /**
    * List conversations with optional filters
    */
-  ipcMain.handle('conversations:list', async (_event, options?: ListConversationsOptions) => listConversations(options));
+  ipcMain.handle('conversations:list', async (_event, options?: ListConversationsOptions) =>
+    listConversations(options)
+  );
 
   /**
    * Append message to conversation
    */
-  ipcMain.handle('conversations:append', async (_event, id: string, message: ChatMessage) => appendMessage(id, message));
+  ipcMain.handle('conversations:append', async (_event, id: string, message: ChatMessage) =>
+    appendMessage(id, message)
+  );
 
   /**
    * Update conversation metadata
    */
   ipcMain.handle(
     'conversations:update',
-    async (_event, id: string, updates: UpdateConversationMetadata) => updateConversationMetadata(id, updates)
+    async (_event, id: string, updates: UpdateConversationMetadata) =>
+      updateConversationMetadata(id, updates)
   );
 
   /**
@@ -54,7 +61,8 @@ export const registerConversationHandlers = (
    */
   ipcMain.handle(
     'conversations:updateUsage',
-    async (_event, id: string, inputTokens: number, outputTokens: number) => updateUsageStats(id, inputTokens, outputTokens)
+    async (_event, id: string, inputTokens: number, outputTokens: number) =>
+      updateUsageStats(id, inputTokens, outputTokens)
   );
 
   /**
@@ -70,5 +78,7 @@ export const registerConversationHandlers = (
   /**
    * Import conversation from JSON
    */
-  ipcMain.handle('conversations:import', async (_event, jsonString: string) => importConversation(jsonString));
+  ipcMain.handle('conversations:import', async (_event, jsonString: string) =>
+    importConversation(jsonString)
+  );
 };

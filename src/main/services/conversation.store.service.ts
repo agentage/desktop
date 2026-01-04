@@ -8,15 +8,20 @@ import {
   listConversationsOptionsSchema,
   updateConversationMetadataSchema,
 } from '../../shared/schemas/conversation.schema.js';
+import type { ChatMessage } from '../../shared/types/chat.types.js';
 import type {
+  AssistantMessage,
   ConversationIndex,
+  ConversationMessage,
   ConversationRef,
   ConversationSnapshot,
   CreateConversationOptions,
   ListConversationsOptions,
+  SessionConfig,
+  ToolMessage,
   UpdateConversationMetadata,
+  UserMessage,
 } from '../../shared/types/conversation.types.js';
-import type { ChatMessage } from '../../shared/types/chat.types.js';
 
 const CONFIG_DIR = join(homedir(), '.agentage');
 const CONVERSATIONS_DIR = join(CONFIG_DIR, 'conversations');
@@ -37,6 +42,15 @@ const generateId = (): string => {
 };
 
 /**
+ * Generate unique message ID
+ */
+const generateMessageId = (): string => {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).slice(2, 9);
+  return `msg_${timestamp}_${random}`;
+};
+
+/**
  * Get date folder name (YYYY-MM-DD)
  */
 const getDateFolder = (date: Date = new Date()): string => date.toISOString().split('T')[0];
@@ -45,7 +59,7 @@ const getDateFolder = (date: Date = new Date()): string => date.toISOString().sp
  * Derive title from first user message
  */
 const deriveTitle = (snapshot: ConversationSnapshot): string => {
-  const firstUser = snapshot.messages.find((m) => m.role === 'user');
+  const firstUser = snapshot.messages.find((m) => m.type === 'user');
   if (!firstUser) return 'New conversation';
 
   // Get first 50 chars, trim at word boundary
@@ -148,17 +162,26 @@ export const createConversation = async (
   const relativePath = getConversationPath(id, now);
 
   const snapshot: ConversationSnapshot = {
+    version: '1.0.0',
+    format: 'agentage-conversation',
     id,
     title: validated.title ?? 'New conversation',
-    agentId: validated.agentId,
-    systemPrompt: validated.systemPrompt,
-    model: validated.model,
+    session: {
+      model: validated.model,
+      provider: validated.provider,
+      system: validated.system,
+      agentId: validated.agentId,
+      agentName: validated.agentName,
+      tools: validated.tools,
+      modelConfig: validated.modelConfig,
+    },
     messages: [],
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString(),
-    config: validated.config,
-    tags: validated.tags ?? [],
-    isPinned: false,
+    metadata: {
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      tags: validated.tags ?? [],
+      isPinned: false,
+    },
   };
 
   // Save snapshot
@@ -170,13 +193,13 @@ export const createConversation = async (
     id,
     path: relativePath,
     title: snapshot.title,
-    agentId: snapshot.agentId,
-    model: snapshot.model,
+    agentId: snapshot.session.agentId,
+    model: snapshot.session.model,
     messageCount: 0,
-    createdAt: snapshot.createdAt,
-    updatedAt: snapshot.updatedAt,
-    tags: snapshot.tags,
-    isPinned: snapshot.isPinned,
+    createdAt: snapshot.metadata.createdAt,
+    updatedAt: snapshot.metadata.updatedAt,
+    tags: snapshot.metadata.tags,
+    isPinned: snapshot.metadata.isPinned,
   };
 
   index.conversations.unshift(ref); // Add to beginning
@@ -277,6 +300,7 @@ export const listConversations = async (
 
 /**
  * Append message to conversation
+ * Accepts ChatMessage and converts to ConversationMessage format for storage
  */
 export const appendMessage = async (id: string, message: ChatMessage): Promise<void> => {
   const index = await loadIndex();
@@ -287,13 +311,68 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
   }
 
   const snapshot = await loadSnapshot(ref.path);
+  const timestamp = message.timestamp || new Date().toISOString();
 
-  // Add message
-  snapshot.messages.push(message);
-  snapshot.updatedAt = new Date().toISOString();
+  // Convert ChatMessage to ConversationMessage for storage
+  if (message.role === 'user') {
+    // If user message has tool results, add ToolMessage entries
+    if (message.toolResults && message.toolResults.length > 0) {
+      for (const tr of message.toolResults) {
+        const toolMsg: ToolMessage = {
+          type: 'tool',
+          id: generateMessageId(),
+          content: JSON.stringify(tr.result),
+          timestamp,
+          tool_call_id: tr.id,
+          name: tr.name,
+          isError: tr.isError,
+        };
+        snapshot.messages.push(toolMsg);
+      }
+    }
+
+    // Only add user message if it has actual content or no tool results
+    // (Tool results without user content means this was just a tool response carrier)
+    if (message.content || !message.toolResults || message.toolResults.length === 0) {
+      const userMsg: UserMessage = {
+        type: 'user',
+        id: generateMessageId(),
+        content: message.content,
+        timestamp,
+        references: message.references,
+        config: message.config
+          ? {
+              model: message.config.model,
+              temperature: message.config.options?.temperature,
+              maxTokens: message.config.options?.maxTokens,
+            }
+          : undefined,
+      };
+      snapshot.messages.push(userMsg);
+    }
+  } else {
+    // Assistant message
+    const assistantMsg: AssistantMessage = {
+      type: 'assistant',
+      id: generateMessageId(),
+      content: message.content,
+      timestamp,
+      tool_calls: message.toolCalls?.map((tc) => ({
+        id: tc.id,
+        name: tc.name,
+        input: tc.input,
+        status: 'completed',
+      })),
+      finishReason: message.toolCalls && message.toolCalls.length > 0 ? 'tool_use' : 'end_turn',
+    };
+    snapshot.messages.push(assistantMsg);
+  }
+
+  snapshot.metadata.updatedAt = new Date().toISOString();
 
   // Update title if this is first user message
-  if (snapshot.messages.length === 1 && message.role === 'user') {
+  const firstUserMsg = snapshot.messages.find((m) => m.type === 'user');
+  if (firstUserMsg && snapshot.messages.filter((m) => m.type === 'user').length === 1) {
     snapshot.title = deriveTitle(snapshot);
   }
 
@@ -302,7 +381,7 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
 
   // Update index ref
   ref.messageCount = snapshot.messages.length;
-  ref.updatedAt = snapshot.updatedAt;
+  ref.updatedAt = snapshot.metadata.updatedAt;
   ref.title = snapshot.title;
 
   await saveIndex(index);
@@ -332,17 +411,17 @@ export const updateConversationMetadata = async (
   }
 
   if (validated.tags !== undefined) {
-    snapshot.tags = validated.tags;
+    snapshot.metadata.tags = validated.tags;
     ref.tags = validated.tags;
   }
 
   if (validated.isPinned !== undefined) {
-    snapshot.isPinned = validated.isPinned;
+    snapshot.metadata.isPinned = validated.isPinned;
     ref.isPinned = validated.isPinned;
   }
 
-  snapshot.updatedAt = new Date().toISOString();
-  ref.updatedAt = snapshot.updatedAt;
+  snapshot.metadata.updatedAt = new Date().toISOString();
+  ref.updatedAt = snapshot.metadata.updatedAt;
 
   // Save changes
   await saveSnapshot(ref.path, snapshot);
@@ -371,7 +450,7 @@ export const updateUsageStats = async (
   snapshot.usage.outputTokens += outputTokens;
   snapshot.usage.totalTokens = snapshot.usage.inputTokens + snapshot.usage.outputTokens;
 
-  snapshot.updatedAt = new Date().toISOString();
+  snapshot.metadata.updatedAt = new Date().toISOString();
 
   await saveSnapshot(ref.path, snapshot);
 };
@@ -454,12 +533,12 @@ export const importConversation = async (jsonString: string): Promise<Conversati
     id: newId,
     path: relativePath,
     title: snapshot.title,
-    agentId: snapshot.agentId,
-    model: snapshot.model,
+    agentId: snapshot.session.agentId,
+    model: snapshot.session.model,
     messageCount: snapshot.messages.length,
-    createdAt: snapshot.createdAt,
-    updatedAt: snapshot.updatedAt,
-    tags: snapshot.tags ?? [],
+    createdAt: snapshot.metadata.createdAt,
+    updatedAt: snapshot.metadata.updatedAt,
+    tags: snapshot.metadata.tags ?? [],
     isPinned: false,
   };
 
@@ -467,4 +546,92 @@ export const importConversation = async (jsonString: string): Promise<Conversati
   await saveIndex(index);
 
   return snapshot;
+};
+
+/**
+ * Convert array of ConversationMessages to ChatMessage format
+ * Groups tool messages with user messages
+ */
+const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[] => {
+  const legacy: ChatMessage[] = [];
+  const pendingToolResults: ToolMessage[] = [];
+
+  for (const msg of messages) {
+    if (msg.type === 'tool') {
+      // Collect tool messages
+      pendingToolResults.push(msg);
+    } else if (msg.type === 'user') {
+      // Add user message
+      const userMsg: ChatMessage = {
+        role: 'user',
+        content: msg.content,
+        timestamp: msg.timestamp,
+        references: msg.references,
+        config: msg.config
+          ? {
+              model: msg.config.model ?? '',
+              options: {
+                temperature: msg.config.temperature,
+                maxTokens: msg.config.maxTokens,
+              },
+            }
+          : undefined,
+      };
+
+      // Attach any pending tool results
+      if (pendingToolResults.length > 0) {
+        userMsg.toolResults = pendingToolResults.map((tm) => ({
+          id: tm.tool_call_id,
+          name: tm.name,
+          result: JSON.parse(tm.content) as unknown,
+          isError: tm.isError,
+        }));
+        pendingToolResults.length = 0; // Clear
+      }
+
+      legacy.push(userMsg);
+    } else {
+      // Assistant message
+      legacy.push({
+        role: 'assistant',
+        content: msg.content,
+        timestamp: msg.timestamp,
+        toolCalls: msg.tool_calls?.map((tc) => ({
+          id: tc.id,
+          name: tc.name,
+          input: tc.input,
+        })),
+      });
+    }
+  }
+
+  return legacy;
+};
+
+/**
+ * Restore conversation to in-memory format for continuing the chat
+ */
+export const restoreConversation = async (
+  id: string
+): Promise<{
+  id: string;
+  messages: ChatMessage[];
+  config: SessionConfig;
+  createdAt: string;
+  updatedAt: string;
+} | null> => {
+  const snapshot = await getConversation(id);
+  if (!snapshot) return null;
+
+  // Convert stored messages to runtime format
+  const legacyMessages = convertMessagesToLegacy(snapshot.messages);
+
+  // Return in the format expected by chat service
+  return {
+    id: snapshot.id,
+    messages: legacyMessages,
+    config: snapshot.session,
+    createdAt: snapshot.metadata.createdAt,
+    updatedAt: snapshot.metadata.updatedAt,
+  };
 };

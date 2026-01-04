@@ -8,8 +8,8 @@ import { registerConversationHandlers } from './handlers/conversation.handlers.j
 import { registerModelProvidersHandlers } from './handlers/models.handlers.js';
 import { registerOAuthConnectHandlers } from './handlers/oauth.handlers.js';
 import { registerToolsHandlers } from './handlers/tools.handlers.js';
-import { registerWidgetHandlers } from './handlers/widget.handlers.js';
 import { registerWidgetToolHandlers } from './handlers/widget-tools.handlers.js';
+import { registerWidgetHandlers } from './handlers/widget.handlers.js';
 import { registerWindowHandlers } from './handlers/window.handlers.js';
 import { registerWorkspaceHandlers } from './handlers/workspace.handlers.js';
 
