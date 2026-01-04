@@ -41,28 +41,10 @@ export const navigationConfig: NavigationConfig = {
       label: 'RESOURCES',
       items: [
         {
-          id: 'tools',
-          title: 'Tools',
-          icon: 'wrench',
-          path: '/tools',
-        },
-        {
-          id: 'models',
-          title: 'Models',
-          icon: 'brain',
-          path: '/models',
-        },
-        {
-          id: 'connections',
-          title: 'Connections',
-          icon: 'link',
-          path: '/connections',
-        },
-        {
-          id: 'context',
-          title: 'Context',
-          icon: 'file-text',
-          path: '/context',
+          id: 'resources',
+          title: 'Resources',
+          icon: 'layers',
+          path: '/resources',
         },
       ],
     },

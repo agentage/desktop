@@ -25,4 +25,5 @@ export * from './icons.js';
 export { InlineEdit } from './inline-edit.js';
 export { Section, StatCard, type StatCardTrend } from './section.js';
 export { Switch } from './switch.js';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs.js';
 export { ToggleButton, ToggleGroup, type ToggleOption } from './toggle-group.js';

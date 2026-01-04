@@ -15,6 +15,7 @@ import {
   LoginPage,
   ModelsPage,
   NewAgentPage,
+  ResourcesPage,
   SettingsPage,
   TasksPage,
   ToolsPage,
@@ -67,6 +68,10 @@ export const router = createHashRouter([
               {
                 path: '/tasks',
                 element: <TasksPage />,
+              },
+              {
+                path: '/resources',
+                element: <ResourcesPage />,
               },
               {
                 path: '/tools',

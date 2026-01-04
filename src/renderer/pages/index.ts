@@ -5,6 +5,7 @@ export { ErrorPage } from './ErrorPage.js';
 export { HelpPage } from './help.js';
 export { HomePage } from './home.js';
 export { ModelsPage } from './ModelsPage.js';
+export { ResourcesPage } from './ResourcesPage.js';
 export { SettingsPage } from './settings/index.js';
 export { TasksPage } from './TasksPage.js';
 export { ToolsPage } from './tools/index.js';
