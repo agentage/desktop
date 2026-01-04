@@ -167,7 +167,7 @@ export interface ToolCall {
 export interface ToolResult {
   id: string;
   name: string;
-  result: unknown;
+  result: string;
   isError?: boolean;
 }
 

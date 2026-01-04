@@ -344,7 +344,7 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
         const toolMsg: ToolMessage = {
           type: 'tool',
           id: generateMessageId(),
-          content: JSON.stringify(tr.result),
+          content: tr.result,
           timestamp,
           tool_call_id: tr.id,
           name: tr.name,
@@ -475,7 +475,7 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
         userMsg.toolResults = pendingToolResults.map((tm) => ({
           id: tm.tool_call_id,
           name: tm.name,
-          result: JSON.parse(tm.content) as unknown,
+          result: tm.content,
           isError: tm.isError,
         }));
         pendingToolResults.length = 0; // Clear

@@ -197,7 +197,7 @@ const buildMessages = (
       const content: Anthropic.ToolResultBlockParam[] = msg.toolResults.map((result) => ({
         type: 'tool_result',
         tool_use_id: result.id,
-        content: typeof result.result === 'string' ? result.result : JSON.stringify(result.result),
+        content: result.result,
         is_error: result.isError,
       }));
 
