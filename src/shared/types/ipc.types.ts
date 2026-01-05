@@ -15,6 +15,7 @@ import type {
   ChatToolInfo,
 } from './chat.types.js';
 import type { FilesOnlyResponse, FullContextResponse } from './context.types.js';
+import type { ContextData } from './context.data.types.js';
 import type {
   LoadProvidersResult,
   SaveProviderRequest,
@@ -60,6 +61,10 @@ export interface IpcChannelMap {
   // Config
   'config:get': () => Promise<Record<string, unknown>>;
   'config:set': (key: string, value: unknown) => Promise<void>;
+
+  // Context Data
+  'context.data:load': () => Promise<ContextData>;
+  'context.data:save': (data: ContextData) => Promise<void>;
 
   // Models
   'models:validate': (request: ValidateTokenRequest) => Promise<ValidateTokenResponse>;
