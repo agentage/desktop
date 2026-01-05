@@ -146,7 +146,7 @@ export const WorkspaceCard = ({
 
         <div className="flex-1 min-w-0">
           {isEditing ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-6">
               <input
                 type="text"
                 value={editName}
@@ -154,7 +154,7 @@ export const WorkspaceCard = ({
                   setEditName(e.target.value);
                 }}
                 onKeyDown={handleKeyDown}
-                className="flex-1 px-2 py-1 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:border-primary"
+                className="flex-1 h-6 px-2 text-sm border border-border rounded bg-background text-foreground focus:outline-none focus:border-primary"
                 autoFocus
               />
               <IconButton
@@ -166,7 +166,7 @@ export const WorkspaceCard = ({
               <IconButton icon={<XIcon />} onClick={handleCancel} title="Cancel" />
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-6">
               <h3 className="text-sm font-medium text-foreground truncate">{workspace.name}</h3>
               {isActive && (
                 <span className="px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded">
