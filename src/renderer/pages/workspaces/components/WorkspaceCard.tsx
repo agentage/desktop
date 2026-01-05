@@ -166,7 +166,7 @@ export const WorkspaceCard = ({
               <IconButton icon={<XIcon />} onClick={handleCancel} title="Cancel" />
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 py-1">
               <h3 className="text-sm font-medium text-foreground truncate">{workspace.name}</h3>
               {isActive && (
                 <span className="px-1.5 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded">
