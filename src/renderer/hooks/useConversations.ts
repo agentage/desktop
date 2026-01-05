@@ -17,19 +17,24 @@ export const useConversations = (): {
   /**
    * Load conversations with optional filters
    */
-  const loadConversations = useCallback(async (options?: ListConversationsOptions) => {
-    try {
-      const result = await window.agentage.conversations.list(options);
-      setConversations(result);
-    } catch (err) {
-      console.error('Failed to load conversations:', err);
-    }
+  const loadConversations = useCallback((_options?: ListConversationsOptions): Promise<void> => {
+    // TODO: Implement conversation listing when backend API is available
+    console.warn('Conversation listing not yet implemented');
+    setConversations([]);
+    return Promise.resolve();
   }, []);
 
   /**
    * Subscribe to conversation changes
    */
-  const onChange = useCallback((callback: () => void): (() => void) => window.agentage.conversations.onChange(callback), []);
+  const onChange = useCallback((callback: () => void): (() => void) => {
+    // TODO: Implement conversation change listener when backend API is available
+    console.warn('Conversation change listener not yet implemented');
+    callback();
+    return () => {
+      // Cleanup function placeholder
+    };
+  }, []);
 
   /**
    * Load conversations on mount

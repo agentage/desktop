@@ -352,9 +352,9 @@ const streamResponse = async (
       const stream = client.messages.stream(
         {
           model: config.model,
-          max_tokens: config.options?.maxTokens ?? 4096,
-          temperature: config.options?.temperature,
-          top_p: config.options?.topP,
+          max_tokens: config.modelConfig?.maxTokens ?? 4096,
+          temperature: config.modelConfig?.temperature,
+          top_p: config.modelConfig?.topP,
           system: systemPrompt,
           messages,
           tools: tools.length > 0 ? tools : undefined,

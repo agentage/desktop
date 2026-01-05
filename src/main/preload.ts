@@ -85,6 +85,7 @@ interface WorkspaceUpdate {
 
 // Model providers types
 type ModelProviderType = 'anthropic' | 'openai';
+type TokenSource = 'manual' | 'oauth:openai' | 'oauth:anthropic';
 
 interface ValidateTokenRequest {
   provider: ModelProviderType;
@@ -107,7 +108,8 @@ interface ValidateTokenResponse {
 
 interface ModelProviderConfig {
   provider: ModelProviderType;
-  token: string;
+  source: TokenSource;
+  token?: string; // Only when source === 'manual'
   enabled: boolean;
   lastFetchedAt?: string;
   models: ModelInfo[];
@@ -115,7 +117,8 @@ interface ModelProviderConfig {
 
 interface SaveProviderRequest {
   provider: ModelProviderType;
-  token: string;
+  source: TokenSource;
+  token?: string; // Only when source === 'manual'
   enabled: boolean;
   lastFetchedAt?: string;
   models: ModelInfo[];
