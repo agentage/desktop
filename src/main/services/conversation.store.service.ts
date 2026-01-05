@@ -11,6 +11,7 @@ import {
 import type { ChatMessage } from '../../shared/types/chat.types.js';
 import type {
   AssistantMessage,
+  Attachment,
   ConversationIndex,
   ConversationMessage,
   ConversationRef,
@@ -79,7 +80,7 @@ const getDateFolder = (date: Date = new Date()): string => date.toISOString().sp
  * Derive title from first user message
  */
 const deriveTitle = (snapshot: ConversationSnapshot): string => {
-  const firstUser = snapshot.messages.find((m) => m.type === 'user');
+  const firstUser = snapshot.messages.find((m) => m.role === 'user');
   if (!firstUser) return 'New conversation';
 
   // Get first 50 chars, trim at word boundary
@@ -342,7 +343,7 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
     if (message.toolResults && message.toolResults.length > 0) {
       for (const tr of message.toolResults) {
         const toolMsg: ToolMessage = {
-          type: 'tool',
+          role: 'tool',
           id: generateMessageId(),
           content: tr.result,
           timestamp,
@@ -357,12 +358,20 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
     // Only add user message if it has actual content or no tool results
     // (Tool results without user content means this was just a tool response carrier)
     if (message.content || !message.toolResults || message.toolResults.length === 0) {
+      // Convert ChatReference[] to Attachment[]
+      const attachments: Attachment[] | undefined = message.references?.map((ref) => ({
+        type: ref.type,
+        uri: ref.uri,
+        content: ref.content,
+        range: ref.range,
+      }));
+
       const userMsg: UserMessage = {
-        type: 'user',
+        role: 'user',
         id: generateMessageId(),
         content: message.content,
         timestamp,
-        references: message.references,
+        attachments,
         config: message.config
           ? {
               model: message.config.model,
@@ -374,19 +383,21 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
       snapshot.messages.push(userMsg);
     }
   } else {
-    // Assistant message
+    // Assistant message - convert toolCalls to OpenAI format
     const assistantMsg: AssistantMessage = {
-      type: 'assistant',
+      role: 'assistant',
       id: generateMessageId(),
-      content: message.content,
+      content: message.content || null,
       timestamp,
       tool_calls: message.toolCalls?.map((tc) => ({
         id: tc.id,
-        name: tc.name,
-        input: tc.input,
-        status: 'completed',
+        type: 'function' as const,
+        function: {
+          name: tc.name,
+          arguments: typeof tc.input === 'string' ? tc.input : JSON.stringify(tc.input),
+        },
+        status: 'completed' as const,
       })),
-      finishReason: message.toolCalls && message.toolCalls.length > 0 ? 'tool_use' : 'end_turn',
     };
     snapshot.messages.push(assistantMsg);
   }
@@ -394,8 +405,8 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
   snapshot.metadata.updatedAt = new Date().toISOString();
 
   // Update title if this is first user message
-  const firstUserMsg = snapshot.messages.find((m) => m.type === 'user');
-  if (firstUserMsg && snapshot.messages.filter((m) => m.type === 'user').length === 1) {
+  const firstUserMsg = snapshot.messages.find((m) => m.role === 'user');
+  if (firstUserMsg && snapshot.messages.filter((m) => m.role === 'user').length === 1) {
     snapshot.title = deriveTitle(snapshot);
   }
 
@@ -449,16 +460,24 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
   const pendingToolResults: ToolMessage[] = [];
 
   for (const msg of messages) {
-    if (msg.type === 'tool') {
+    if (msg.role === 'tool') {
       // Collect tool messages
       pendingToolResults.push(msg);
-    } else if (msg.type === 'user') {
+    } else if (msg.role === 'user') {
       // Add user message
+      // Convert Attachment[] back to ChatReference[]
+      const references = msg.attachments?.map((att) => ({
+        type: att.type,
+        uri: att.uri,
+        content: att.content,
+        range: att.range,
+      }));
+
       const userMsg: ChatMessage = {
         role: 'user',
         content: msg.content,
         timestamp: msg.timestamp,
-        references: msg.references,
+        references,
         config: msg.config
           ? {
               model: msg.config.model ?? '',
@@ -474,7 +493,7 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
       if (pendingToolResults.length > 0) {
         userMsg.toolResults = pendingToolResults.map((tm) => ({
           id: tm.tool_call_id,
-          name: tm.name,
+          name: tm.name ?? '',
           result: tm.content,
           isError: tm.isError,
         }));
@@ -483,15 +502,15 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
 
       legacy.push(userMsg);
     } else {
-      // Assistant message
+      // Assistant message - convert from OpenAI format to legacy
       legacy.push({
         role: 'assistant',
-        content: msg.content,
+        content: msg.content ?? '',
         timestamp: msg.timestamp,
         toolCalls: msg.tool_calls?.map((tc) => ({
           id: tc.id,
-          name: tc.name,
-          input: tc.input,
+          name: tc.function.name,
+          input: JSON.parse(tc.function.arguments) as unknown,
         })),
       });
     }
