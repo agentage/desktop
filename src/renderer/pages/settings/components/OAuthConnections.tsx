@@ -5,13 +5,10 @@ import {
   AnthropicIcon,
   Button,
   CheckCircleIcon,
-  IconButton,
   LinkIcon,
   OpenAIIcon,
-  RefreshIcon,
   Section,
 } from '../../../components/index.js';
-import { cn } from '../../../lib/utils.js';
 
 /**
  * Get icon component for provider
@@ -187,14 +184,6 @@ export const OAuthConnections = (): React.JSX.Element => {
       iconColor="violet"
       title="OAuth Connections"
       description="Connect external AI providers"
-      action={
-        <IconButton
-          icon={<RefreshIcon />}
-          onClick={() => void loadProviders()}
-          disabled={loading}
-          className={cn(loading && 'animate-spin')}
-        />
-      }
     >
       {error && (
         <div className="mb-3 p-2 rounded bg-destructive/10 text-destructive text-xs flex items-center gap-2">

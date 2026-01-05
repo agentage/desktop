@@ -163,7 +163,7 @@ export const ToolsPage = (): React.JSX.Element => {
 
   return (
     <div className="flex-1 p-4 h-full">
-      <div className="max-w-3xl mx-auto space-y-4 pb-48">
+      <div className="w-full space-y-4 pb-48">
         {/* Header */}
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-md bg-primary/10">
