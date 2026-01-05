@@ -17,7 +17,7 @@ import {
   NewAgentPage,
   ResourcesPage,
   SettingsPage,
-  TasksPage,
+  // TasksPage,
   ToolsPage,
   WorkspacesPage,
 } from '../pages/index.js';
@@ -65,10 +65,10 @@ export const router = createHashRouter([
                 path: '/agents/new',
                 element: <NewAgentPage />,
               },
-              {
-                path: '/tasks',
-                element: <TasksPage />,
-              },
+              // {
+              //   path: '/tasks',
+              //   element: <TasksPage />,
+              // },
               {
                 path: '/resources',
                 element: <ResourcesPage />,

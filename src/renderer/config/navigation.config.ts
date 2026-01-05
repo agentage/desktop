@@ -24,18 +24,18 @@ export const navigationConfig: NavigationConfig = {
         },
       ],
     },
-    {
-      id: 'work',
-      label: 'WORK',
-      items: [
-        {
-          id: 'tasks',
-          title: 'Tasks',
-          icon: 'list-checks',
-          path: '/tasks',
-        },
-      ],
-    },
+    // {
+    //   id: 'work',
+    //   label: 'WORK',
+    //   items: [
+    //     {
+    //       id: 'tasks',
+    //       title: 'Tasks',
+    //       icon: 'list-checks',
+    //       path: '/tasks',
+    //     },
+    //   ],
+    // },
     {
       id: 'resources',
       label: 'RESOURCES',
