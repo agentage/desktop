@@ -7,6 +7,7 @@ import {
   AccountsPage,
   AgentPage,
   AgentsPage,
+  ChatPage,
   ConnectionsPage,
   ContextPage,
   ErrorPage,
@@ -51,6 +52,10 @@ export const router = createHashRouter([
             children: [
               {
                 path: '/',
+                element: <ChatPage />,
+              },
+              {
+                path: '/home',
                 element: <HomePage />,
               },
               {

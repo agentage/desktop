@@ -11,9 +11,9 @@ export const navigationConfig: NavigationConfig = {
       label: '', // No label for main navigation
       items: [
         {
-          id: 'home',
-          title: 'Home',
-          icon: 'home',
+          id: 'chat',
+          title: 'Chat',
+          icon: 'message-square',
           path: '/',
         },
         {
@@ -47,11 +47,6 @@ export const navigationConfig: NavigationConfig = {
           path: '/resources',
         },
       ],
-    },
-    {
-      id: 'chat',
-      label: 'CHAT',
-      items: [], // Conversation history will be rendered dynamically
     },
   ],
 };

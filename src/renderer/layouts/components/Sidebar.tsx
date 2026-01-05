@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { navigationConfig } from '../../config/navigation.config.js';
 import { cn } from '../../lib/utils.js';
-import { ConversationHistory } from './ConversationHistory.js';
 import { NavUser } from './NavUser.js';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher.js';
 
@@ -171,9 +170,7 @@ const NavIcon = ({ name }: { name: string }): React.JSX.Element | null => icons[
 interface SidebarProps {
   isCollapsed?: boolean;
   onToggle?: () => void;
-  onChatToggle?: () => void;
-  onLoadConversation?: (conversationId: string) => void;
-  activeConversationId?: string;
+  onInfoPanelToggle?: () => void;
 }
 
 /**
@@ -184,36 +181,26 @@ interface SidebarProps {
  *   - Workspace switcher at top
  *   - Navigation groups from config
  *   - User section at bottom
- *   - Collapsible via external toggle (SiteHeader)
+ *   - Collapsible via external toggle
  */
 export const Sidebar = ({
   isCollapsed = false,
-  onChatToggle,
-  onLoadConversation,
-  activeConversationId,
+  onInfoPanelToggle,
 }: SidebarProps): React.JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleNavItemClick = (path: string): void => {
-    // Handle special paths like #chat
-    if (path === '#chat') {
-      onChatToggle?.();
+    // Handle special paths like #info
+    if (path === '#info') {
+      onInfoPanelToggle?.();
       return;
     }
     void navigate(path);
   };
 
-  const handleNewChat = (): void => {
-    onChatToggle?.();
-  };
-
-  const handleSelectConversation = (conversationId: string): void => {
-    onLoadConversation?.(conversationId);
-  };
-
   const isActive = (path: string): boolean => {
-    if (path === '#chat') return false;
+    if (path === '#info') return false;
     return location.pathname === path;
   };
 
@@ -239,47 +226,38 @@ export const Sidebar = ({
                 {group.label}
               </div>
             )}
-            {/* Render conversation history for CHAT group */}
-            {group.id === 'chat' ? (
-              <ConversationHistory
-                isCollapsed={isCollapsed}
-                activeConversationId={activeConversationId}
-                onNewChat={handleNewChat}
-                onSelectConversation={handleSelectConversation}
-              />
-            ) : (
-              <nav className="flex flex-col gap-0.5">
-                {group.items.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      handleNavItemClick(item.path);
-                    }}
-                    disabled={item.disabled}
-                    title={isCollapsed ? item.title : undefined}
-                    className={cn(
-                      'flex items-center gap-2 rounded-md py-1.5 text-xs',
-                      isCollapsed ? 'px-2' : 'pl-4 pr-2',
-                      'transition-colors',
-                      'focus:outline-none',
-                      isActive(item.path)
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-foreground hover:bg-accent',
-                      item.disabled && 'opacity-50 cursor-not-allowed',
-                      isCollapsed && 'justify-center'
-                    )}
-                  >
-                    <NavIcon name={item.icon} />
-                    {!isCollapsed && item.title}
-                    {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
-                      <span className="ml-auto rounded-full bg-destructive px-1.5 py-0.5 text-[10px] text-destructive-foreground">
-                        {item.badge}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </nav>
-            )}
+            {/* Render navigation items */}
+            <nav className="flex flex-col gap-0.5">
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    handleNavItemClick(item.path);
+                  }}
+                  disabled={item.disabled}
+                  title={isCollapsed ? item.title : undefined}
+                  className={cn(
+                    'flex items-center gap-2 rounded-md py-1.5 text-xs',
+                    isCollapsed ? 'px-2' : 'pl-4 pr-2',
+                    'transition-colors',
+                    'focus:outline-none',
+                    isActive(item.path)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-foreground hover:bg-accent',
+                    item.disabled && 'opacity-50 cursor-not-allowed',
+                    isCollapsed && 'justify-center'
+                  )}
+                >
+                  <NavIcon name={item.icon} />
+                  {!isCollapsed && item.title}
+                  {item.badge !== undefined && item.badge > 0 && !isCollapsed && (
+                    <span className="ml-auto rounded-full bg-destructive px-1.5 py-0.5 text-[10px] text-destructive-foreground">
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </nav>
           </div>
         ))}
       </div>
