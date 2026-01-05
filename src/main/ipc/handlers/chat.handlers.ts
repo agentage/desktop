@@ -17,7 +17,7 @@ export const registerChatHandlers = (
   /**
    * Send chat message and stream response
    */
-  ipcMain.handle('chat:send', (_event, request: ChatSendRequest) => {
+  ipcMain.handle('chat:send', async (_event, request: ChatSendRequest) => {
     const mainWindow = getMainWindow();
     if (!mainWindow) {
       throw new Error('No active window');
