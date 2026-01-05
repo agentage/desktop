@@ -360,6 +360,11 @@ interface FilesOnlyResponse {
 
 type ContextResponse = FullContextResponse | FilesOnlyResponse;
 
+// Context data types
+interface ContextData {
+  systemPrompt: string;
+}
+
 export interface AgentageAPI {
   agents: {
     list: () => Promise<string[]>;
@@ -384,6 +389,10 @@ export interface AgentageAPI {
   config: {
     get: () => Promise<Record<string, unknown>>;
     set: (key: string, value: unknown) => Promise<void>;
+  };
+  contextData: {
+    load: () => Promise<ContextData>;
+    save: (data: ContextData) => Promise<void>;
   };
   app: {
     getVersion: () => Promise<string>;
@@ -465,6 +474,10 @@ const api: AgentageAPI = {
   config: {
     get: () => ipcRenderer.invoke('config:get'),
     set: (key: string, value: unknown) => ipcRenderer.invoke('config:set', key, value),
+  },
+  contextData: {
+    load: () => ipcRenderer.invoke('context.data:load'),
+    save: (data: ContextData) => ipcRenderer.invoke('context.data:save', data),
   },
   app: {
     getVersion: () => ipcRenderer.invoke('app:version'),

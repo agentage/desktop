@@ -4,6 +4,7 @@ import { registerAppHandlers, setupRendererReadyMonitor } from './handlers/app.h
 import { registerAuthHandlers } from './handlers/auth.handlers.js';
 import { registerChatHandlers } from './handlers/chat.handlers.js';
 import { registerConfigHandlers } from './handlers/config.handlers.js';
+import { registerContextDataHandlers } from './handlers/context.data.handlers.js';
 import { registerConversationHandlers } from './handlers/conversation.handlers.js';
 import { registerModelProvidersHandlers } from './handlers/models.handlers.js';
 import { registerOAuthConnectHandlers } from './handlers/oauth.handlers.js';
@@ -23,6 +24,7 @@ export const registerIpcHandlers = (
   registerAuthHandlers(ipcMain);
   registerChatHandlers(ipcMain, getMainWindow);
   registerConfigHandlers(ipcMain);
+  registerContextDataHandlers(ipcMain);
   registerConversationHandlers(ipcMain, getMainWindow);
   registerModelProvidersHandlers(ipcMain, getMainWindow);
   registerOAuthConnectHandlers(ipcMain);

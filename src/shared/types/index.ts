@@ -2,6 +2,7 @@ export * from './auth.types.js';
 export * from './chat.types.js';
 export * from './config.types.js';
 export * from './context.types.js';
+export * from './context.data.types.js';
 export * from './ipc.types.js';
 export * from './model.providers.types.js';
 export * from './navigation.types.js';
