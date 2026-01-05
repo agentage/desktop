@@ -174,6 +174,7 @@ interface SidebarProps {
   onChatToggle?: () => void;
   onLoadConversation?: (conversationId: string) => void;
   activeConversationId?: string;
+  onNavigate?: (title: string) => void;
 }
 
 /**
@@ -191,17 +192,19 @@ export const Sidebar = ({
   onChatToggle,
   onLoadConversation,
   activeConversationId,
+  onNavigate,
 }: SidebarProps): React.JSX.Element => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleNavItemClick = (path: string): void => {
+  const handleNavItemClick = (path: string, title: string): void => {
     // Handle special paths like #chat
     if (path === '#chat') {
       onChatToggle?.();
       return;
     }
     void navigate(path);
+    onNavigate?.(title);
   };
 
   const handleNewChat = (): void => {
@@ -253,7 +256,7 @@ export const Sidebar = ({
                   <button
                     key={item.id}
                     onClick={() => {
-                      handleNavItemClick(item.path);
+                      handleNavItemClick(item.path, item.title);
                     }}
                     disabled={item.disabled}
                     title={isCollapsed ? item.title : undefined}

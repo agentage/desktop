@@ -1,5 +1,6 @@
 export { AccountPage, AccountsPage, ConnectionsPage, LoginPage } from './auth/index.js';
 export { AgentPage, AgentsPage, NewAgentPage } from './agents/index.js';
+export { ChatPage, type ChatPageHandle } from './ChatPage.js';
 export { ContextPage } from './ContextPage.js';
 export { ErrorPage } from './ErrorPage.js';
 export { HelpPage } from './help.js';

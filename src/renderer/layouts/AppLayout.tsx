@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import { ChatPanel, type ChatPanelHandle } from '../features/chat/index.js';
-import { Sidebar, SiteFooter, SiteHeader, TitleBar } from './components/index.js';
+import { ChatPage, type ChatPageHandle } from '../pages/index.js';
+import { InfoPanel, Sidebar, SiteFooter, TitleBar } from './components/index.js';
 
 // Mobile breakpoint (matches Tailwind's 'md')
 const MOBILE_BREAKPOINT = 768;
@@ -9,15 +8,16 @@ const MOBILE_BREAKPOINT = 768;
 /**
  * Main application layout for authenticated users
  *
- * Structure: TitleBar (top) + Sidebar (left) + Content area (right)
- * Contains the main navigation and content rendering area
+ * Structure: TitleBar (top) + Sidebar (left) + ChatPage (center) + InfoPanel (right)
+ * Chat is the primary interface, InfoPanel shows contextual info from navigation
  * Sidebar auto-collapses on mobile screens
  */
 export const AppLayout = (): React.JSX.Element => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const chatPanelRef = useRef<ChatPanelHandle>(null);
+  const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+  const [infoPanelTitle, setInfoPanelTitle] = useState('Info');
+  const chatPageRef = useRef<ChatPageHandle>(null);
 
   // Handle responsive sidebar collapse
   useEffect(() => {
@@ -44,23 +44,26 @@ export const AppLayout = (): React.JSX.Element => {
     setIsSidebarCollapsed((prev) => !prev);
   };
 
-  const toggleChat = (): void => {
-    setIsChatOpen((prev) => !prev);
+  const toggleInfoPanel = (): void => {
+    setIsInfoPanelOpen((prev) => !prev);
   };
 
   const handleNewChat = (): void => {
     // Clear the current conversation
-    chatPanelRef.current?.clearChat();
-    // Open the chat panel
-    setIsChatOpen(true);
+    chatPageRef.current?.clearChat();
   };
 
   const handleLoadConversation = (conversationId: string): void => {
-    // Load the conversation in the chat panel
-    void chatPanelRef.current?.loadConversation(conversationId);
-    // Open the chat panel if not already open
-    if (!isChatOpen) {
-      setIsChatOpen(true);
+    // Load the conversation in the chat page
+    void chatPageRef.current?.loadConversation(conversationId);
+  };
+
+  const handleNavigate = (title: string): void => {
+    // Update info panel title based on navigation
+    setInfoPanelTitle(title);
+    // Open info panel when navigating
+    if (!isInfoPanelOpen) {
+      setIsInfoPanelOpen(true);
     }
   };
 
@@ -69,28 +72,30 @@ export const AppLayout = (): React.JSX.Element => {
       {/* Title bar at top */}
       <TitleBar title="" showLogo={true} dark={true} />
 
-      {/* Main content area: sidebar + content + chat panel */}
+      {/* Main content area: sidebar + chat page + info panel */}
       <main className="flex flex-1 overflow-hidden">
         <Sidebar
           isCollapsed={isSidebarCollapsed || isMobile}
           onToggle={toggleSidebar}
           onChatToggle={handleNewChat}
           onLoadConversation={handleLoadConversation}
+          onNavigate={handleNavigate}
         />
 
-        {/* Content area */}
-        <section className="flex flex-1 flex-col overflow-hidden">
-          {/* Site header with breadcrumbs */}
-          <SiteHeader onToggleSidebar={toggleSidebar} />
+        {/* Chat page - primary interface */}
+        <ChatPage
+          ref={chatPageRef}
+          onToggleInfoPanel={toggleInfoPanel}
+          onToggleSidebar={toggleSidebar}
+          isInfoPanelOpen={isInfoPanelOpen}
+        />
 
-          {/* Main content */}
-          <div className="flex-1 overflow-auto p-6">
-            <Outlet />
-          </div>
-        </section>
-
-        {/* Chat panel on the right */}
-        <ChatPanel ref={chatPanelRef} isOpen={isChatOpen} onClose={toggleChat} />
+        {/* Info panel on the right - contextual info from navigation */}
+        <InfoPanel
+          isOpen={isInfoPanelOpen}
+          onClose={toggleInfoPanel}
+          title={infoPanelTitle}
+        />
       </main>
 
       {/* Footer at bottom - full width */}
