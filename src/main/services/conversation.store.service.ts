@@ -11,6 +11,7 @@ import {
 import type { ChatMessage } from '../../shared/types/chat.types.js';
 import type {
   AssistantMessage,
+  Attachment,
   ConversationIndex,
   ConversationMessage,
   ConversationRef,
@@ -79,7 +80,7 @@ const getDateFolder = (date: Date = new Date()): string => date.toISOString().sp
  * Derive title from first user message
  */
 const deriveTitle = (snapshot: ConversationSnapshot): string => {
-  const firstUser = snapshot.messages.find((m) => m.type === 'user');
+  const firstUser = snapshot.messages.find((m) => m.role === 'user');
   if (!firstUser) return 'New conversation';
 
   // Get first 50 chars, trim at word boundary
@@ -92,23 +93,33 @@ const deriveTitle = (snapshot: ConversationSnapshot): string => {
  * Initialize conversations directory
  */
 export const initConversationStore = async (): Promise<void> => {
+  console.log('[ConversationStore] Initializing...', { dir: CONVERSATIONS_DIR });
   await mkdir(CONVERSATIONS_DIR, { recursive: true });
   await loadIndex();
+  console.log('[ConversationStore] Initialized successfully');
 };
 
 /**
  * Load index from disk (with caching)
  */
 const loadIndex = async (): Promise<ConversationIndex> => {
-  if (indexCache) return indexCache;
+  if (indexCache) {
+    console.log('[ConversationStore] Using cached index', {
+      count: indexCache.conversations.length,
+    });
+    return indexCache;
+  }
 
   try {
+    console.log('[ConversationStore] Loading index from disk...', { file: INDEX_FILE });
     const content = await readFile(INDEX_FILE, 'utf-8');
     const parsed = JSON.parse(content) as unknown;
     indexCache = conversationIndexSchema.parse(parsed);
+    console.log('[ConversationStore] Index loaded', { count: indexCache.conversations.length });
     return indexCache;
-  } catch {
+  } catch (error) {
     // Create default index if file doesn't exist
+    console.log('[ConversationStore] Index not found, creating default', { error });
     const defaultIndex: ConversationIndex = {
       version: 1,
       conversations: [],
@@ -124,10 +135,17 @@ const loadIndex = async (): Promise<ConversationIndex> => {
  * Save index to disk
  */
 const saveIndex = async (index: ConversationIndex): Promise<void> => {
+  console.log('[ConversationStore] Saving index...', { count: index.conversations.length });
   index.updatedAt = new Date().toISOString();
-  const validated = conversationIndexSchema.parse(index);
-  await writeFile(INDEX_FILE, JSON.stringify(validated, null, 2), 'utf-8');
-  indexCache = validated;
+  try {
+    const validated = conversationIndexSchema.parse(index);
+    await writeFile(INDEX_FILE, JSON.stringify(validated, null, 2), 'utf-8');
+    indexCache = validated;
+    console.log('[ConversationStore] Index saved successfully');
+  } catch (error) {
+    console.error('[ConversationStore] Failed to save index', { error });
+    throw error;
+  }
 };
 
 /**
@@ -147,9 +165,21 @@ const getAbsolutePath = (relativePath: string): string => join(CONVERSATIONS_DIR
  * Load conversation snapshot from disk
  */
 const loadSnapshot = async (relativePath: string): Promise<ConversationSnapshot> => {
-  const content = await readFile(getAbsolutePath(relativePath), 'utf-8');
-  const parsed = JSON.parse(content) as unknown;
-  return conversationSnapshotSchema.parse(parsed);
+  const absolutePath = getAbsolutePath(relativePath);
+  console.log('[ConversationStore] Loading snapshot...', { path: absolutePath });
+  try {
+    const content = await readFile(absolutePath, 'utf-8');
+    const parsed = JSON.parse(content) as unknown;
+    const snapshot = conversationSnapshotSchema.parse(parsed);
+    console.log('[ConversationStore] Snapshot loaded', {
+      id: snapshot.id,
+      messages: snapshot.messages.length,
+    });
+    return snapshot;
+  } catch (error) {
+    console.error('[ConversationStore] Failed to load snapshot', { path: absolutePath, error });
+    throw error;
+  }
 };
 
 /**
@@ -159,14 +189,30 @@ const saveSnapshot = async (
   relativePath: string,
   snapshot: ConversationSnapshot
 ): Promise<void> => {
-  const validated = conversationSnapshotSchema.parse(snapshot);
   const absolutePath = getAbsolutePath(relativePath);
+  console.log('[ConversationStore] Saving snapshot...', {
+    id: snapshot.id,
+    path: absolutePath,
+    messages: snapshot.messages.length,
+  });
 
-  // Ensure date folder exists
-  const folder = join(CONVERSATIONS_DIR, relativePath.split('/')[0]);
-  await mkdir(folder, { recursive: true });
+  try {
+    const validated = conversationSnapshotSchema.parse(snapshot);
 
-  await writeFile(absolutePath, JSON.stringify(validated, null, 2), 'utf-8');
+    // Ensure date folder exists
+    const folder = join(CONVERSATIONS_DIR, relativePath.split('/')[0]);
+    await mkdir(folder, { recursive: true });
+
+    await writeFile(absolutePath, JSON.stringify(validated, null, 2), 'utf-8');
+    console.log('[ConversationStore] Snapshot saved successfully', { id: snapshot.id });
+  } catch (error) {
+    console.error('[ConversationStore] Failed to save snapshot', {
+      id: snapshot.id,
+      path: absolutePath,
+      error,
+    });
+    throw error;
+  }
 };
 
 /**
@@ -175,6 +221,12 @@ const saveSnapshot = async (
 export const createConversation = async (
   options: CreateConversationOptions
 ): Promise<ConversationSnapshot> => {
+  console.log('[ConversationStore] Creating conversation...', {
+    model: options.model,
+    provider: options.provider,
+    agentId: options.agentId,
+  });
+
   const validated = createConversationOptionsSchema.parse(options);
 
   const id = validated.id ?? generateId();
@@ -228,6 +280,7 @@ export const createConversation = async (
   // Emit change event
   emitConversationsChanged();
 
+  console.log('[ConversationStore] Conversation created', { id, path: relativePath });
   return snapshot;
 };
 
@@ -326,10 +379,19 @@ export const listConversations = async (
  * Accepts ChatMessage and converts to ConversationMessage format for storage
  */
 export const appendMessage = async (id: string, message: ChatMessage): Promise<void> => {
+  console.log('[ConversationStore] Appending message...', {
+    conversationId: id,
+    role: message.role,
+    contentLength: message.content?.length,
+    hasToolCalls: !!message.toolCalls?.length,
+    hasToolResults: !!message.toolResults?.length,
+  });
+
   const index = await loadIndex();
   const ref = index.conversations.find((c) => c.id === id);
 
   if (!ref) {
+    console.error('[ConversationStore] Conversation not found', { id });
     throw new Error(`Conversation ${id} not found`);
   }
 
@@ -342,7 +404,7 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
     if (message.toolResults && message.toolResults.length > 0) {
       for (const tr of message.toolResults) {
         const toolMsg: ToolMessage = {
-          type: 'tool',
+          role: 'tool',
           id: generateMessageId(),
           content: tr.result,
           timestamp,
@@ -357,12 +419,20 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
     // Only add user message if it has actual content or no tool results
     // (Tool results without user content means this was just a tool response carrier)
     if (message.content || !message.toolResults || message.toolResults.length === 0) {
+      // Convert ChatReference[] to Attachment[]
+      const attachments: Attachment[] | undefined = message.references?.map((ref) => ({
+        type: ref.type,
+        uri: ref.uri,
+        content: ref.content,
+        range: ref.range,
+      }));
+
       const userMsg: UserMessage = {
-        type: 'user',
+        role: 'user',
         id: generateMessageId(),
         content: message.content,
         timestamp,
-        references: message.references,
+        attachments,
         config: message.config
           ? {
               model: message.config.model,
@@ -374,19 +444,21 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
       snapshot.messages.push(userMsg);
     }
   } else {
-    // Assistant message
+    // Assistant message - convert toolCalls to OpenAI format
     const assistantMsg: AssistantMessage = {
-      type: 'assistant',
+      role: 'assistant',
       id: generateMessageId(),
-      content: message.content,
+      content: message.content || null,
       timestamp,
       tool_calls: message.toolCalls?.map((tc) => ({
         id: tc.id,
-        name: tc.name,
-        input: tc.input,
-        status: 'completed',
+        type: 'function' as const,
+        function: {
+          name: tc.name,
+          arguments: typeof tc.input === 'string' ? tc.input : JSON.stringify(tc.input),
+        },
+        status: 'completed' as const,
       })),
-      finishReason: message.toolCalls && message.toolCalls.length > 0 ? 'tool_use' : 'end_turn',
     };
     snapshot.messages.push(assistantMsg);
   }
@@ -394,8 +466,8 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
   snapshot.metadata.updatedAt = new Date().toISOString();
 
   // Update title if this is first user message
-  const firstUserMsg = snapshot.messages.find((m) => m.type === 'user');
-  if (firstUserMsg && snapshot.messages.filter((m) => m.type === 'user').length === 1) {
+  const firstUserMsg = snapshot.messages.find((m) => m.role === 'user');
+  if (firstUserMsg && snapshot.messages.filter((m) => m.role === 'user').length === 1) {
     snapshot.title = deriveTitle(snapshot);
   }
 
@@ -411,6 +483,12 @@ export const appendMessage = async (id: string, message: ChatMessage): Promise<v
 
   // Emit change event
   emitConversationsChanged();
+
+  console.log('[ConversationStore] Message appended', {
+    conversationId: id,
+    totalMessages: snapshot.messages.length,
+    title: snapshot.title,
+  });
 };
 
 /**
@@ -449,16 +527,24 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
   const pendingToolResults: ToolMessage[] = [];
 
   for (const msg of messages) {
-    if (msg.type === 'tool') {
+    if (msg.role === 'tool') {
       // Collect tool messages
       pendingToolResults.push(msg);
-    } else if (msg.type === 'user') {
+    } else if (msg.role === 'user') {
       // Add user message
+      // Convert Attachment[] back to ChatReference[]
+      const references = msg.attachments?.map((att) => ({
+        type: att.type,
+        uri: att.uri,
+        content: att.content,
+        range: att.range,
+      }));
+
       const userMsg: ChatMessage = {
         role: 'user',
         content: msg.content,
         timestamp: msg.timestamp,
-        references: msg.references,
+        references,
         config: msg.config
           ? {
               model: msg.config.model ?? '',
@@ -474,7 +560,7 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
       if (pendingToolResults.length > 0) {
         userMsg.toolResults = pendingToolResults.map((tm) => ({
           id: tm.tool_call_id,
-          name: tm.name,
+          name: tm.name ?? '',
           result: tm.content,
           isError: tm.isError,
         }));
@@ -483,15 +569,15 @@ const convertMessagesToLegacy = (messages: ConversationMessage[]): ChatMessage[]
 
       legacy.push(userMsg);
     } else {
-      // Assistant message
+      // Assistant message - convert from OpenAI format to legacy
       legacy.push({
         role: 'assistant',
-        content: msg.content,
+        content: msg.content ?? '',
         timestamp: msg.timestamp,
         toolCalls: msg.tool_calls?.map((tc) => ({
           id: tc.id,
-          name: tc.name,
-          input: tc.input,
+          name: tc.function.name,
+          input: JSON.parse(tc.function.arguments) as unknown,
         })),
       });
     }

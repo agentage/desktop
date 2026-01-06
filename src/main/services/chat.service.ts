@@ -14,6 +14,12 @@ import type {
 import { toAnthropicTools } from '../tools/converter.js';
 import { executeTool, listTools } from '../tools/index.js';
 import type { ToolContext } from '../tools/types.js';
+import {
+  appendMessage,
+  createConversation as createPersistedConversation,
+  restoreConversation,
+  updateUsageStats,
+} from './conversation.store.service.js';
 import { loadProviders, resolveProviderToken } from './model.providers.service.js';
 import { getActiveWorkspace } from './workspace.service.js';
 
@@ -97,28 +103,65 @@ const getAnthropicClient = async (): Promise<{ client: Anthropic; isOAuth: boole
 
 /**
  * Get or create conversation
+ * Creates in-memory conversation and persists to disk
  */
-const getOrCreateConversation = (
+const getOrCreateConversation = async (
   sessionConfig: SessionConfig,
   conversationId?: string
-): Conversation => {
+): Promise<Conversation> => {
+  // Try to get existing conversation from memory
   if (conversationId && conversations.has(conversationId)) {
     const existing = conversations.get(conversationId);
-    if (existing) return existing;
+    if (existing) {
+      console.log('[ChatService] Using existing in-memory conversation', { id: conversationId });
+      return existing;
+    }
   }
 
-  const id = conversationId ?? generateId('conv');
-  const now = new Date().toISOString();
+  // Try to restore from disk if we have an ID
+  if (conversationId) {
+    console.log('[ChatService] Trying to restore conversation from disk', { id: conversationId });
+    const restored = await restoreConversation(conversationId);
+    if (restored) {
+      console.log('[ChatService] Restored conversation from disk', {
+        id: restored.id,
+        messages: restored.messages.length,
+      });
+      const conversation: Conversation = {
+        id: restored.id,
+        config: restored.config,
+        messages: restored.messages,
+        createdAt: restored.createdAt,
+        updatedAt: restored.updatedAt,
+      };
+      conversations.set(conversation.id, conversation);
+      return conversation;
+    }
+  }
+
+  // Create new conversation - persist to disk first
+  console.log('[ChatService] Creating new conversation', { model: sessionConfig.model });
+
+  const persisted = await createPersistedConversation({
+    system: sessionConfig.system ?? '',
+    model: sessionConfig.model,
+    provider: 'anthropic', // TODO: detect from model
+    agentId: sessionConfig.agent,
+    tools: sessionConfig.tools,
+    modelConfig: sessionConfig.modelConfig,
+  });
+
+  console.log('[ChatService] Conversation persisted', { id: persisted.id });
 
   const conversation: Conversation = {
-    id,
+    id: persisted.id,
     config: sessionConfig,
     messages: [],
-    createdAt: now,
-    updatedAt: now,
+    createdAt: persisted.metadata.createdAt,
+    updatedAt: persisted.metadata.updatedAt,
   };
 
-  conversations.set(id, conversation);
+  conversations.set(conversation.id, conversation);
   return conversation;
 };
 
@@ -278,15 +321,15 @@ const executeToolCall = async (
 /**
  * Send a chat message and stream response
  */
-export const sendMessage = (
+export const sendMessage = async (
   request: ChatSendRequest,
   emitEvent: (event: ChatEvent) => void
-): ChatSendResponse => {
+): Promise<ChatSendResponse> => {
   const validated = chatSendRequestSchema.parse(request);
   const config = validated.config;
 
   const requestId = generateId('req');
-  const conversation = getOrCreateConversation(config, config.conversationId);
+  const conversation = await getOrCreateConversation(config, config.conversationId);
   const abortController = new AbortController();
 
   activeRequests.set(requestId, abortController);
@@ -300,6 +343,10 @@ export const sendMessage = (
   };
   conversation.messages.push(userMessage);
   conversation.updatedAt = userMessage.timestamp;
+
+  // Persist user message to disk
+  console.log('[ChatService] Persisting user message', { conversationId: conversation.id });
+  await appendMessage(conversation.id, userMessage);
 
   // Start streaming in background
   void streamResponse(
@@ -422,6 +469,13 @@ const streamResponse = async (
         };
         conversation.messages.push(assistantMessage);
         conversation.updatedAt = assistantMessage.timestamp;
+
+        // Persist assistant message and usage to disk
+        console.log('[ChatService] Persisting assistant message', {
+          conversationId: conversation.id,
+        });
+        await appendMessage(conversation.id, assistantMessage);
+        await updateUsageStats(conversation.id, totalInputTokens, totalOutputTokens);
 
         // Emit done
         emitEvent({

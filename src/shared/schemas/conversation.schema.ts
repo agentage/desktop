@@ -13,11 +13,12 @@ const isoDatetime = z.string().refine((val) => !isNaN(Date.parse(val)), {
 const providerSchema = z.enum(['openai', 'anthropic', 'custom']);
 
 /**
- * Reference/attachment schema
+ * Attachment schema (Agentage extension of OpenAI format)
  */
-const referenceSchema = z.object({
-  type: z.enum(['file', 'selection', 'image']),
+const attachmentSchema = z.object({
+  type: z.enum(['file', 'image', 'selection']),
   uri: z.string(),
+  name: z.string().optional(),
   content: z.string().optional(),
   range: z
     .object({
@@ -26,28 +27,31 @@ const referenceSchema = z.object({
     })
     .optional(),
   mimeType: z.string().optional(),
-  name: z.string().optional(),
 });
 
 /**
- * Tool call schema
+ * Tool call schema (OpenAI-compatible format)
  */
 const toolCallSchema = z.object({
   id: z.string(),
-  name: z.string(),
-  input: z.unknown(),
+  type: z.literal('function'),
+  function: z.object({
+    name: z.string(),
+    arguments: z.string(), // JSON-encoded
+  }),
   status: z.enum(['pending', 'running', 'completed', 'error']).optional(),
 });
 
 /**
- * User message schema
+ * User message schema (OpenAI-compatible)
  */
 const userMessageSchema = z.object({
-  type: z.literal('user'),
+  role: z.literal('user'),
   id: z.string(),
   content: z.string(),
   timestamp: isoDatetime,
-  references: z.array(referenceSchema).optional(),
+  name: z.string().optional(),
+  attachments: z.array(attachmentSchema).optional(),
   config: z
     .object({
       model: z.string().optional(),
@@ -58,38 +62,46 @@ const userMessageSchema = z.object({
 });
 
 /**
- * Assistant message schema
+ * Assistant message schema (OpenAI-compatible)
  */
 const assistantMessageSchema = z.object({
-  type: z.literal('assistant'),
+  role: z.literal('assistant'),
   id: z.string(),
-  content: z.string(),
+  content: z.string().nullable(),
   timestamp: isoDatetime,
-  finishReason: z
-    .enum(['end_turn', 'max_tokens', 'stop_sequence', 'pause_turn', 'refusal', 'tool_use'])
-    .optional(),
-  thinking: z.string().optional(),
   tool_calls: z.array(toolCallSchema).optional(),
+  refusal: z.string().nullable().optional(),
+  _anthropic: z
+    .object({
+      thinking: z.string().optional(),
+      stopReason: z.enum(['end_turn', 'max_tokens', 'stop_sequence', 'tool_use']).optional(),
+    })
+    .optional(),
+  _openai: z
+    .object({
+      finishReason: z.enum(['stop', 'length', 'tool_calls', 'content_filter']).optional(),
+    })
+    .optional(),
 });
 
 /**
- * Tool message schema
+ * Tool message schema (OpenAI-compatible)
  */
 const toolMessageSchema = z.object({
-  type: z.literal('tool'),
+  role: z.literal('tool'),
   id: z.string(),
   content: z.string(),
   timestamp: isoDatetime,
   tool_call_id: z.string(),
-  name: z.string(),
+  name: z.string().optional(),
   isError: z.boolean().optional(),
   duration: z.number().optional(),
 });
 
 /**
- * Conversation message union schema
+ * Conversation message union schema (OpenAI-compatible, discriminated by 'role')
  */
-export const conversationMessageSchema = z.discriminatedUnion('type', [
+export const conversationMessageSchema = z.discriminatedUnion('role', [
   userMessageSchema,
   assistantMessageSchema,
   toolMessageSchema,
@@ -238,7 +250,7 @@ export type ConversationMessageSchema = z.infer<typeof conversationMessageSchema
 export type UserMessageSchema = z.infer<typeof userMessageSchema>;
 export type AssistantMessageSchema = z.infer<typeof assistantMessageSchema>;
 export type ToolMessageSchema = z.infer<typeof toolMessageSchema>;
-export type ReferenceSchema = z.infer<typeof referenceSchema>;
+export type AttachmentSchema = z.infer<typeof attachmentSchema>;
 export type ToolCallSchema = z.infer<typeof toolCallSchema>;
 export type SessionConfigSchema = z.infer<typeof sessionConfigSchema>;
 export type ConversationMetadataSchema = z.infer<typeof conversationMetadataSchema>;
