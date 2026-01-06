@@ -10,10 +10,17 @@ import type {
   ChatToolInfo,
   Conversation,
   SessionConfig,
+  ToolCall,
 } from '../../shared/types/chat.types.js';
 import { toAnthropicTools } from '../tools/converter.js';
 import { executeTool, listTools } from '../tools/index.js';
 import type { ToolContext } from '../tools/types.js';
+import {
+  appendMessage as storeAppendMessage,
+  createConversation as storeCreateConversation,
+  getConversation as storeGetConversation,
+  updateUsageStats,
+} from './conversation.store.service.js';
 import { loadProviders, resolveProviderToken } from './model.providers.service.js';
 import { getActiveWorkspace } from './workspace.service.js';
 
@@ -96,29 +103,64 @@ const getAnthropicClient = async (): Promise<{ client: Anthropic; isOAuth: boole
 };
 
 /**
- * Get or create conversation
+ * Get or create a persistent conversation (saved to disk)
  */
-const getOrCreateConversation = (
+const getOrCreatePersistentConversation = async (
   sessionConfig: SessionConfig,
   conversationId?: string
-): Conversation => {
-  if (conversationId && conversations.has(conversationId)) {
-    const existing = conversations.get(conversationId);
-    if (existing) return existing;
+): Promise<Conversation> => {
+  // If conversation ID provided, try to load from store first
+  if (conversationId) {
+    // Check in-memory cache first
+    const cached = conversations.get(conversationId);
+    if (cached) return cached;
+
+    // Try to load from disk
+    const stored = await storeGetConversation(conversationId);
+    if (stored) {
+      // Convert stored format to runtime format
+      const conversation: Conversation = {
+        id: stored.id,
+        config: {
+          conversationId: stored.id,
+          model: stored.session.model,
+          system: stored.session.system,
+          agent: stored.session.agentId,
+          tools: stored.session.tools,
+          modelConfig: stored.session.modelConfig,
+        },
+        messages: [], // Messages are loaded separately if needed
+        createdAt: stored.metadata.createdAt,
+        updatedAt: stored.metadata.updatedAt,
+      };
+      conversations.set(conversationId, conversation);
+      return conversation;
+    }
   }
 
-  const id = conversationId ?? generateId('conv');
-  const now = new Date().toISOString();
+  // Create new conversation in store
+  const stored = await storeCreateConversation({
+    model: sessionConfig.model,
+    system: sessionConfig.system ?? '',
+    provider: 'anthropic', // TODO: Detect provider from model
+    agentId: sessionConfig.agent,
+    tools: sessionConfig.tools,
+    modelConfig: sessionConfig.modelConfig,
+  });
 
+  // Create in-memory conversation
   const conversation: Conversation = {
-    id,
-    config: sessionConfig,
+    id: stored.id,
+    config: {
+      ...sessionConfig,
+      conversationId: stored.id,
+    },
     messages: [],
-    createdAt: now,
-    updatedAt: now,
+    createdAt: stored.metadata.createdAt,
+    updatedAt: stored.metadata.updatedAt,
   };
 
-  conversations.set(id, conversation);
+  conversations.set(stored.id, conversation);
   return conversation;
 };
 
@@ -286,32 +328,57 @@ export const sendMessage = (
   const config = validated.config;
 
   const requestId = generateId('req');
-  const conversation = getOrCreateConversation(config, config.conversationId);
   const abortController = new AbortController();
 
   activeRequests.set(requestId, abortController);
 
-  // Add user message to history
-  const userMessage: ChatMessage = {
-    role: 'user',
-    content: validated.prompt,
-    references: validated.references,
-    timestamp: new Date().toISOString(),
-  };
-  conversation.messages.push(userMessage);
-  conversation.updatedAt = userMessage.timestamp;
+  // We need to create/get conversation asynchronously, but return immediately
+  // The actual conversation ID will be set after async initialization
+  const tempConversationId = config.conversationId ?? generateId('conv');
 
-  // Start streaming in background
-  void streamResponse(
-    requestId,
-    conversation,
-    validated,
-    emitEvent,
-    abortController.signal,
-    config
-  );
+  // Start the async flow
+  void (async (): Promise<void> => {
+    try {
+      // Get or create persistent conversation
+      const conversation = await getOrCreatePersistentConversation(config, config.conversationId);
 
-  return { requestId, conversationId: conversation.id };
+      // Add user message to history
+      const userMessage: ChatMessage = {
+        role: 'user',
+        content: validated.prompt,
+        references: validated.references,
+        timestamp: new Date().toISOString(),
+        config,
+      };
+      conversation.messages.push(userMessage);
+      conversation.updatedAt = userMessage.timestamp;
+
+      // Persist user message to store
+      await storeAppendMessage(conversation.id, userMessage);
+
+      // Start streaming
+      await streamResponse(
+        requestId,
+        conversation,
+        validated,
+        emitEvent,
+        abortController.signal,
+        config
+      );
+    } catch (err) {
+      // Handle initialization errors
+      emitEvent({
+        requestId,
+        type: 'error',
+        code: 'INTERNAL_ERROR',
+        message: err instanceof Error ? err.message : 'Failed to initialize conversation',
+        recoverable: false,
+      });
+      activeRequests.delete(requestId);
+    }
+  })();
+
+  return { requestId, conversationId: tempConversationId };
 };
 
 /**
@@ -386,12 +453,58 @@ const streamResponse = async (
       if (stopReason === 'tool_use') {
         const toolUseBlocks = extractToolUseBlocks(finalMessage.content);
 
+        // Extract text content from the assistant message (if any)
+        let assistantText = '';
+        for (const block of finalMessage.content) {
+          if (block.type === 'text') {
+            assistantText += block.text;
+          }
+        }
+
+        // Build tool calls for storage
+        const toolCallsForStorage: ToolCall[] = toolUseBlocks.map((tu) => ({
+          id: tu.id,
+          name: tu.name,
+          input: tu.input,
+        }));
+
+        // Store intermediate assistant message with tool calls
+        const intermediateAssistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: assistantText,
+          timestamp: new Date().toISOString(),
+          toolCalls: toolCallsForStorage,
+        };
+        await storeAppendMessage(conversation.id, intermediateAssistantMessage);
+
         // Execute all tool calls sequentially
         const toolResults: ToolResultBlock[] = [];
+        const toolResultsForStorage: {
+          id: string;
+          name: string;
+          result: string;
+          isError?: boolean;
+        }[] = [];
+
         for (const toolUse of toolUseBlocks) {
           const result = await executeToolCall(toolUse, toolContext, emitEvent, requestId);
           toolResults.push(result);
+          toolResultsForStorage.push({
+            id: toolUse.id,
+            name: toolUse.name,
+            result: result.content,
+            isError: result.is_error,
+          });
         }
+
+        // Store tool results as a "user" message with toolResults
+        const toolResultMessage: ChatMessage = {
+          role: 'user',
+          content: '', // Empty content - just carrying tool results
+          timestamp: new Date().toISOString(),
+          toolResults: toolResultsForStorage,
+        };
+        await storeAppendMessage(conversation.id, toolResultMessage);
 
         // Add assistant message + tool results to conversation for next iteration
         messages = [
@@ -414,14 +527,37 @@ const streamResponse = async (
           outputTokens: totalOutputTokens,
         });
 
+        // Collect tool calls from all iterations for the final message
+        const allToolCalls: ToolCall[] = [];
+        for (const msg of messages) {
+          if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+            for (const block of msg.content) {
+              if (block.type === 'tool_use') {
+                allToolCalls.push({
+                  id: block.id,
+                  name: block.name,
+                  input: block.input,
+                });
+              }
+            }
+          }
+        }
+
         // Add final assistant message to conversation history
         const assistantMessage: ChatMessage = {
           role: 'assistant',
           content: fullResponse,
           timestamp: new Date().toISOString(),
+          toolCalls: allToolCalls.length > 0 ? allToolCalls : undefined,
         };
         conversation.messages.push(assistantMessage);
         conversation.updatedAt = assistantMessage.timestamp;
+
+        // Persist assistant message to store
+        await storeAppendMessage(conversation.id, assistantMessage);
+
+        // Update usage stats in store
+        await updateUsageStats(conversation.id, totalInputTokens, totalOutputTokens);
 
         // Emit done
         emitEvent({

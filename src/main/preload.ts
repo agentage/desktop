@@ -220,6 +220,58 @@ interface WidgetToolDefinition {
   };
 }
 
+// Conversation types
+interface ConversationRef {
+  id: string;
+  path: string;
+  title: string;
+  agentId?: string;
+  model: string;
+  messageCount: number;
+  createdAt: string;
+  updatedAt: string;
+  tags?: string[];
+  isPinned?: boolean;
+}
+
+interface ListConversationsOptions {
+  agentId?: string;
+  model?: string;
+  tags?: string[];
+  search?: string;
+  pinnedFirst?: boolean;
+  sortBy?: 'createdAt' | 'updatedAt' | 'messageCount';
+  sortDirection?: 'asc' | 'desc';
+  skip?: number;
+  limit?: number;
+}
+
+// Restored conversation with messages
+interface RestoredConversation {
+  id: string;
+  messages: {
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: string;
+    toolCalls?: { id: string; name: string; input: unknown }[];
+    toolResults?: { id: string; name: string; result: string; isError?: boolean }[];
+  }[];
+  config: {
+    model: string;
+    system?: string;
+    agentId?: string;
+    tools?: string[];
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ConversationsAPI {
+  list: (options?: ListConversationsOptions) => Promise<ConversationRef[]>;
+  restore: (id: string) => Promise<RestoredConversation | null>;
+  onChange: (callback: () => void) => () => void;
+}
+
 // Chat types
 interface ChatModelOptions {
   maxTokens?: number;
@@ -439,6 +491,7 @@ export interface AgentageAPI {
     callTool: (toolName: string, params?: unknown) => Promise<unknown>;
     listTools: () => Promise<WidgetToolDefinition[]>;
   };
+  conversations: ConversationsAPI;
 }
 
 const api: AgentageAPI = {
@@ -568,6 +621,19 @@ const api: AgentageAPI = {
     callTool: (toolName: string, params?: unknown) =>
       ipcRenderer.invoke('widgets:callTool', toolName, params),
     listTools: () => ipcRenderer.invoke('widgets:listTools'),
+  },
+  conversations: {
+    list: (options?: ListConversationsOptions) => ipcRenderer.invoke('conversations:list', options),
+    restore: (id: string) => ipcRenderer.invoke('conversations:restore', id),
+    onChange: (callback: () => void) => {
+      const handler = (): void => {
+        callback();
+      };
+      ipcRenderer.on('conversations:changed', handler);
+      return () => {
+        ipcRenderer.removeListener('conversations:changed', handler);
+      };
+    },
   },
 };
 
