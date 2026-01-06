@@ -9,8 +9,11 @@ import { Button, FileTextIcon, FormField, Textarea } from '../components/index.j
  */
 export const ContextPage = (): React.JSX.Element => {
   const [systemPrompt, setSystemPrompt] = useState('');
+  const [originalSystemPrompt, setOriginalSystemPrompt] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const hasChanges = systemPrompt !== originalSystemPrompt;
 
   // Load context data on mount
   useEffect(() => {
@@ -18,6 +21,7 @@ export const ContextPage = (): React.JSX.Element => {
       try {
         const data = await window.agentage.contextData.load();
         setSystemPrompt(data.systemPrompt);
+        setOriginalSystemPrompt(data.systemPrompt);
       } catch (error) {
         console.error('Failed to load context data:', error);
       }
@@ -31,6 +35,7 @@ export const ContextPage = (): React.JSX.Element => {
 
     try {
       await window.agentage.contextData.save({ systemPrompt });
+      setOriginalSystemPrompt(systemPrompt);
       setSaveMessage('Saved successfully');
       setTimeout(() => {
         setSaveMessage(null);
@@ -76,7 +81,7 @@ export const ContextPage = (): React.JSX.Element => {
               onClick={(): void => {
                 void handleSave();
               }}
-              disabled={isSaving}
+              disabled={isSaving || !hasChanges}
             >
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
