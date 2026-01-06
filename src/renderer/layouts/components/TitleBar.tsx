@@ -98,7 +98,9 @@ export const TitleBar = ({
 
   const handleOpenDevTools = (): void => {
     if (simple) return;
-    void window.agentage.window.openDevTools();
+    void window.agentage.window.openDevTools().catch(() => {
+      // IPC not available or error opening devtools, ignore
+    });
   };
 
   // Windows 10 style button - taller, narrower rectangle
