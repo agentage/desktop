@@ -401,6 +401,7 @@ export interface AgentageAPI {
     getConfigDir: () => Promise<string>;
     rendererReady: () => Promise<boolean>;
     quit: () => void;
+    isDev: () => Promise<boolean>;
   };
   settings: {
     get: () => Promise<Settings>;
@@ -422,6 +423,7 @@ export interface AgentageAPI {
     maximize: () => Promise<void>;
     close: () => Promise<void>;
     isMaximized: () => Promise<boolean>;
+    openDevTools: () => Promise<void>;
   };
   chat: ChatAPI;
   oauth: {
@@ -488,6 +490,7 @@ const api: AgentageAPI = {
     quit: () => {
       ipcRenderer.send('app:quit');
     },
+    isDev: () => ipcRenderer.invoke('app:isDev'),
   },
   settings: {
     get: () => ipcRenderer.invoke('settings:get'),
@@ -518,6 +521,7 @@ const api: AgentageAPI = {
     maximize: () => ipcRenderer.invoke('window:maximize'),
     close: () => ipcRenderer.invoke('window:close'),
     isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
+    openDevTools: () => ipcRenderer.invoke('window:openDevTools'),
   },
   chat: {
     send: (request: ChatSendRequest) => ipcRenderer.invoke('chat:send', request),

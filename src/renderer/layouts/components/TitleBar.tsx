@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { cn } from '../../lib/utils.js';
 
+// Terminal icon for dev tools
+const TerminalIcon = (): React.JSX.Element => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="4 17 10 11 4 5" />
+    <line x1="12" x2="20" y1="19" y2="19" />
+  </svg>
+);
+
 interface TitleBarProps {
   title?: string;
   showLogo?: boolean;
@@ -37,6 +45,7 @@ export const TitleBar = ({
   simple = false,
 }: TitleBarProps): React.JSX.Element => {
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isDev, setIsDev] = useState(false);
   const isMac = isMacOS();
 
   const checkMaximized = useCallback(async (): Promise<void> => {
@@ -53,6 +62,14 @@ export const TitleBar = ({
     if (simple) return;
 
     void checkMaximized();
+
+    // Check if we're in dev mode
+    void window.agentage.app
+      .isDev()
+      .then(setIsDev)
+      .catch(() => {
+        setIsDev(false);
+      });
 
     const handleResize = (): void => {
       void checkMaximized();
@@ -77,6 +94,11 @@ export const TitleBar = ({
   const handleClose = (): void => {
     if (simple) return;
     void window.agentage.window.close();
+  };
+
+  const handleOpenDevTools = (): void => {
+    if (simple) return;
+    void window.agentage.window.openDevTools();
   };
 
   // Windows 10 style button - taller, narrower rectangle
@@ -136,6 +158,27 @@ export const TitleBar = ({
       {showLogo && (
         <div className="flex items-center gap-2 px-3">
           <span className="text-xs font-medium text-foreground">{title}</span>
+        </div>
+      )}
+
+      {/* Dev Tools Button - visible only in dev mode */}
+      {isDev && !simple && (
+        <div
+          className="flex items-center px-2"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          <button
+            onClick={handleOpenDevTools}
+            title="Open DevTools"
+            type="button"
+            className={cn(
+              'flex size-6 items-center justify-center rounded',
+              'text-muted-foreground hover:text-foreground hover:bg-accent transition-colors',
+              'focus:outline-none'
+            )}
+          >
+            <TerminalIcon />
+          </button>
         </div>
       )}
 

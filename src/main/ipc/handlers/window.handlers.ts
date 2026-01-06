@@ -28,4 +28,11 @@ export const registerWindowHandlers = (
     const win = getMainWindow();
     return win?.isMaximized() ?? false;
   });
+
+  ipcMain.handle('window:openDevTools', () => {
+    const win = getMainWindow();
+    if (win) {
+      win.webContents.openDevTools();
+    }
+  });
 };
