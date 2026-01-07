@@ -71,6 +71,8 @@ export const registerAppHandlers = (
 
   ipcMain.handle('app:getConfigDir', () => getConfigDir());
 
+  ipcMain.handle('app:isDev', () => process.env.NODE_ENV === 'development');
+
   ipcMain.on('app:quit', () => {
     app.quit();
   });
