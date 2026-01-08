@@ -19,14 +19,15 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 
 ## ✨ Key Features
 
-| Feature                     | Description                                   |
-| --------------------------- | --------------------------------------------- |
-| 🔍 **Agent Discovery**      | Browse and manage local agent files           |
-| 🤖 **Chat Interface**       | Claude integration with streaming responses   |
-| 🔐 **OAuth Authentication** | Claude and Codex provider connections         |
-| 🛠️ **Tools System**         | Extensible tool handlers and converters       |
-| 📁 **Workspace Management** | Organize agents across multiple workspaces    |
-| 📦 **Cross-Platform**       | Windows 10+, macOS 11+, Linux (Ubuntu 20.04+) |
+| Feature                     | Description                                          |
+| --------------------------- | ---------------------------------------------------- |
+| 🔍 **Agent Management**     | Browse, create, and manage local agent files         |
+| 🤖 **Chat Interface**       | Anthropic Claude integration with streaming support  |
+| 🔐 **OAuth Connections**    | Claude (Anthropic) and Codex (OpenAI) providers      |
+| 🛠️ **Tools System**         | Extensible widget system and tool handlers           |
+| 📁 **Workspace Management** | Organize agents across multiple workspaces           |
+| 🎨 **Modern UI**            | React-based interface with Tailwind CSS and Radix UI |
+| 📦 **Cross-Platform**       | Windows 10+, macOS 11+, Linux (Ubuntu 20.04+)        |
 
 ---
 
@@ -38,13 +39,16 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │         React + TypeScript Frontend (Renderer)         │ │
 │  │  • Chat Interface        • Agent Management            │ │
-│  │  • Tools Settings        • Workspace UI                │ │
+│  │  • Tools Configuration   • Workspace Management        │ │
+│  │  • Model Settings        • OAuth Connections           │ │
 │  └─────────────────────────┬──────────────────────────────┘ │
-│                            │ IPC                             │
+│                            │ IPC (Context Bridge)            │
 │  ┌─────────────────────────▼──────────────────────────────┐ │
 │  │              Electron Main Process                      │ │
-│  │  • File System Ops       • OAuth Flow (dynamic port)   │ │
-│  │  • Chat Service          • Model Providers             │ │
+│  │  • File System Operations • OAuth Flow (dynamic port)  │ │
+│  │  • Chat Service           • Model Providers            │ │
+│  │  • Workspace Service      • Context Management         │ │
+│  │  • Widget System          • Tool Handlers              │ │
 │  └─────────────────────────────────────────────────────────┘ │
 └───────────────────────────────┬─────────────────────────────┘
                                 │
@@ -67,6 +71,9 @@ Agentage Desktop is the **visual interface** for the Agentage ecosystem — disc
 | **Language**   | TypeScript       | 5.9+ (strict)    |
 | **Bundler**    | Vite             | 6+               |
 | **Validation** | Zod              | 4.3+             |
+| **Styling**    | Tailwind CSS     | 4+               |
+| **Components** | Radix UI         | Latest           |
+| **Testing**    | Jest             | 30+              |
 
 ---
 
@@ -79,19 +86,36 @@ src/
 │   ├── preload.ts        # Context bridge (IPC)
 │   ├── ipc/              # IPC layer
 │   │   ├── handlers/     # IPC handler implementations
+│   │   ├── registry.ts   # Handler registration
+│   │   └── types.ts      # IPC type definitions
 │   ├── services/         # Business logic services
+│   │   ├── oauth/        # OAuth provider implementations
+│   │   └── *.service.ts  # Core services
+│   └── tools/            # Tool implementations
 ├── renderer/             # React app (UI)
-│   ├── app/              # App bootstrap
-│   ├── components/       # Reusable UI components (primitives)
+│   ├── app/              # App bootstrap & routing
+│   ├── components/       # Reusable UI components
+│   │   ├── primitives/   # Base components (Icon, Text)
+│   │   └── layout/       # Layout components (Flex, Grid, Stack)
 │   ├── config/           # App configuration
-│   ├── features/         # Stateful features
-│   ├── guards/           # Route guards
+│   ├── features/         # Feature-specific components
+│   │   ├── chat/         # Chat interface components
+│   │   └── composer/     # Message composer
+│   ├── guards/           # Route guards (Auth, Electron)
 │   ├── hooks/            # Custom React hooks
-│   ├── layouts/          # Page layouts
-│   ├── lib/              # Utility libraries
+│   ├── layouts/          # Page layouts & chrome
+│   ├── lib/              # Utility libraries & widget system
 │   ├── pages/            # Page components
-│   └── styles/           # CSS files
+│   │   ├── agents/       # Agent management pages
+│   │   ├── auth/         # Authentication pages
+│   │   ├── settings/     # Settings pages
+│   │   ├── tools/        # Tools configuration
+│   │   └── workspaces/   # Workspace management
+│   ├── styles/           # Global CSS
+│   └── widgets/          # Dashboard widgets
 └── shared/               # Shared types & schemas
+    ├── schemas/          # Zod validation schemas
+    └── types/            # TypeScript type definitions
 ```
 
 ---
@@ -138,6 +162,7 @@ npm run package:win
 | Command                 | Description                                |
 | ----------------------- | ------------------------------------------ |
 | `npm run dev`           | Start Vite dev server (renderer)           |
+| `npm run dev:electron`  | Build and run full Electron app            |
 | `npm run build`         | Production build                           |
 | `npm run type-check`    | TypeScript validation                      |
 | `npm run lint`          | ESLint check                               |
@@ -194,6 +219,11 @@ Local config file: `~/.agentage/config.json`
 # Run all tests
 npm run test
 
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
 ```
 
 ---
