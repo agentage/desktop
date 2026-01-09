@@ -14,7 +14,7 @@
   },
   "main": "dist/main/index.js",
   "scripts": {
-    "dev": "npm run build && NODE_ENV=development && vite",
+    "dev": "vite",
     "dev:electron": "npm run build && NODE_ENV=development electron . --no-sandbox",
     "build": "tsc && vite build",
     "build:main": "tsc -p tsconfig.main.json",

@@ -10,6 +10,10 @@ export default defineConfig({
     electron([
       {
         entry: 'src/main/index.ts',
+        onstart: (args) => {
+          // Start Electron app after main process is built
+          args.startup();
+        },
         vite: {
           build: {
             outDir: 'dist/main',
@@ -30,6 +34,7 @@ export default defineConfig({
       {
         entry: 'src/main/preload.ts',
         onstart: (options) => {
+          // Reload renderer when preload script changes
           options.reload();
         },
         vite: {

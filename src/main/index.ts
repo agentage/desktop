@@ -60,6 +60,50 @@ let mainWindow: BrowserWindow | null = null;
 
 export const getMainWindow = (): BrowserWindow | null => mainWindow;
 
+/**
+ * Wait for the Vite dev server to be ready before loading
+ * Implements exponential backoff with max retries
+ */
+const waitForDevServer = async (
+  url: string,
+  win: BrowserWindow,
+  retryCount = 0
+): Promise<void> => {
+  const MAX_RETRIES = 10;
+  const BASE_DELAY = 500; // ms
+
+  if (win.isDestroyed()) {
+    console.warn('Window destroyed while waiting for dev server');
+    return;
+  }
+
+  try {
+    // Try to load the URL
+    await win.loadURL(url);
+    console.log('✓ Successfully connected to Vite dev server');
+  } catch (error) {
+    if (retryCount >= MAX_RETRIES) {
+      console.error(
+        `✗ Failed to connect to dev server after ${String(MAX_RETRIES)} attempts:`,
+        error
+      );
+      console.error('  Please ensure Vite dev server is running.');
+      return;
+    }
+
+    // Exponential backoff: 500ms, 1s, 2s, 4s, ...
+    const delay = BASE_DELAY * Math.pow(2, Math.min(retryCount, 3));
+    console.warn(
+      `⏳ Waiting for Vite dev server... (attempt ${String(retryCount + 1)}/${String(MAX_RETRIES)}, retrying in ${String(delay)}ms)`
+    );
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, delay);
+    });
+    await waitForDevServer(url, win, retryCount + 1);
+  }
+};
+
 const createWindow = (): BrowserWindow => {
   const appIcon = getAppIcon();
 
@@ -93,24 +137,14 @@ const createWindow = (): BrowserWindow => {
   // Load URL after window setup is complete
   // In dev mode, use VITE_DEV_SERVER_URL set by vite-plugin-electron
   const devServerUrl = process.env.VITE_DEV_SERVER_URL;
-  const loadUrl =
-    isDev && devServerUrl
-      ? win.loadURL(devServerUrl)
-      : win.loadFile(join(__dirname, '../renderer/index.html'));
 
-  // Handle load failures in dev mode (Vite not ready yet)
   if (isDev && devServerUrl) {
-    void loadUrl.catch(() => {
-      // Retry loading after a short delay if Vite dev server isn't ready
-      console.warn('Failed to load dev server, retrying in 1s...');
-      setTimeout(() => {
-        void win.loadURL(devServerUrl).catch((err: unknown) => {
-          console.error('Failed to load dev server:', err);
-        });
-      }, 1000);
-    });
+    // In dev mode, wait for Vite dev server to be ready before loading
+    // This prevents the common race condition where Electron starts before Vite
+    void waitForDevServer(devServerUrl, win);
   } else {
-    void loadUrl;
+    // In production, load the built HTML file
+    void win.loadFile(join(__dirname, '../renderer/index.html'));
   }
 
   if (isDev) {
