@@ -133,12 +133,21 @@ src/
 # Install dependencies
 npm install
 
-# Start Vite dev server (renderer only)
+# Start development (Vite dev server + Electron app)
+# The plugin automatically starts Electron after Vite is ready
 npm run dev
 
-# Build and run full Electron app
+# Alternative: Build once and run Electron (no hot reload)
 npm run dev:electron
 ```
+
+**Note:** `npm run dev` uses `vite-plugin-electron` which automatically:
+1. Starts the Vite dev server for the renderer process
+2. Builds the main and preload scripts
+3. Launches Electron when ready
+4. Enables hot-reload for both main and renderer processes
+
+The app will wait for the Vite dev server to be ready before loading, preventing common connection issues.
 
 ### Build & Package
 
@@ -159,17 +168,17 @@ npm run package:win
 
 ## 📋 Scripts
 
-| Command                 | Description                                |
-| ----------------------- | ------------------------------------------ |
-| `npm run dev`           | Start Vite dev server (renderer)           |
-| `npm run dev:electron`  | Build and run full Electron app            |
-| `npm run build`         | Production build                           |
-| `npm run type-check`    | TypeScript validation                      |
-| `npm run lint`          | ESLint check                               |
-| `npm run lint:fix`      | Auto-fix lint issues                       |
-| `npm run test`          | Run Jest tests                             |
-| `npm run verify`        | Full CI check (type + lint + build + test) |
-| `npm run package`       | Cross-platform packaging                   |
+| Command                 | Description                                         |
+| ----------------------- | --------------------------------------------------- |
+| `npm run dev`           | Start Vite + Electron with hot reload               |
+| `npm run dev:electron`  | Build and run Electron (no hot reload)              |
+| `npm run build`         | Production build                                    |
+| `npm run type-check`    | TypeScript validation                               |
+| `npm run lint`          | ESLint check                                        |
+| `npm run lint:fix`      | Auto-fix lint issues                                |
+| `npm run test`          | Run Jest tests                                      |
+| `npm run verify`        | Full CI check (type + lint + build + test)          |
+| `npm run package`       | Cross-platform packaging                            |
 
 ---
 
