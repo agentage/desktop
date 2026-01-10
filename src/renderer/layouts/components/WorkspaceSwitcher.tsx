@@ -192,8 +192,8 @@ export const WorkspaceSwitcher = ({
           <span className="truncate text-xs font-medium text-foreground">
             {activeWorkspace?.name ?? 'No workspace'}
           </span>
-          <span className="truncate text-[10px] text-muted-foreground">
-            {activeWorkspace?.path ? activeWorkspace.path.split('/').pop() : 'Select workspace'}
+          <span className="truncate text-[10px] text-muted-foreground" title={activeWorkspace?.path}>
+            {activeWorkspace?.path ?? 'Select workspace'}
           </span>
         </div>
         <ChevronDownIcon />
