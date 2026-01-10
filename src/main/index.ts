@@ -64,11 +64,7 @@ export const getMainWindow = (): BrowserWindow | null => mainWindow;
  * Wait for the Vite dev server to be ready before loading
  * Implements exponential backoff with max retries
  */
-const waitForDevServer = async (
-  url: string,
-  win: BrowserWindow,
-  retryCount = 0
-): Promise<void> => {
+const waitForDevServer = async (url: string, win: BrowserWindow, retryCount = 0): Promise<void> => {
   const MAX_RETRIES = 10;
   const BASE_DELAY = 500; // ms
 
@@ -115,7 +111,7 @@ const createWindow = (): BrowserWindow => {
     icon: appIcon,
     frame: false, // Frameless window for custom titlebar
     webPreferences: {
-      preload: join(__dirname, '../preload/preload.js'),
+      preload: join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -135,8 +131,8 @@ const createWindow = (): BrowserWindow => {
   });
 
   // Load URL after window setup is complete
-  // In dev mode, use VITE_DEV_SERVER_URL set by vite-plugin-electron
-  const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+  // electron-vite sets ELECTRON_RENDERER_URL in dev mode
+  const devServerUrl = process.env.ELECTRON_RENDERER_URL;
 
   if (isDev && devServerUrl) {
     // In dev mode, wait for Vite dev server to be ready before loading

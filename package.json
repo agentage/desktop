@@ -14,11 +14,10 @@
   },
   "main": "dist/main/index.js",
   "scripts": {
-    "dev": "vite",
-    "dev:electron": "npm run build && NODE_ENV=development electron . --no-sandbox",
-    "build": "tsc && vite build",
-    "build:main": "tsc -p tsconfig.main.json",
-    "build:renderer": "vite build",
+    "dev": "electron-vite dev -- --no-sandbox",
+    "dev:debug": "cross-env DEBUG=true electron-vite dev -- --no-sandbox",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
     "type-check": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
@@ -27,12 +26,12 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "verify": "npm run type-check && npm run lint && npm run build && npm run test",
-    "clean": "rm -rf dist coverage",
+    "clean": "rm -rf dist out coverage",
     "generate-icons": "bash scripts/generate-icons.sh",
-    "package": "electron-builder",
-    "package:linux": "electron-builder --linux",
-    "package:mac": "electron-builder --mac",
-    "package:win": "electron-builder --win"
+    "package": "electron-vite build && electron-builder",
+    "package:linux": "electron-vite build && electron-builder --linux",
+    "package:mac": "electron-vite build && electron-builder --mac",
+    "package:win": "electron-vite build && electron-builder --win"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
@@ -54,6 +53,7 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@electron-toolkit/utils": "^4.0.0",
     "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/markdown-it": "^14.1.2",
@@ -64,8 +64,10 @@
     "@typescript-eslint/parser": "^8.52.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.23",
+    "cross-env": "^10.1.0",
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8",
+    "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.26",
@@ -76,9 +78,7 @@
     "ts-jest": "^29.4.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.50.1",
-    "vite": "^6.0.5",
-    "vite-plugin-electron": "^0.29.0",
-    "vite-plugin-electron-renderer": "^0.14.6"
+    "vite": "^6.0.5"
   },
   "engines": {
     "node": ">=20.0.0",
